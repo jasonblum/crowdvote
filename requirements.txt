@@ -6,6 +6,7 @@ django-debug-toolbar==3.2.4
 django-extensions==3.1.5
 django-service-objects==0.7.1
 django-taggit==3.0.0
+docutils==0.18.1
 factory-boy==3.2.1
 pydot==1.4.2
 pyparsing==3.0.8
