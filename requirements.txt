@@ -1,0 +1,12 @@
+asgiref==3.5.0
+coverage==6.3.2
+Django==4.0.4
+django-admin-list-filter-dropdown==1.0.3
+django-debug-toolbar==3.2.4
+django-extensions==3.1.5
+django-service-objects==0.7.1
+django-taggit==3.0.0
+factory-boy==3.2.1
+pydot==1.4.2
+pyparsing==3.0.8
+sqlparse==0.4.2
