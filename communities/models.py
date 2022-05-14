@@ -11,6 +11,10 @@ User = get_user_model()
 
 
 class Community(BaseModel):
+    """
+    CrowdVote can host multiple Communities, so members can belong to more than one.
+    """
+
     name = models.CharField(max_length=255)
     description = models.TextField()
     members = models.ManyToManyField(User, through="Membership")
@@ -20,6 +24,11 @@ class Community(BaseModel):
 
 
 class Membership(BaseModel):
+    """
+    This is a "through-model", where we can add details about a person's membership in a community,
+    such as whether their vote actually counts, or they are just a "lobbyist"
+    """
+
     member = models.ForeignKey(
         User, related_name="memberships", on_delete=models.PROTECT
     )
@@ -41,7 +50,13 @@ class Membership(BaseModel):
     datetime_joined = models.DateTimeField(auto_now_add=True, editable=False)
 
 
-class MembershipProxy(Membership):
+class PublicMembership(Membership):
+    """
+    To allow voters to remain anonymous, while also proving their membership in a community,
+    CrowdVote presents *Two* membership lists: one revealing usernames, and the other revealing real names,
+    leaving it up to each voter to decide whether to publicize their uersname.
+    """
+
     class Meta:
         proxy = True
         verbose_name = "Public Membership"
@@ -49,6 +64,12 @@ class MembershipProxy(Membership):
 
 
 class Election(BaseModel):
+    """
+    The actual question posted to the community (e.g.
+    "Should we extend the Bush-era tax cuts for the rich?" or
+    "Which landscape proposal should we accept?")
+    """
+
     title = models.CharField(max_length=255)
     description = models.TextField()
     datetime_close = models.DateTimeField()
@@ -86,7 +107,7 @@ class Ballot(BaseModel):
         Election, related_name="ballots", on_delete=models.PROTECT
     )
     voter = models.ForeignKey(User, related_name="ballots", on_delete=models.PROTECT)
-    calculated = models.BooleanField(default=False)
+    is_calculated = models.BooleanField(default=False)
     tags = TaggableManager()
 
     def get_preferred_candidate(self):
@@ -97,7 +118,9 @@ class Ballot(BaseModel):
 
 
 class Vote(BaseModel):
-    candidate = models.ForeignKey(Candidate, related_name="votes", on_delete=models.PROTECT)
+    candidate = models.ForeignKey(
+        Candidate, related_name="votes", on_delete=models.PROTECT
+    )
     stars = models.PositiveSmallIntegerField(
         default=0, validators=[MinValueValidator(0), MaxValueValidator(5)]
     )

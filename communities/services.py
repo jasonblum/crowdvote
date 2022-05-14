@@ -11,6 +11,13 @@ from shared.utilities import get_object_or_None, normal_round
 
 class CalculateBallots(Service):
     def get_or_calculate_ballot(self, election, voter, follow_path=[]):
+        """
+        This is where the magic happens: this recursive function gets a voter's ballot,
+        or calculates one on their behalf IF they are following other users from whom
+        votes can be inherited.
+
+        Note the follow_path prevents potential circular followings.
+        """
         election.ballot_tree_log_indent += 1
         election.ballot_tree_log.append(
             {
@@ -24,7 +31,7 @@ class CalculateBallots(Service):
 
         # If ballot had to be created or was already calculated, continue calculating
         # b/c If they manually cast their own ballot, calculated will be set to False
-        if created or ballot.calculated:
+        if created or ballot.is_calculated:
 
             election.ballot_tree_log.append(
                 {
@@ -80,13 +87,13 @@ class CalculateBallots(Service):
                     star_score = normal_round(sum(stars) / len(stars))
                     election.ballot_tree_log.append(
                         {
-                            "indent": election.ballot_tree_log_indent + 2,
+                            "indent": election.ballot_tree_log_indent + 1,
                             "log": f"Creating vote for {ballot.voter} on {candidate}: {star_score * '☆ '}",
                         }
                     )
                     ballot.votes.create(candidate=candidate, stars=star_score)
 
-            ballot.calculated = True
+            ballot.is_calculated = True
             ballot.save()
 
         election.ballot_tree_log_indent -= 1

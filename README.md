@@ -27,6 +27,13 @@ Read more at https://crowdvote.com/
 - `python manage.py runserver` and browse to http://127.0.0.1:8000/admin/
 
 ### Next steps
+
+- [This Trello Board](https://trello.com/b/F0akcqpu/crowdvote) is tracking specific TODO's
+
+But the main things needed to get this app ready for production use:
+
 1. Need an API with Django Rest Framework
 1. Need a Vue.js front-end
+  1. Particularly need a really engaging real-time visualizations of democracy emerging organically in the community.   
 1. Need tests
+1. Move to PostgreSQL (Currently just SQLite)

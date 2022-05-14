@@ -9,7 +9,7 @@ from django.utils.html import format_html
 
 from .models import (
     Membership,
-    MembershipProxy,
+    PublicMembership,
     Community,
     Election,
     Ballot,
@@ -76,8 +76,8 @@ class MembershipAdmin(admin.ModelAdmin):
     community_link.short_description = "Community"
 
 
-@admin.register(MembershipProxy)
-class MembershipProxyAdmin(admin.ModelAdmin):
+@admin.register(PublicMembership)
+class PublicMembershipAdmin(admin.ModelAdmin):
     list_display = (
         "username_link",
         "is_public",

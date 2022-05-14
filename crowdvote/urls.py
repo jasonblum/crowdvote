@@ -15,9 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
+
 
 urlpatterns = [
-    path('admin/doc/', include('django.contrib.admindocs.urls')),
+    path("", TemplateView.as_view(template_name="home.html")),
+    path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path("communities/", include("communities.urls")),
     path("__debug__/", include("debug_toolbar.urls")),
