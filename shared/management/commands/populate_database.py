@@ -14,6 +14,8 @@ from communities.factories import (
     VoteFactory,
 )
 
+from shared.utilities import get_random_madeup_tags
+
 NUM_USERS = 100
 NUM_ELECTIONS = 2
 PERCENTAGE_OF_USERS_WHO_ARE_MEMBERS = 80
@@ -21,14 +23,6 @@ PERCENTAGE_OF_USERS_WHO_FOLLOWING_SOMEONE = 80
 RANGE_MAX_OF_FOLLOWEES = 8
 PERCENTAGE_OF_MEMBERS_VOTING = 60
 PERCENTAGE_OF_ELECTIONS_SOLICITING_BALLOTS = 90
-
-
-def get_random_tags():
-    abcs = "abcdefghijklmnopqrstuvwxyz"
-    tags = []
-    for i in range(random.randint(0, 4)):
-        tags.append(random.choice(abcs) * 5)
-    return list(set(tags))
 
 
 class Command(BaseCommand):
@@ -62,7 +56,9 @@ class Command(BaseCommand):
             users.remove(user)
             for _ in range(2, random.randrange(1, RANGE_MAX_OF_FOLLOWEES)):
                 FollowingFactory(
-                    user=user, followee=random.choice(users), tags=get_random_tags()
+                    user=user,
+                    followee=random.choice(users),
+                    tags=get_random_madeup_tags(),
                 )
                 i += 1
 
@@ -91,7 +87,7 @@ class Command(BaseCommand):
                 )
             ]:
                 ballot = BallotFactory(
-                    election=election, voter=user, tags=get_random_tags()
+                    election=election, voter=user, tags=get_random_madeup_tags()
                 )
                 for candidate in election.candidates.all():
                     VoteFactory(candidate=candidate, ballot=ballot)

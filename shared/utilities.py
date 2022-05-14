@@ -1,4 +1,4 @@
-import math
+import math, random
 from django.shortcuts import _get_queryset
 
 
@@ -25,3 +25,14 @@ def normal_round(n):
     if n - math.floor(n) < 0.5:
         return math.floor(n)
     return math.ceil(n)
+
+
+def get_random_madeup_tags():
+    """
+    Just makes up some number of random gibberish tags for testing...
+    """
+    abcs = "abcdefghijklmnopqrstuvwxyz"
+    tags = []
+    for i in range(random.randint(0, 4)):
+        tags.append(random.choice(abcs) * 5)
+    return list(set(tags))
