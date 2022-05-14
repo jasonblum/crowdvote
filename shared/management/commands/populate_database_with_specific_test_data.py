@@ -44,9 +44,7 @@ class Command(BaseCommand):
                 is_voting_community_member=True,
             )
 
-        #TODO: leaving off here this morning.  Need to do next:
-        - Add non voting lobbyists
-        - Add elections, candiates, etc...
-
+        # TODO: leaving off here this morning.  Need to do next: add elections, candidates, etc
+        # then to go work on your CalculateBallots service...
 
         self.stdout.write("....and done!")

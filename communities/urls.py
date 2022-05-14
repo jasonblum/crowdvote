@@ -5,6 +5,6 @@ from . import views
 app_name = "communities"
 
 urlpatterns = [
-    path("calculate_ballots", views.calulate_ballots, name="calulate_ballots"),
+    path("calculate_ballots/", views.calculate_ballots, name="calculate_ballots"),
     path("tally/", views.tally, name="tally"),
 ]

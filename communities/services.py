@@ -66,25 +66,25 @@ class CalculateBallots(Service):
             # Now compete ballots to calculate this one
             ballot.votes.all().delete()
 
-            for choice in ballot.election.choices.all():
+            for candidate in ballot.election.candidates.all():
                 stars = []
 
                 for ballot_to_compete in ballots_to_compete:
-                    choice_to_inherit = get_object_or_None(
-                        ballot_to_compete.votes.filter(choice=choice)
+                    candidate_to_inherit = get_object_or_None(
+                        ballot_to_compete.votes.filter(candidate=candidate)
                     )
-                    if choice_to_inherit:
-                        stars.append(choice_to_inherit.stars)
+                    if candidate_to_inherit:
+                        stars.append(candidate_to_inherit.stars)
 
                 if stars:
                     star_score = normal_round(sum(stars) / len(stars))
                     election.ballot_tree_log.append(
                         {
                             "indent": election.ballot_tree_log_indent + 2,
-                            "log": f"Creating vote for {ballot.voter} on {choice}: {star_score * '☆ '}",
+                            "log": f"Creating vote for {ballot.voter} on {candidate}: {star_score * '☆ '}",
                         }
                     )
-                    ballot.votes.create(choice=choice, stars=star_score)
+                    ballot.votes.create(candidate=candidate, stars=star_score)
 
             ballot.calculated = True
             ballot.save()
@@ -170,7 +170,7 @@ class Tally(Service):
                     }
                 )
 
-                # (S)TAR: Score the choices on each voting member's ballot:
+                # (S)TAR: Score the candidates on each voting member's ballot:
                 scores = defaultdict(list)
                 for ballot in election.ballots.all():
                     if ballot.voter.memberships.filter(
@@ -183,7 +183,7 @@ class Tally(Service):
                             }
                         )
                         for vote in ballot.votes.all():
-                            scores[vote.choice].append(vote.score)
+                            scores[vote.candidate].append(vote.stars)
                         election.tally_log.append(
                             {
                                 "indent": election.tally_log_indent + 2,
@@ -198,7 +198,7 @@ class Tally(Service):
                             }
                         )
 
-                # S(TAR): Then Automaticaly Run off: determine winner from ballot's preferred choice
+                # S(TAR): Then Automaticaly Run off: determine winner from ballot's preferred candidate
 
             tally_report = ""
             for log in election.tally_log:

@@ -30,6 +30,6 @@ class Command(BaseCommand):
         call_command("populate_database_with_specific_test_data")
         self.stdout.write(
             self.style.SUCCESS(
-                "> Specific Test users, followings and votes added to make it easier to test..."
+                "> Added specific Test users, followings and votes added to make it easier to test..."
             )
         )

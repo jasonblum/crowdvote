@@ -7,7 +7,7 @@ from django.shortcuts import render
 from .services import CalculateBallots, Tally
 
 
-def calulate_ballots(request):
+def calculate_ballots(request):
     ballot_tree = CalculateBallots.execute({})
     return render(request, "communities/ballot_tree.html", {"ballot_tree": ballot_tree})
 
