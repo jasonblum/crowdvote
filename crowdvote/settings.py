@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # THIRD PARTY APPS
     "django_admin_listfilter_dropdown",
+    "admin_reorder",
     "taggit",
     # PROJECT APPS
     "accounts",
@@ -64,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "admin_reorder.middleware.ModelAdminReorder",
 ]
 
 ROOT_URLCONF = "crowdvote.urls"
@@ -97,6 +99,38 @@ if DEBUG:
         "SHOW_TOOLBAR_CALLBACK": lambda x: True,
         "INTERCEPT_REDIRECTS": False,
     }
+
+
+ADMIN_REORDER = (
+    # https://django-modeladmin-reorder.readthedocs.io/
+    {
+        "app": "accounts",
+        "label": "People",
+        "models": (
+            "accounts.CustomUser",
+            "accounts.Following",
+            "taggit.Tag",
+        ),
+    },
+    {
+        "app": "communities",
+        "models": (
+            "communities.Community",
+            "communities.Membership",
+            "communities.MembershipProxy",
+        ),
+    },
+    {
+        "app": "communities",
+        "label": "Elections",
+        "models": (
+            "communities.Election",
+            "communities.Candidate",
+            "communities.Ballot",
+            "communities.Vote",
+        ),
+    },
+)
 
 
 WSGI_APPLICATION = "crowdvote.wsgi.application"
