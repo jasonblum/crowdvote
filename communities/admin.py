@@ -9,7 +9,6 @@ from django.utils.html import format_html
 
 from .models import (
     Membership,
-    PublicMembership,
     Community,
     Election,
     Ballot,
@@ -34,9 +33,9 @@ class MembershipAdmin(admin.ModelAdmin):
         "member_link",
         "community_link",
         "is_community_legislator",
-        "is_community_administrator",
+        "is_community_manager",
         "is_voting_community_member",
-        "datetime_joined",
+        "dt_joined",
     )
     list_filter = (
         # for ordinary fields
@@ -46,7 +45,7 @@ class MembershipAdmin(admin.ModelAdmin):
         # for related fields
         # ('a_foreignkey_field', RelatedDropdownFilter),
         "is_community_legislator",
-        "is_community_administrator",
+        "is_community_manager",
         "is_voting_community_member",
     )
     search_fields = ("member__username",)
@@ -76,45 +75,12 @@ class MembershipAdmin(admin.ModelAdmin):
     community_link.short_description = "Community"
 
 
-@admin.register(PublicMembership)
-class PublicMembershipAdmin(admin.ModelAdmin):
-    list_display = (
-        "username_link",
-        "is_public",
-        "community_link",
-    )
-    list_filter = (("community", ChoiceDropdownFilter), "is_public")
-    search_fields = ("member__username",)
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        return queryset.select_related("community", "member")
-
-    def community_link(self, obj):
-        return format_html(
-            f"<a href={reverse('admin:communities_community_change', kwargs={'object_id': obj.community.pk})}>{obj.community}</a>"
-        )
-
-    def username_link(self, obj):
-        return format_html(
-            f"<a href={reverse('admin:accounts_customuser_change', kwargs={'object_id': obj.member.pk})}>{obj.member.username if obj.is_public else obj.member.id}</a>"
-        )
-
-    community_link.short_description = "Community"
-
-
 @admin.register(Election)
 class ElectionAdmin(admin.ModelAdmin):
 
     list_display = (
         "__str__",
-        "datetime_close",
+        "dt_close",
         "community_link",
     )
     list_filter = (("community", ChoiceDropdownFilter),)

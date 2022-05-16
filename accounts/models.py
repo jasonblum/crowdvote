@@ -9,8 +9,6 @@ from shared.models import BaseModel
 
 
 class CustomUser(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-
     class Meta:
         ordering = ["username"]
         verbose_name = "User"
@@ -18,13 +16,22 @@ class CustomUser(AbstractUser):
 
 
 class Following(BaseModel):
-    user = models.ForeignKey(
-        CustomUser, related_name="followings", on_delete=models.PROTECT
+    follower = models.ForeignKey(
+        CustomUser,
+        related_name="followings",
+        on_delete=models.PROTECT,
+        help_text="The user doing the following.",
     )
     followee = models.ForeignKey(
-        CustomUser, related_name="followers", on_delete=models.PROTECT
+        CustomUser,
+        related_name="followers",
+        on_delete=models.PROTECT,
+        help_text="The user being followed.",
     )
     tags = TaggableManager()
 
     class Meta:
-        ordering = ["user__username"]
+        ordering = [
+            "follower__username",
+            "followee__username",
+        ]

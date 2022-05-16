@@ -2,8 +2,14 @@ from django.db import models
 
 
 class BaseModel(models.Model):
-    dt_updated = models.DateTimeField(auto_now=True, editable=False)
-    dt_created = models.DateTimeField(auto_now_add=True, editable=False)
+    dt_updated = models.DateTimeField(
+        auto_now=True, editable=False, help_text="DateTime this record was created."
+    )
+    dt_created = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        help_text="DateTime this record last updated.",
+    )
 
     class Meta:
         abstract = True
