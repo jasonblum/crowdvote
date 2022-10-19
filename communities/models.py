@@ -1,8 +1,10 @@
+import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from taggit.managers import TaggableManager
+from taggit.models import GenericUUIDTaggedItemBase, TaggedItemBase
 
 from shared.models import BaseModel
 
@@ -16,7 +18,7 @@ class Community(BaseModel):
     """
 
     name = models.CharField(max_length=255)
-    description = models.TextField()  # TODO Convert to RichTextField
+    description = models.TextField()
     members = models.ManyToManyField(User, through="Membership")
 
     class Meta:
@@ -35,11 +37,8 @@ class Membership(BaseModel):
     community = models.ForeignKey(
         Community, related_name="memberships", on_delete=models.PROTECT
     )
-    is_anonymous = models.BooleanField(
-        default=True, help_text="Members vote anonymously by default."
-    )
-    is_community_legislator = models.BooleanField(
-        default=False, help_text="Can author and publish Elections."
+    is_anonymous_by_default = models.BooleanField(
+        default=True, help_text="Members' ballots are anonymous by default."
     )
     is_community_manager = models.BooleanField(
         default=False, help_text="Can manage Community membership."
@@ -53,16 +52,38 @@ class Membership(BaseModel):
         help_text="DateTime member joined this community",
     )
 
-    @property
-    def username(self):
-        """
-        Community Members' identites and memberships must be transparent and verifiable, but their
-        actual usernames do not need to be revealed, allowing them to remain anonymous,  if the like.
-        """
-        return self.member.username if self.is_public else "Anonymous"
+    # @property
+    # def username(self):
+    #     """
+    #     Community Members' identites and memberships must be transparent and verifiable, but their
+    #     actual usernames do not need to be revealed, allowing them to remain anonymous,  if they prefer.
+    #     """
+    #     return self.member.username if self.is_public else "Anonymous"
 
 
-class Election(BaseModel):
+class Results(BaseModel):
+    """
+    Just a container for all the Referendum results...
+
+    TODO: note I started doing another Result below, with the Referendum as a foreign key.
+    Not sure what I was thinking here, but need to figure out which was the better approach...
+    """
+
+    ballot_inheritance_tree = models.TextField(
+        help_text="TODO: JSON snapshot of the ballot inheritance"
+    )
+    choice_scores = models.TextField(
+        help_text="Not sure how to store this, but need array of choices ordered by and including scores"
+    )
+    choice_runoff = models.TextField(
+        help_text="Not sure how to store this, but need array of choices ordered by and including their runoff scores"
+    )
+    report = models.TextField(
+        help_text="User-friendly presentation of all of the above."
+    )
+
+
+class Referendum(BaseModel):
     """
     The actual question posted to the community (e.g.
     "Should we extend the Bush-era tax cuts for the rich?" or
@@ -72,71 +93,101 @@ class Election(BaseModel):
     title = models.CharField(max_length=255)
     description = models.TextField()
     dt_close = models.DateTimeField(
-        help_text="DateTime this Election closes, no longer tallied, and no longer allowing votes."
+        help_text="DateTime this Referendum closes, no longer tallied, and no longer allowing votes."
     )
     community = models.ForeignKey(
-        Community, related_name="elections", on_delete=models.PROTECT
+        Community, related_name="referendums", on_delete=models.PROTECT
     )
-    # TODO: Make these JSON fields?:
-    ballot_tree = models.TextField(help_text="JSON data representation of the tally")
-    tally_report = models.TextField(
-        help_text="User-friendly presentation of the ballot_tree"
+    results_need_updating = models.BooleanField(
+        default=True,
+        help_text="The Referendum was just published, or someone voted, and tally() needs to run.",
     )
 
     @property
-    def winning_candidates(self):
-        raise
-        # We need a preference matrix or something like this: https://www.starvoting.us/ties
-        return self.candidates.filter(is_winning_candidate=True)[:2]
+    def result(self):
+        # Result will just be the last saved result.
+        return self.results[0]
 
 
-class Candidate(BaseModel):
+class Result(BaseModel):
+    """
+    Container for all of a referendum's results, calculations, etc.
+    """
+
+    referendum = models.ForeignKey(
+        Referendum, related_name="results", on_delete=models.PROTECT
+    )
+    report = models.TextField()
+    stats = models.JSONField()
+
+
+class Choice(BaseModel):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    election = models.ForeignKey(
-        Election, related_name="candidates", on_delete=models.PROTECT
+    referendum = models.ForeignKey(
+        Referendum, related_name="choices", on_delete=models.PROTECT
     )
-    is_winning_candidate = models.BooleanField(
-        default=False, help_text="Set by tally (and note: there might be a tie)"
+
+    # TODO I stopped here not sure how to work this out.  Need some place for Referendum.Results to show candidates ORDERED BY their scores AND BY their runoff position
+    score = models.DecimalField(
+        null=True,
+        max_digits=5,
+        decimal_places=4,
+        help_text="Average number of Stars",
     )
-    stars = models.PositiveSmallIntegerField(
-        default=0,
-        validators=[MinValueValidator(0), MaxValueValidator(5)],
-        help_text="Score Then Automatic Runoff",
+    runoff_score = models.DecimalField(
+        null=True,
+        max_digits=5,
+        decimal_places=4,
+        help_text="Average number of Stars",
     )
 
     def get_id_display(self):
         return f"Ca-{self.id}"
 
 
+class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
+    # If you only inherit GenericUUIDTaggedItemBase, you need to define
+    # a tag field. e.g.
+    # tag = models.ForeignKey(Tag, related_name="uuid_tagged_items", on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+
+
 class Ballot(BaseModel):
-    election = models.ForeignKey(
-        Election, related_name="ballots", on_delete=models.PROTECT
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    referendum = models.ForeignKey(
+        Referendum, related_name="ballots", on_delete=models.PROTECT
     )
-    membership = models.ForeignKey(
-        Membership, related_name="ballots", on_delete=models.PROTECT
-    )
+    voter = models.ForeignKey(User, related_name="ballots", on_delete=models.PROTECT)
     is_calculated = models.BooleanField(
         default=False,
         help_text="False by default, or when manually cast - True, if calculated by the system.",
     )
-    tags = TaggableManager()
+    is_anonymous = models.BooleanField(
+        # default=membership.is_anonymous_by_default,
+        default=True,
+        help_text="Defaults to Membership.is_anonymous_by_default",
+    )
+    tags = TaggableManager(through=UUIDTaggedItem)
+    comments = models.TextField(
+        help_text="Any additional context the voter might like to share behind their vote."
+    )
 
-    def get_preferred_candidate(self):
+    def get_preferred_choice(self):
         pass
         # https://www.starvoting.us/ties
-        # For Automatic Runoff, which candidate, if any, is preferred?
+        # For Automatic Runoff, which choice, if any, is preferred?
         # Get the
 
-    @property
-    def voter(self):
-        return self.membership.member
+    # TODO constraint or save method to automatically set self.referendum.needs_new_results = True, so that a new tally runs
 
 
 class Vote(BaseModel):
-    candidate = models.ForeignKey(
-        Candidate, related_name="votes", on_delete=models.PROTECT
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    choice = models.ForeignKey(Choice, related_name="votes", on_delete=models.PROTECT)
     stars = models.PositiveSmallIntegerField(
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(5)],
@@ -149,4 +200,4 @@ class Vote(BaseModel):
     )
 
     class Meta:
-        ordering = ["candidate"]
+        ordering = ["choice"]

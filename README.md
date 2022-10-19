@@ -4,7 +4,7 @@
 **TLDR**: This app aims to provide a platform for unlocking `Representation` from the arbitrarily fixed terms of a 
 community's candidates, by allowing candidates to run on the simple pledge to `CrowdVote` their decisions to a 
 `Free Market` competition between community `Members`, who can
-1) vote directly on each decision, 
+1) vote directly on each referendum, 
 2) delegate their vote on to other members whose judgement they trust on whatever topics they like,
 3) ...compete with each other to earn and retain that trust!
 
@@ -16,6 +16,7 @@ Read more at https://crowdvote.com/
 
 - To generate a graph of the models using [Django Extensions](https://django-extensions.readthedocs.io/en/latest/graph_models.html) <br/>
   `python manage.py graph_models accounts communities -X BaseModel,MembershipProxy,Group,Permission,AbstractUser,AbstractBaseUser,PermissionsMixin -g -o crowdvote_model_graph.png`
+  #tip: you can comment out field you don't care about before generating the graph, like stuff in the BaseModel.
 - [Django Admin Docs](https://docs.djangoproject.com/en/4.0/ref/contrib/admin/admindocs/) are enabled. 
 
 ### Running the app
@@ -35,3 +36,10 @@ Read more at https://crowdvote.com/
   1. A really engaging real-time visualization of democracy emerging organically in the community.   
   1. Tests
   1. PostgreSQL (Currently just SQLite)
+
+
+
+
+add this to the TODO:
+https://2022.djangocon.us/talks/tips-and-tricks-for-optimizing-django/
+

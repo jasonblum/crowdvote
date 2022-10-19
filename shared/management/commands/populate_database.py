@@ -8,21 +8,22 @@ from accounts.factories import CustomUserFactory, FollowingFactory
 from communities.factories import (
     CommunityFactory,
     MembershipFactory,
-    ElectionFactory,
-    CandidateFactory,
+    ReferendumFactory,
+    ChoiceFactory,
     BallotFactory,
     VoteFactory,
 )
 
 from shared.utilities import get_random_madeup_tags
 
+
 NUM_USERS = 100
-NUM_ELECTIONS = 2
+NUM_REFERENDUMS = 2
 PERCENTAGE_OF_USERS_WHO_ARE_MEMBERS = 80
 PERCENTAGE_OF_USERS_WHO_FOLLOWING_SOMEONE = 80
-RANGE_MAX_OF_FOLLOWEES = 8
+MAX_NUM_OF_FOLLOWEES = 8
 PERCENTAGE_OF_MEMBERS_VOTING = 60
-PERCENTAGE_OF_ELECTIONS_SOLICITING_BALLOTS = 90
+PERCENTAGE_OF_REFERENDUMS_ATTRACTING_BALLOTS = 90
 
 
 class Command(BaseCommand):
@@ -31,67 +32,81 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **kwargs):
 
-        self.stdout.write("Creating new data...")
+        self.stdout.write("> Creating new data...")
 
-        # Creating a community
+        # CREATE A COMMUNITY
         community = CommunityFactory()
+        self.stdout.write(f"> Community created: {community}.")
 
-        # Create all the users
+        # CREATE USERS
         users = CustomUserFactory.create_batch(NUM_USERS)
         self.stdout.write(f"> {NUM_USERS} users created.")
 
-        # Create memberships
+        # CREATE MEMBERSHIPS
+        memberships = []
         for i, user in enumerate(
             users[: round((len(users) * PERCENTAGE_OF_USERS_WHO_ARE_MEMBERS) / 100)]
         ):
-            MembershipFactory(member=user, community=community)
+            memberships.append(MembershipFactory(member=user, community=community))
         self.stdout.write(f"> {i} memberships created.")
 
-        # Create followings
+        # CREATE FOLLOWINGS BETWEEN THOSE USERS
         i = 0
         for user in users[
             : round((len(users) * PERCENTAGE_OF_USERS_WHO_FOLLOWING_SOMEONE) / 100)
         ]:
-            # Make sure this user can't follow itself:
-            users.remove(user)
-            for _ in range(2, random.randrange(1, RANGE_MAX_OF_FOLLOWEES)):
+
+            for _ in range(2, random.randrange(1, MAX_NUM_OF_FOLLOWEES)):
                 FollowingFactory(
-                    user=user,
-                    followee=random.choice(users),
+                    follower=user,
+                    followee=random.choice(
+                        [followee for followee in users if followee != user]
+                    ),
                     tags=get_random_madeup_tags(),
                 )
                 i += 1
-
         self.stdout.write(f"> {i} followings created.")
 
-        # Create elections
-        elections = ElectionFactory.create_batch(NUM_ELECTIONS, community=community)
-        self.stdout.write(f"> {NUM_ELECTIONS} elections created.")
+        # CREATE REFERENDUMS
+        referendums = ReferendumFactory.create_batch(
+            NUM_REFERENDUMS, community=community
+        )
+        self.stdout.write(f"> {NUM_REFERENDUMS} referendums created.")
 
-        # Create Candidates on Elections
+        # CREATE CANDIDATES
         i = 0
-        for election in elections:
+        for referendum in referendums:
             for _ in range(2, random.randrange(2, 10)):
-                CandidateFactory(election=election)
+                ChoiceFactory(referendum=referendum)
                 i += 1
-        self.stdout.write(f"> {i} candidates created on elections")
+        self.stdout.write(f"> {i} choices created on referendums")
 
-        # Create Votes for above % of folks voting and for some % of ballots
-        random.shuffle(users)
-        random.shuffle(elections)
+        # CREATE VOTES FOR PERCENTAGE_OF_MEMBERS_VOTING AND FOR SOME PERCENTAGE_OF_REFERENDUMS_ATTRACTING_BALLOTS
+        random.shuffle(memberships)
+        random.shuffle(referendums)
         i = 0
-        for user in users[: round((len(users) * PERCENTAGE_OF_MEMBERS_VOTING) / 100)]:
-            for election in elections[
+        for membership in memberships[
+            : round((len(memberships) * PERCENTAGE_OF_MEMBERS_VOTING) / 100)
+        ]:
+            for referendum in referendums[
                 : round(
-                    (len(elections) * PERCENTAGE_OF_ELECTIONS_SOLICITING_BALLOTS) / 100
+                    (len(referendums) * PERCENTAGE_OF_REFERENDUMS_ATTRACTING_BALLOTS)
+                    / 100
                 )
             ]:
                 ballot = BallotFactory(
-                    election=election, voter=user, tags=get_random_madeup_tags()
+                    referendum=referendum,
+                    voter=membership.member,
+                    #    Not sure why next line breaks, but manually running again below
+                    #    tags=get_random_madeup_tags(),
                 )
-                for candidate in election.candidates.all():
-                    VoteFactory(candidate=candidate, ballot=ballot)
+                ballot.tags = get_random_madeup_tags()
+                ballot.save()
+
+                for choice in referendum.choices.all():
+                    VoteFactory(choice=choice, ballot=ballot)
                     i += 1
+                print(i)
         self.stdout.write(f"> {i} Votes cast!")
 
         self.stdout.write("....and done!")

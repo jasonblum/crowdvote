@@ -10,9 +10,9 @@ from django.utils.html import format_html
 from .models import (
     Membership,
     Community,
-    Election,
+    Referendum,
     Ballot,
-    Candidate,
+    Choice,
     Vote,
 )
 
@@ -32,7 +32,6 @@ class MembershipAdmin(admin.ModelAdmin):
         "__str__",
         "member_link",
         "community_link",
-        "is_community_legislator",
         "is_community_manager",
         "is_voting_community_member",
         "dt_joined",
@@ -40,11 +39,10 @@ class MembershipAdmin(admin.ModelAdmin):
     list_filter = (
         # for ordinary fields
         # ('a_charfield', DropdownFilter),
-        # # for candidate fields
+        # # for choice fields
         ("community", ChoiceDropdownFilter),
         # for related fields
         # ('a_foreignkey_field', RelatedDropdownFilter),
-        "is_community_legislator",
         "is_community_manager",
         "is_voting_community_member",
     )
@@ -75,8 +73,8 @@ class MembershipAdmin(admin.ModelAdmin):
     community_link.short_description = "Community"
 
 
-@admin.register(Election)
-class ElectionAdmin(admin.ModelAdmin):
+@admin.register(Referendum)
+class ReferendumnAdmin(admin.ModelAdmin):
 
     list_display = (
         "__str__",
@@ -97,16 +95,16 @@ class ElectionAdmin(admin.ModelAdmin):
     community_link.short_description = "Community"
 
 
-@admin.register(Candidate)
-class CandidateAdmin(admin.ModelAdmin):
+@admin.register(Choice)
+class ChoiceAdmin(admin.ModelAdmin):
 
     list_display = (
         "__str__",
         "title",
-        "election_link",
+        "referendum_link",
         "stars_html",
     )
-    list_filter = (("election", ChoiceDropdownFilter),)
+    list_filter = (("referendum", ChoiceDropdownFilter),)
 
     def get_actions(self, request):
         actions = super().get_actions(request)
@@ -116,26 +114,26 @@ class CandidateAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.select_related("election")
+        return queryset.select_related("referendum")
 
     def stars_html(self, obj):
         return "* " * obj.stars
 
     stars_html.short_description = "Stars"
 
-    def election_link(self, obj):
+    def referendum_link(self, obj):
         return format_html(
-            f"<a href={reverse('admin:communities_election_change', kwargs={'object_id': obj.election.pk})}>{obj.election}</a>"
+            f"<a href={reverse('admin:communities_referendum_change', kwargs={'object_id': obj.referendum.pk})}>{obj.referendum}</a>"
         )
 
-    election_link.short_description = "Election"
+    referendum_link.short_description = "Referendum"
 
 
 @admin.register(Ballot)
 class BallotAdmin(admin.ModelAdmin):
 
-    list_display = ("__str__", "election_link", "voter_link", "tags_list")
-    list_filter = (("election", ChoiceDropdownFilter),)
+    list_display = ("__str__", "referendum_link", "voter_link", "tags_list")
+    list_filter = (("referendum", ChoiceDropdownFilter),)
 
     def get_actions(self, request):
         actions = super().get_actions(request)
@@ -145,21 +143,23 @@ class BallotAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.select_related("election", "voter").prefetch_related("tags")
+        return queryset.select_related("referendum", "membership").prefetch_related(
+            "tags"
+        )
 
     def voter_link(self, obj):
         return format_html(
-            f"<a href={reverse('admin:accounts_customuser_change', kwargs={'object_id': obj.voter.pk})}>{obj.voter}</a>"
+            f"<a href={reverse('admin:accounts_customuser_change', kwargs={'object_id': obj.membership.member.pk})}>{obj.voter}</a>"
         )
 
     voter_link.short_description = "Voter"
 
-    def election_link(self, obj):
+    def referendum_link(self, obj):
         return format_html(
-            f"<a href={reverse('admin:communities_election_change', kwargs={'object_id': obj.election.pk})}>{obj.election}</a>"
+            f"<a href={reverse('admin:communities_referendum_change', kwargs={'object_id': obj.referendum.pk})}>{obj.referendum}</a>"
         )
 
-    election_link.short_description = "Election"
+    referendum_link.short_description = "Referendum"
 
     def tags_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
@@ -172,22 +172,22 @@ class VoteAdmin(admin.ModelAdmin):
 
     list_display = (
         "__str__",
-        "candidate_link",
+        "choice_link",
         "stars_html",
         "ballot_link",
     )
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.select_related("candidate", "ballot")
+        return queryset.select_related("choice", "ballot")
 
-    def candidate_link(self, obj):
+    def choice_link(self, obj):
         return format_html(
-            f"<a href={reverse('admin:communities_candidate_change', kwargs={'object_id': obj.candidate.pk})}>{obj.candidate}</a>"
+            f"<a href={reverse('admin:communities_choice_change', kwargs={'object_id': obj.choice.pk})}>{obj.choice}</a>"
         )
 
-    candidate_link.short_description = "Candidate"
-    candidate_link.admin_order_field = "candidate_id"
+    choice_link.short_description = "Choice"
+    choice_link.admin_order_field = "choice_id"
 
     def ballot_link(self, obj):
         return format_html(

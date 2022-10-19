@@ -1,4 +1,5 @@
 from collections import defaultdict
+from weakref import ref
 
 from django.utils import timezone
 
@@ -10,7 +11,20 @@ from shared.utilities import get_object_or_None, normal_round
 
 
 class CalculateBallots(Service):
-    def get_or_calculate_ballot(self, election, voter, follow_path=[]):
+    def score(self, ballots=[]):
+        """
+        Returns orderedDict of choices with their scores from all ballots (the S in STAR)
+        """
+        pass
+
+    def automatic_runoff(self, ballots=[]):
+        scores = self.score(ballots)
+        """
+        Returns orderedDict of choices with their scores and preferred count from all ballots (the AR in STAR)
+        """
+        pass
+
+    def get_or_calculate_ballot(self, referendum, voter, follow_path=[]):
         """
         This is where the magic happens: this recursive function gets a voter's ballot,
         or calculates one on their behalf IF they are following other users from whom
@@ -18,32 +32,34 @@ class CalculateBallots(Service):
 
         Note the follow_path prevents potential circular followings.
         """
-        election.ballot_tree_log_indent += 1
-        election.ballot_tree_log.append(
+        referendum.ballot_tree_log_indent += 1
+        referendum.ballot_tree_log.append(
             {
-                "indent": election.ballot_tree_log_indent,
-                "log": f"Getting or Creating ballot for member {voter}",
+                "indent": referendum.ballot_tree_log_indent,
+                "log": f"Getting or Creating ballot for voter {voter}",
             }
         )
 
         # this is the recursive function
-        ballot, created = Ballot.objects.get_or_create(election=election, voter=voter)
+        ballot, created = Ballot.objects.get_or_create(
+            referendum=referendum, voter=voter
+        )
 
         # If ballot had to be created or was already calculated, continue calculating
         # b/c If they manually cast their own ballot, calculated will be set to False
         if created or ballot.is_calculated:
 
-            election.ballot_tree_log.append(
+            referendum.ballot_tree_log.append(
                 {
-                    "indent": election.ballot_tree_log_indent + 1,
+                    "indent": referendum.ballot_tree_log_indent + 1,
                     "log": f"Ballot {'Created' if created else 'Retrieved and already set to calculated'} for {ballot.voter}",
                 }
             )
 
             if not ballot.voter.followings.exists():
-                election.ballot_tree_log.append(
+                referendum.ballot_tree_log.append(
                     {
-                        "indent": election.ballot_tree_log_indent + 1,
+                        "indent": referendum.ballot_tree_log_indent + 1,
                         "log": f"{ballot.voter} is not following anyone.",
                     }
                 )
@@ -55,9 +71,9 @@ class CalculateBallots(Service):
                 if following.followee not in follow_path:
                     follow_path.append(ballot.voter)
 
-                    election.ballot_tree_log.append(
+                    referendum.ballot_tree_log.append(
                         {
-                            "indent": election.ballot_tree_log_indent + 1,
+                            "indent": referendum.ballot_tree_log_indent + 1,
                             "log": f"{ballot.voter} is following {following.followee}",
                         }
                     )
@@ -66,89 +82,89 @@ class CalculateBallots(Service):
 
                     ballots_to_compete.append(
                         self.get_or_calculate_ballot(
-                            election, following.followee, follow_path
+                            referendum, following.followee, follow_path
                         )
                     )
 
             # Now compete ballots to calculate this one
             ballot.votes.all().delete()
 
-            for candidate in ballot.election.candidates.all():
+            for choice in ballot.referendum.choices.all():
                 stars = []
 
                 for ballot_to_compete in ballots_to_compete:
-                    candidate_to_inherit = get_object_or_None(
-                        ballot_to_compete.votes.filter(candidate=candidate)
+                    choice_to_inherit = get_object_or_None(
+                        ballot_to_compete.votes.filter(choice=choice)
                     )
-                    if candidate_to_inherit:
-                        stars.append(candidate_to_inherit.stars)
+                    if choice_to_inherit:
+                        stars.append(choice_to_inherit.stars)
 
                 if stars:
                     star_score = normal_round(sum(stars) / len(stars))
-                    election.ballot_tree_log.append(
+                    referendum.ballot_tree_log.append(
                         {
-                            "indent": election.ballot_tree_log_indent + 1,
-                            "log": f"Creating vote for {ballot.voter} on {candidate}: {star_score * '☆ '}",
+                            "indent": referendum.ballot_tree_log_indent + 1,
+                            "log": f"Creating vote for {ballot.voter} on {choice}: {star_score * '☆ '}",
                         }
                     )
-                    ballot.votes.create(candidate=candidate, stars=star_score)
+                    ballot.votes.create(choice=choice, stars=star_score)
 
             ballot.is_calculated = True
             ballot.save()
 
-        election.ballot_tree_log_indent -= 1
+        referendum.ballot_tree_log_indent -= 1
         return ballot
 
     def process(self):
 
         for community in Community.objects.all():
-            for election in community.elections.filter(
-                datetime_close__gt=timezone.now()
-            ):
+            for referendum in community.referendums.filter(dt_close__gt=timezone.now()):
 
-                # Stick a log on to the election, to print out at the end
-                election.ballot_tree_log = []
-                election.ballot_tree_log_indent = 0
-                election.ballot_tree_log.append(
+                # Stick a log on to the referendum, to print out at the end
+                referendum.ballot_tree_log = []
+                referendum.ballot_tree_log_indent = 0
+                referendum.ballot_tree_log.append(
                     {
-                        "indent": election.ballot_tree_log_indent,
-                        "log": f"Ballot Tree for {election}: {election.title} (Community: {community})",
+                        "indent": referendum.ballot_tree_log_indent,
+                        "log": f"Ballot Tree for {referendum}: {referendum.title} (Community: {community})",
                     }
                 )
-                election.ballot_tree_log.append(
+                referendum.ballot_tree_log.append(
                     {
-                        "indent": election.ballot_tree_log_indent,
+                        "indent": referendum.ballot_tree_log_indent,
                         "log": "-" * 100,
                     }
                 )
 
                 ballots = []
-                for member in community.members.all():
+                for membership in community.memberships.all():
                     ballots.append(
-                        self.get_or_calculate_ballot(election=election, voter=member)
+                        self.get_or_calculate_ballot(
+                            referendum=referendum, voter=membership.member
+                        )
                     )
 
-                election.ballot_tree_log.append(
+                referendum.ballot_tree_log.append(
                     {
-                        "indent": election.ballot_tree_log_indent,
+                        "indent": referendum.ballot_tree_log_indent,
                         "log": "Begin final tally!",
                     }
                 )
-                election.ballot_tree_log.append(
+                referendum.ballot_tree_log.append(
                     {
-                        "indent": election.ballot_tree_log_indent,
+                        "indent": referendum.ballot_tree_log_indent,
                         "log": "-" * 200,
                     }
                 )
 
                 ballot_tree = ""
-                for log in election.ballot_tree_log:
+                for log in referendum.ballot_tree_log:
                     ballot_tree += (
                         f"{log['indent'] * '----------------'}{log['log']}<br/>"
                     )
 
-                election.ballot_tree = ballot_tree
-                election.save()
+                referendum.ballot_tree = ballot_tree
+                referendum.save()
 
                 return ballot_tree
 
@@ -157,61 +173,59 @@ class Tally(Service):
     def process(self):
 
         for community in Community.objects.all():
-            for election in community.elections.filter(
-                datetime_close__gt=timezone.now()
-            ):
+            for referendum in community.referendums.filter(dt_close__gt=timezone.now()):
 
-                # Stick a log on to the election, to print out at the end
-                election.tally_log = []
-                election.tally_log_indent = 0
-                election.tally_log.append(
+                # Stick a log on to the referendum, to print out at the end
+                referendum.tally_log = []
+                referendum.tally_log_indent = 0
+                referendum.tally_log.append(
                     {
-                        "indent": election.tally_log_indent,
-                        "log": f"Tallying balots for {election}: {election.title} (Community: {community})",
+                        "indent": referendum.tally_log_indent,
+                        "log": f"Tallying balots for {referendum}: {referendum.title} (Community: {community})",
                     }
                 )
-                election.tally_log.append(
+                referendum.tally_log.append(
                     {
-                        "indent": election.tally_log_indent,
+                        "indent": referendum.tally_log_indent,
                         "log": "-" * 100,
                     }
                 )
 
-                # (S)TAR: Score the candidates on each voting member's ballot:
+                # (S)TAR: Score the choices on each voting member's ballot:
                 scores = defaultdict(list)
-                for ballot in election.ballots.all():
+                for ballot in referendum.ballots.all():
                     if ballot.voter.memberships.filter(
                         community=community, is_voting_community_member=True
                     ).exists():
-                        election.tally_log.append(
+                        referendum.tally_log.append(
                             {
-                                "indent": election.tally_log_indent + 1,
-                                "log": f"{ballot.voter} is a voting member of {election}'s community ({community}",
+                                "indent": referendum.tally_log_indent + 1,
+                                "log": f"{ballot.voter} is a voting member of {referendum}'s community ({community}",
                             }
                         )
                         for vote in ballot.votes.all():
-                            scores[vote.candidate].append(vote.stars)
-                        election.tally_log.append(
+                            scores[vote.choice].append(vote.stars)
+                        referendum.tally_log.append(
                             {
-                                "indent": election.tally_log_indent + 2,
+                                "indent": referendum.tally_log_indent + 2,
                                 "log": "Scores added...",
                             }
                         )
                     else:
-                        election.tally_log.append(
+                        referendum.tally_log.append(
                             {
-                                "indent": election.tally_log_indent + 1,
-                                "log": f"{ballot.voter} is NOT a voting member of {election}'s community ({community}",
+                                "indent": referendum.tally_log_indent + 1,
+                                "log": f"{ballot.voter} is NOT a voting member of {referendum}'s community ({community}",
                             }
                         )
 
-                # S(TAR): Then Automaticaly Run off: determine winner from ballot's preferred candidate
+                # S(TAR): Then Automaticaly Run off: determine winner from ballot's preferred choice
 
             tally_report = ""
-            for log in election.tally_log:
+            for log in referendum.tally_log:
                 tally_report += f"{log['indent'] * '----------------'}{log['log']}<br/>"
 
-            election.tally_report = tally_report + str(scores)
-            election.save()
+            referendum.tally_report = tally_report + str(scores)
+            referendum.save()
 
         return tally_report

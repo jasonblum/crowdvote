@@ -60,7 +60,7 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Following)
 class FollowingAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "user_link", "followee_link", "tags_list")
+    list_display = ("__str__", "follower_link", "followee_link", "tags_list")
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -70,18 +70,18 @@ class FollowingAdmin(admin.ModelAdmin):
             super()
             .get_queryset(request)
             .select_related(
-                "user",
+                "follower",
                 "followee",
             )
             .prefetch_related("tags")
         ).distinct()
 
-    def user_link(self, obj):
+    def follower_link(self, obj):
         return format_html(
-            f"<a href={reverse('admin:accounts_customuser_change', kwargs={'object_id': obj.user.pk})}>{obj.user}</a>"
+            f"<a href={reverse('admin:accounts_customuser_change', kwargs={'object_id': obj.follower.pk})}>{obj.follower}</a>"
         )
 
-    user_link.short_description = "Follower"
+    follower_link.short_description = "Follower"
 
     def followee_link(self, obj):
         return format_html(

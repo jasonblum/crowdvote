@@ -4,7 +4,7 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 
 from accounts.models import CustomUser, Following
-from communities.models import Community, Election, Candidate, Membership, Ballot, Vote
+from communities.models import Community, Referendum, Choice, Membership, Ballot, Vote
 
 from shared.utilities import get_random_madeup_tags
 
@@ -40,11 +40,11 @@ class Command(BaseCommand):
             Membership.objects.create(
                 member=user,
                 community=community,
-                is_public=True,
+                is_anonymous_by_default=False,
                 is_voting_community_member=True,
             )
 
-        # TODO: leaving off here this morning.  Need to do next: add elections, candidates, etc
+        # TODO: leaving off here this morning.  Need to do next: add referendums, choices, etc
         # then to go work on your CalculateBallots service...
 
         self.stdout.write("....and done!")
