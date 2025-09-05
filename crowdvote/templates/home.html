@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to CrowdVote{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 50px auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333;">
+    <header style="text-align: center; margin-bottom: 40px;">
+        <h1 style="color: #2563eb; font-size: 3rem; margin-bottom: 10px;">Welcome to CrowdVote</h1>
+        <p style="font-size: 1.2rem; color: #6b7280; margin: 0;">The Democracy App: A platform for Free-Market Representation</p>
+    </header>
+
+    <section style="background: #f8fafc; padding: 30px; border-radius: 8px; margin-bottom: 30px;">
+        <h2 style="color: #1e40af; margin-bottom: 20px;">Real Democracy happens between elections.</h2>
+        <p style="font-size: 1.1rem;">
+            CrowdVote enables communities to make decisions together through a revolutionary voting system that combines 
+            <strong>STAR voting</strong> (Score Then Automatic Runoff) with <strong>delegative democracy</strong>.
+        </p>
+    </section>
+
+    <section style="margin-bottom: 30px;">
+        <h3 style="color: #1e40af; margin-bottom: 15px;">Key Features</h3>
+        <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
+                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
+                <strong>Vote directly</strong> on each referendum
+            </li>
+            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
+                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
+                <strong>Delegate your vote</strong> to trusted members on specific topics
+            </li>
+            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
+                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
+                <strong>Tag-based following</strong> - follow different people for different issues
+            </li>
+            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
+                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
+                <strong>Transitive voting</strong> - inherit votes through chains of trust
+            </li>
+            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
+                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
+                <strong>Always override</strong> - maintain the ability to vote directly
+            </li>
+        </ul>
+    </section>
+
+    <section style="text-align: center; background: #eef2ff; padding: 25px; border-radius: 8px;">
+        <h3 style="color: #1e40af; margin-bottom: 15px;">CrowdVote = Free Market Representation</h3>
+        <p style="margin-bottom: 20px;">
+            Rather than tying representation to fixed electoral terms, CrowdVote creates a marketplace 
+            where community members compete to earn and retain trust on specific issues.
+        </p>
+        <div style="margin-top: 20px;">
+            <strong style="color: #7c3aed;">Development Status:</strong> 
+            <span style="color: #059669;">Active Development - Docker + Railway Deployment Complete! 🚀</span>
+        </div>
+    </section>
+</div>
+{% endblock %}
