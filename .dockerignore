@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+.venv
+ENV
+env.bak
+venv.bak
+
+# Django
+*.log
+db.sqlite3
+staticfiles/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+Dockerfile
+Dockerfile.dev
+docker-compose.yml
+.dockerignore
+
+# Documentation
+README.md
+docs/
+resources/
+
+# Testing
+.coverage
+.pytest_cache
+htmlcov/
