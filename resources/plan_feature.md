@@ -1,3 +1,8 @@
+Before starting any feature planning, ALWAYS read and understand:
+- docs/CHANGELOG.md - Complete development history and context
+- AGENTS.md - Project guidelines, best practices, and development standards
+- README.md - Project overview and current status
+
 The user will provide a feature description. Your job is to:
 
 1. Create a technical plan that concisely describes the feature the user wants to build.
