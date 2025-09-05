@@ -171,9 +171,26 @@ COPY . .
 
 ### Docker Compose
 - Use separate services for Django, PostgreSQL, and Redis
-- Mount volumes for development hot-reloading
+- Mount volumes for development hot-reloading (`.:/app` for hot-reload)
 - Use `.env` files for environment variables
 - Include health checks for all services
+- Remove obsolete `version` attribute from docker-compose.yml (Docker Compose v2+)
+
+### Docker Development Workflow
+1. **Development vs Production**: 
+   - Use virtual environments for dependency management and requirements.txt generation
+   - Use Docker for consistent development and production deployment environments
+   - Keep separate `Dockerfile.dev` for development and `Dockerfile` for production
+
+2. **Container Configuration**:
+   - Development containers: Include volume mounts, development server, hot-reloading
+   - Production containers: Optimized layers, static file collection, production server (gunicorn)
+   - Use `.dockerignore` to exclude unnecessary files from build context
+
+3. **Database Setup**:
+   - Local development: Docker Compose PostgreSQL service with persistent volumes
+   - Production: Managed database service (Railway PostgreSQL)
+   - Use environment variables for consistent database configuration across environments
 
 ## Railway Deployment
 
@@ -208,13 +225,35 @@ Based on Railway's Django guide:
 4. **Database**: Use Railway's PostgreSQL service
 5. **Deploy from GitHub**: Connect repository for automatic deploys
 
+### Railway Deployment Best Practices
+1. **Environment Variables Security**:
+   - Avoid special characters (`#`, `@`, `!`) in SECRET_KEY - Railway may truncate after comment characters
+   - Generate Railway-safe keys using letters, digits, `-`, and `_` only
+   - Use Railway's `${{ServiceName.VARIABLE}}` syntax for service references
+
+2. **Dockerfile Requirements**:
+   - Install system dependencies (like `curl`) before UV installation in slim Python images
+   - Use proper apt-get cleanup to minimize image size
+   - Example: `RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*`
+
+3. **Repository Management**:
+   - Use clean `main` branch for Railway deployment
+   - Remove legacy Django files that can confuse Railway's auto-detection
+   - Railway's Railpack may override custom Dockerfiles if old files are present
+
+4. **Branch Strategy**:
+   - Connect Railway to `main` branch, not legacy `master`
+   - Fresh Railway service setup recommended if switching branches
+   - Railway auto-deploys on GitHub push to connected branch
+
 ### Production Checklist
 - Run `python manage.py check --deploy`
 - Ensure migrations are applied
 - Collect static files
-- Set secure environment variables
+- Set secure environment variables (Railway-compatible format)
 - Configure domain and SSL
 - Set up monitoring and logging
+- Verify Railway uses intended Dockerfile (not auto-detection)
 
 ## Development Workflow
 
