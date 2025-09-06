@@ -252,3 +252,435 @@ def manage_application(request, community_id, application_id):
             messages.error(request, f"Error rejecting application: {str(e)}")
     
     return redirect('democracy:community_manage', community_id=community_id)
+
+
+@login_required
+def decision_list(request, community_id):
+    """
+    List all decisions for a community with filtering and search.
+    
+    Shows different views based on user role:
+    - Community members: Active and closed decisions
+    - Community managers: All decisions including drafts
+    
+    Args:
+        request: Django request object
+        community_id: UUID of the community
+    """
+    from django.db.models import Q, Count
+    from .forms import DecisionSearchForm
+    
+    community = get_object_or_404(Community, id=community_id)
+    
+    # Check if user is a member
+    try:
+        user_membership = Membership.objects.get(
+            community=community,
+            member=request.user
+        )
+    except Membership.DoesNotExist:
+        messages.error(request, "You must be a member of this community to view decisions.")
+        return redirect('democracy:community_detail', community_id=community_id)
+    
+    # Get base queryset
+    decisions = Decision.objects.filter(community=community).select_related('community')
+    
+    # Filter based on user role
+    if not user_membership.is_community_manager:
+        # Regular members can't see draft decisions
+        decisions = decisions.exclude(dt_close__isnull=True)
+    
+    # Handle search and filtering
+    form = DecisionSearchForm(request.GET)
+    if form.is_valid():
+        search = form.cleaned_data.get('search')
+        status = form.cleaned_data.get('status')
+        sort = form.cleaned_data.get('sort', '-dt_close')
+        
+        if search:
+            decisions = decisions.filter(
+                Q(title__icontains=search) | Q(description__icontains=search)
+            )
+        
+        if status:
+            now = timezone.now()
+            if status == 'active':
+                decisions = decisions.filter(dt_close__gt=now)
+            elif status == 'closed':
+                decisions = decisions.filter(dt_close__lte=now)
+            elif status == 'draft':
+                if user_membership.is_community_manager:
+                    decisions = decisions.filter(dt_close__isnull=True)
+                else:
+                    decisions = decisions.none()  # No drafts for non-managers
+        
+        # Apply sorting
+        decisions = decisions.order_by(sort)
+    else:
+        # Default sorting
+        decisions = decisions.order_by('-dt_close')
+    
+    # Annotate with vote counts
+    decisions = decisions.annotate(
+        total_votes=Count('ballots', distinct=True),
+        total_choices=Count('choices', distinct=True)
+    )
+    
+    # Add status information
+    now = timezone.now()
+    for decision in decisions:
+        if decision.dt_close is None:
+            decision.status = 'draft'
+        elif decision.dt_close > now:
+            decision.status = 'active'
+        else:
+            decision.status = 'closed'
+    
+    context = {
+        'community': community,
+        'user_membership': user_membership,
+        'decisions': decisions,
+        'search_form': form,
+        'can_create': user_membership.is_community_manager,
+    }
+    
+    return render(request, 'democracy/decision_list.html', context)
+
+
+@login_required
+def decision_create(request, community_id):
+    """
+    Create a new decision for the community.
+    
+    Only community managers can create decisions. Supports both
+    draft saving and immediate publishing.
+    
+    Args:
+        request: Django request object
+        community_id: UUID of the community
+    """
+    from .forms import DecisionForm, ChoiceFormSet
+    
+    community = get_object_or_404(Community, id=community_id)
+    
+    # Check if user is a manager
+    try:
+        user_membership = Membership.objects.get(
+            community=community,
+            member=request.user
+        )
+        if not user_membership.is_community_manager:
+            messages.error(request, "Only community managers can create decisions.")
+            return redirect('democracy:community_detail', community_id=community_id)
+    except Membership.DoesNotExist:
+        messages.error(request, "You must be a member of this community.")
+        return redirect('democracy:community_detail', community_id=community_id)
+    
+    if request.method == 'POST':
+        form = DecisionForm(request.POST)
+        
+        if form.is_valid():
+            # Create decision but don't save yet
+            decision = form.save(commit=False)
+            decision.community = community
+            
+            # Handle draft vs publish
+            action = request.POST.get('action')
+            if action == 'save_draft':
+                decision.dt_close = None  # Null means draft
+            
+            decision.save()
+            
+            # Handle choices formset
+            choice_formset = ChoiceFormSet(request.POST, instance=decision)
+            if choice_formset.is_valid():
+                choice_formset.save()
+                
+                if action == 'save_draft':
+                    messages.success(request, f'Decision "{decision.title}" saved as draft.')
+                    return redirect('democracy:decision_edit', community_id=community_id, decision_id=decision.id)
+                else:
+                    messages.success(request, f'Decision "{decision.title}" published successfully!')
+                    return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision.id)
+            else:
+                # Formset errors - decision was saved but choices weren't
+                messages.error(request, "Please fix the errors in the choices below.")
+        else:
+            # Form errors
+            choice_formset = ChoiceFormSet(request.POST)
+    else:
+        form = DecisionForm()
+        choice_formset = ChoiceFormSet()
+    
+    context = {
+        'community': community,
+        'user_membership': user_membership,
+        'form': form,
+        'choice_formset': choice_formset,
+        'is_editing': False,
+    }
+    
+    return render(request, 'democracy/decision_create.html', context)
+
+
+@login_required
+def decision_detail(request, community_id, decision_id):
+    """
+    View decision details and voting interface.
+    
+    Shows decision information, current results (if available),
+    and voting interface for active decisions.
+    
+    Args:
+        request: Django request object
+        community_id: UUID of the community
+        decision_id: UUID of the decision
+    """
+    community = get_object_or_404(Community, id=community_id)
+    decision = get_object_or_404(Decision, id=decision_id, community=community)
+    
+    # Check if user is a member
+    try:
+        user_membership = Membership.objects.get(
+            community=community,
+            member=request.user
+        )
+    except Membership.DoesNotExist:
+        messages.error(request, "You must be a member of this community to view decisions.")
+        return redirect('democracy:community_detail', community_id=community_id)
+    
+    # Check if decision is published (not draft)
+    if decision.dt_close is None and not user_membership.is_community_manager:
+        messages.error(request, "This decision is not yet published.")
+        return redirect('democracy:decision_list', community_id=community_id)
+    
+    # Get user's existing ballot if any
+    user_ballot = None
+    try:
+        user_ballot = Ballot.objects.get(decision=decision, voter=request.user)
+    except Ballot.DoesNotExist:
+        pass
+    
+    # Determine decision status
+    now = timezone.now()
+    if decision.dt_close is None:
+        status = 'draft'
+    elif decision.dt_close > now:
+        status = 'active'
+    else:
+        status = 'closed'
+    
+    # Get voting statistics
+    total_ballots = decision.ballots.count()
+    voting_members = community.get_voting_members().count()
+    participation_rate = (total_ballots / voting_members * 100) if voting_members > 0 else 0
+    
+    # Get current results if decision is closed or has votes
+    current_results = None
+    if status == 'closed' or total_ballots > 0:
+        # Get the latest result
+        current_results = decision.results.first()
+    
+    context = {
+        'community': community,
+        'user_membership': user_membership,
+        'decision': decision,
+        'user_ballot': user_ballot,
+        'status': status,
+        'can_vote': status == 'active' and user_membership.is_voting_community_member,
+        'can_edit': (user_membership.is_community_manager and 
+                    not decision.ballots.exists() and 
+                    status in ['draft', 'active']),
+        'stats': {
+            'total_ballots': total_ballots,
+            'voting_members': voting_members,
+            'participation_rate': round(participation_rate, 1),
+        },
+        'current_results': current_results,
+    }
+    
+    return render(request, 'democracy/decision_detail.html', context)
+
+
+@login_required
+def decision_edit(request, community_id, decision_id):
+    """
+    Edit an existing decision.
+    
+    Only managers can edit decisions, and only before any votes are cast.
+    Draft decisions can be published from this view.
+    
+    Args:
+        request: Django request object
+        community_id: UUID of the community
+        decision_id: UUID of the decision to edit
+    """
+    from .forms import DecisionForm, ChoiceFormSet
+    
+    community = get_object_or_404(Community, id=community_id)
+    decision = get_object_or_404(Decision, id=decision_id, community=community)
+    
+    # Check if user is a manager
+    try:
+        user_membership = Membership.objects.get(
+            community=community,
+            member=request.user
+        )
+        if not user_membership.is_community_manager:
+            messages.error(request, "Only community managers can edit decisions.")
+            return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+    except Membership.DoesNotExist:
+        messages.error(request, "You must be a member of this community.")
+        return redirect('democracy:community_detail', community_id=community_id)
+    
+    # Check if decision can be edited (no votes cast yet)
+    if decision.ballots.exists():
+        messages.error(request, "Cannot edit decision after votes have been cast.")
+        return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+    
+    if request.method == 'POST':
+        form = DecisionForm(request.POST, instance=decision)
+        choice_formset = ChoiceFormSet(request.POST, instance=decision)
+        
+        if form.is_valid() and choice_formset.is_valid():
+            # Handle draft vs publish
+            action = request.POST.get('action')
+            
+            decision = form.save(commit=False)
+            if action == 'save_draft':
+                decision.dt_close = None  # Keep as draft
+            elif action == 'publish' and decision.dt_close is None:
+                # Publishing a draft - ensure dt_close is set
+                if not form.cleaned_data.get('dt_close'):
+                    messages.error(request, "Please set a voting deadline to publish this decision.")
+                    return render(request, 'democracy/decision_create.html', {
+                        'community': community,
+                        'user_membership': user_membership,
+                        'form': form,
+                        'choice_formset': choice_formset,
+                        'decision': decision,
+                        'is_editing': True,
+                    })
+            
+            decision.save()
+            choice_formset.save()
+            
+            if action == 'save_draft':
+                messages.success(request, f'Decision "{decision.title}" updated and saved as draft.')
+            elif action == 'publish':
+                messages.success(request, f'Decision "{decision.title}" published successfully!')
+                return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+            else:
+                messages.success(request, f'Decision "{decision.title}" updated successfully!')
+                return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+        
+    else:
+        form = DecisionForm(instance=decision)
+        choice_formset = ChoiceFormSet(instance=decision)
+    
+    context = {
+        'community': community,
+        'user_membership': user_membership,
+        'form': form,
+        'choice_formset': choice_formset,
+        'decision': decision,
+        'is_editing': True,
+        'is_draft': decision.dt_close is None,
+    }
+    
+    return render(request, 'democracy/decision_create.html', context)
+
+
+@login_required
+@require_POST
+def vote_submit(request, community_id, decision_id):
+    """
+    Submit or update a vote on a decision.
+    
+    Handles STAR voting submission with tag input and anonymity preferences.
+    Creates or updates the user's ballot and individual choice votes.
+    
+    Args:
+        request: Django request object
+        community_id: UUID of the community
+        decision_id: UUID of the decision
+    """
+    from .forms import VoteForm
+    
+    community = get_object_or_404(Community, id=community_id)
+    decision = get_object_or_404(Decision, id=decision_id, community=community)
+    
+    # Check if user is a voting member
+    try:
+        user_membership = Membership.objects.get(
+            community=community,
+            member=request.user
+        )
+        if not user_membership.is_voting_community_member:
+            messages.error(request, "Only voting members can cast ballots.")
+            return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+    except Membership.DoesNotExist:
+        messages.error(request, "You must be a member of this community to vote.")
+        return redirect('democracy:community_detail', community_id=community_id)
+    
+    # Check if decision is active
+    now = timezone.now()
+    if decision.dt_close is None:
+        messages.error(request, "This decision is not yet published.")
+        return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+    elif decision.dt_close <= now:
+        messages.error(request, "Voting has closed for this decision.")
+        return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+    
+    # Process the vote form
+    form = VoteForm(decision, request.user, request.POST)
+    
+    if form.is_valid():
+        # Get or create ballot
+        ballot, created = Ballot.objects.get_or_create(
+            decision=decision,
+            voter=request.user,
+            defaults={
+                'is_calculated': False,
+                'is_anonymous': form.cleaned_data.get('is_anonymous', True),
+                'tags': form.cleaned_data.get('tags', ''),
+            }
+        )
+        
+        # Update ballot if it already existed
+        if not created:
+            ballot.is_anonymous = form.cleaned_data.get('is_anonymous', True)
+            ballot.tags = form.cleaned_data.get('tags', '')
+            ballot.save()
+        
+        # Clear existing votes and create new ones
+        ballot.votes.all().delete()
+        
+        choice_ratings = form.get_choice_ratings()
+        for choice_id, stars in choice_ratings.items():
+            choice = get_object_or_404(Choice, id=choice_id, decision=decision)
+            Vote.objects.create(
+                choice=choice,
+                stars=stars,
+                ballot=ballot
+            )
+        
+        # Mark decision results as needing update
+        decision.results_need_updating = True
+        decision.save()
+        
+        messages.success(
+            request, 
+            f"Your vote has been {'updated' if not created else 'submitted'} successfully! "
+            f"You can change it anytime before {decision.dt_close.strftime('%B %d, %Y at %I:%M %p')}."
+        )
+        
+        return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+    
+    else:
+        # Form errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, f"{field}: {error}")
+        
+        return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)

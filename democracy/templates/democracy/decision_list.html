@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Decisions - {{ community.name }} - CrowdVote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Community Decisions</h1>
+                    <p class="mt-2 text-gray-600">{{ community.name }}</p>
+                </div>
+                <div class="flex space-x-3">
+                    {% if can_create %}
+                        <a href="{% url 'democracy:decision_create' community.id %}" 
+                           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                            📝 Create Decision
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'democracy:community_detail' community.id %}" 
+                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                        ← Back to Community
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <form method="get" class="space-y-4 md:space-y-0 md:flex md:items-end md:space-x-4">
+                <div class="flex-1">
+                    <label for="{{ search_form.search.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Search Decisions
+                    </label>
+                    {{ search_form.search }}
+                </div>
+                <div>
+                    <label for="{{ search_form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Status
+                    </label>
+                    {{ search_form.status }}
+                </div>
+                <div>
+                    <label for="{{ search_form.sort.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Sort By
+                    </label>
+                    {{ search_form.sort }}
+                </div>
+                <div>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                        Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Decisions List -->
+        <div class="space-y-6">
+            {% for decision in decisions %}
+                <div class="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                    <div class="p-6">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <!-- Status Badge -->
+                                <div class="flex items-center space-x-3 mb-3">
+                                    {% if decision.status == 'active' %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                            🟢 Active - Voting Open
+                                        </span>
+                                    {% elif decision.status == 'closed' %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                            🔴 Closed - Results Final
+                                        </span>
+                                    {% elif decision.status == 'draft' %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                            ⚪ Draft - Not Published
+                                        </span>
+                                    {% endif %}
+                                    
+                                    {% if decision.dt_close %}
+                                        <span class="text-sm text-gray-500">
+                                            {% if decision.status == 'active' %}
+                                                Closes {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
+                                            {% else %}
+                                                Closed {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Title and Description -->
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                    <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
+                                       class="hover:text-blue-600 transition-colors">
+                                        {{ decision.title }}
+                                    </a>
+                                </h3>
+                                
+                                <p class="text-gray-600 mb-4 line-clamp-3">
+                                    {{ decision.description|truncatewords:30 }}
+                                </p>
+
+                                <!-- Stats -->
+                                <div class="flex items-center space-x-6 text-sm text-gray-500">
+                                    <div class="flex items-center space-x-1">
+                                        <span>🗳️</span>
+                                        <span>{{ decision.total_votes }} vote{{ decision.total_votes|pluralize }}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <span>📋</span>
+                                        <span>{{ decision.total_choices }} choice{{ decision.total_choices|pluralize }}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <span>📅</span>
+                                        <span>Created {{ decision.created|date:"M j, Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex flex-col space-y-2 ml-6">
+                                <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
+                                   class="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 font-medium text-center">
+                                    {% if decision.status == 'active' %}
+                                        Vote Now
+                                    {% elif decision.status == 'draft' %}
+                                        View Draft
+                                    {% else %}
+                                        View Results
+                                    {% endif %}
+                                </a>
+                                
+                                {% if user_membership.is_community_manager %}
+                                    {% if decision.status == 'draft' or decision.status == 'active' and not decision.total_votes %}
+                                        <a href="{% url 'democracy:decision_edit' community.id decision.id %}" 
+                                           class="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 font-medium text-center">
+                                            Edit
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="bg-white rounded-lg shadow p-12 text-center">
+                    <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <span class="text-2xl">📋</span>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Decisions Found</h3>
+                    {% if can_create %}
+                        <p class="text-gray-500 mb-6">
+                            Get started by creating the first decision for your community to vote on.
+                        </p>
+                        <a href="{% url 'democracy:decision_create' community.id %}" 
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                            📝 Create First Decision
+                        </a>
+                    {% else %}
+                        <p class="text-gray-500">
+                            {% if search_form.search.value or search_form.status.value %}
+                                No decisions match your search criteria. Try adjusting your filters.
+                            {% else %}
+                                Community managers haven't created any decisions yet.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination (if needed in future) -->
+        <!-- Add pagination here if we implement it -->
+    </div>
+</div>
+
+<style>
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
+{% endblock %}

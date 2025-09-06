@@ -78,6 +78,38 @@
             </div>
         </div>
 
+        <!-- Quick Actions -->
+        {% if user_membership %}
+        <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Community Actions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a href="{% url 'democracy:decision_list' community.id %}" 
+                   class="flex items-center p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                    <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                        <span class="text-2xl">🗳️</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">View Decisions</h3>
+                        <p class="text-sm text-gray-600">See active votes and past decisions</p>
+                    </div>
+                </a>
+                
+                {% if user_membership.is_community_manager %}
+                <a href="{% url 'democracy:decision_create' community.id %}" 
+                   class="flex items-center p-4 border-2 border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors">
+                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                        <span class="text-2xl">📝</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Create Decision</h3>
+                        <p class="text-sm text-gray-600">Start a new community vote</p>
+                    </div>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Members Section -->
         <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200">
             <div class="flex items-center justify-between mb-6">

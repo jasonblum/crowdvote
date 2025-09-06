@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if is_editing %}
+        Edit {{ decision.title }} - {{ community.name }}
+    {% else %}
+        Create Decision - {{ community.name }}
+    {% endif %}
+    - CrowdVote
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        {% if is_editing %}
+                            Edit Decision
+                        {% else %}
+                            Create New Decision
+                        {% endif %}
+                    </h1>
+                    <p class="mt-2 text-gray-600">
+                        {{ community.name }}
+                        {% if is_editing and is_draft %}
+                            • <span class="text-yellow-600 font-medium">Draft</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{% url 'democracy:decision_list' community.id %}" 
+                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="post" class="space-y-8" id="decision-form">
+            {% csrf_token %}
+            
+            <!-- Decision Details -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-6">Decision Details</h2>
+                
+                <div class="space-y-6">
+                    <!-- Title -->
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Decision Title *
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {{ form.title.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">
+                            A clear, concise title that describes what is being decided (10-200 characters)
+                        </p>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Description *
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {{ form.description.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">
+                            Provide detailed context about what's being decided, why it matters, and any relevant background (minimum 50 characters)
+                        </p>
+                    </div>
+
+                    <!-- Voting Deadline -->
+                    <div>
+                        <label for="{{ form.dt_close.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Voting Deadline *
+                        </label>
+                        {{ form.dt_close }}
+                        {% if form.dt_close.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {{ form.dt_close.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">
+                            When voting will close and results will be finalized (must be at least 1 hour in the future)
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Choices -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold text-gray-900">Decision Choices</h2>
+                    <button type="button" 
+                            id="add-choice" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                        + Add Choice
+                    </button>
+                </div>
+                
+                <div id="choices-container">
+                    {{ choice_formset.management_form }}
+                    
+                    {% for form in choice_formset %}
+                        <div class="choice-form border border-gray-200 rounded-lg p-4 mb-4" data-form-index="{{ forloop.counter0 }}">
+                            <div class="flex items-start justify-between mb-4">
+                                <h3 class="text-md font-medium text-gray-900">
+                                    Choice {{ forloop.counter }}
+                                </h3>
+                                {% if not form.instance.pk or choice_formset.can_delete %}
+                                    <button type="button" 
+                                            class="remove-choice text-red-600 hover:text-red-800 text-sm font-medium"
+                                            data-form-index="{{ forloop.counter0 }}">
+                                        Remove
+                                    </button>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <!-- Hidden fields -->
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                
+                                <!-- Choice Title -->
+                                <div>
+                                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Choice Name *
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                        <div class="mt-1 text-sm text-red-600">
+                                            {{ form.title.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Choice Description -->
+                                <div>
+                                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                        Description (Optional)
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="mt-1 text-sm text-red-600">
+                                            {{ form.description.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                {% if choice_formset.non_form_errors %}
+                    <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="text-sm text-red-600">
+                            {{ choice_formset.non_form_errors }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-sm text-blue-700">
+                        <strong>Requirements:</strong> You must have at least 2 choices and no more than 10. 
+                        Each choice should be a distinct option that community members can vote on using the STAR voting system (0-5 stars).
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Publish Decision</h3>
+                        <p class="text-sm text-gray-500 mt-1">
+                            {% if is_editing and is_draft %}
+                                This decision is currently a draft. You can save changes or publish it for voting.
+                            {% else %}
+                                Choose whether to save as draft or publish immediately for community voting.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="submit" 
+                                name="action" 
+                                value="save_draft"
+                                class="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                            {% if is_editing %}Update Draft{% else %}Save as Draft{% endif %}
+                        </button>
+                        <button type="submit" 
+                                name="action" 
+                                value="publish"
+                                class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                            {% if is_editing and is_draft %}Publish Decision{% else %}Publish Now{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Hidden choice form template for dynamic adding -->
+<div id="choice-form-template" style="display: none;">
+    <!-- This will be populated by JavaScript -->
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const choicesContainer = document.getElementById('choices-container');
+    const addChoiceBtn = document.getElementById('add-choice');
+    const managementForm = document.querySelector('[name$="-TOTAL_FORMS"]');
+    
+    let formIndex = parseInt(managementForm.value);
+    
+    // Add choice functionality
+    addChoiceBtn.addEventListener('click', function() {
+        if (formIndex >= 10) {
+            alert('Maximum 10 choices allowed');
+            return;
+        }
+        
+        const newForm = createChoiceForm(formIndex);
+        choicesContainer.appendChild(newForm);
+        
+        formIndex++;
+        managementForm.value = formIndex;
+        
+        updateChoiceNumbers();
+    });
+    
+    // Remove choice functionality
+    choicesContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-choice')) {
+            const formDiv = e.target.closest('.choice-form');
+            const deleteInput = formDiv.querySelector('[name$="-DELETE"]');
+            
+            if (deleteInput) {
+                // Mark for deletion if it's an existing choice
+                deleteInput.checked = true;
+                formDiv.style.display = 'none';
+            } else {
+                // Remove completely if it's a new choice
+                formDiv.remove();
+                formIndex--;
+                managementForm.value = formIndex;
+            }
+            
+            updateChoiceNumbers();
+        }
+    });
+    
+    function createChoiceForm(index) {
+        const formDiv = document.createElement('div');
+        formDiv.className = 'choice-form border border-gray-200 rounded-lg p-4 mb-4';
+        formDiv.setAttribute('data-form-index', index);
+        
+        formDiv.innerHTML = `
+            <div class="flex items-start justify-between mb-4">
+                <h3 class="text-md font-medium text-gray-900">
+                    Choice ${index + 1}
+                </h3>
+                <button type="button" 
+                        class="remove-choice text-red-600 hover:text-red-800 text-sm font-medium"
+                        data-form-index="${index}">
+                    Remove
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="id_choices-${index}-title" class="block text-sm font-medium text-gray-700 mb-1">
+                        Choice Name *
+                    </label>
+                    <input type="text" 
+                           name="choices-${index}-title" 
+                           id="id_choices-${index}-title"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Choice name (e.g., 'Cathedral Gray')">
+                </div>
+
+                <div>
+                    <label for="id_choices-${index}-description" class="block text-sm font-medium text-gray-700 mb-1">
+                        Description (Optional)
+                    </label>
+                    <textarea name="choices-${index}-description" 
+                              id="id_choices-${index}-description"
+                              rows="2"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Brief description of this choice (optional)"></textarea>
+                </div>
+            </div>
+        `;
+        
+        return formDiv;
+    }
+    
+    function updateChoiceNumbers() {
+        const visibleForms = choicesContainer.querySelectorAll('.choice-form:not([style*="display: none"])');
+        visibleForms.forEach((form, index) => {
+            const header = form.querySelector('h3');
+            if (header) {
+                header.textContent = `Choice ${index + 1}`;
+            }
+        });
+    }
+    
+    // Form validation
+    document.getElementById('decision-form').addEventListener('submit', function(e) {
+        const visibleChoices = choicesContainer.querySelectorAll('.choice-form:not([style*="display: none"])');
+        
+        if (visibleChoices.length < 2) {
+            e.preventDefault();
+            alert('You must have at least 2 choices for a decision.');
+            return;
+        }
+        
+        // Check that all visible choices have titles
+        let hasEmptyTitle = false;
+        visibleChoices.forEach(form => {
+            const titleInput = form.querySelector('[name$="-title"]');
+            if (titleInput && !titleInput.value.trim()) {
+                hasEmptyTitle = true;
+            }
+        });
+        
+        if (hasEmptyTitle) {
+            e.preventDefault();
+            alert('All choices must have a title.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

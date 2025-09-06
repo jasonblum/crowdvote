@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}{{ decision.title }} - {{ community.name }} - CrowdVote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center space-x-3 mb-2">
+                        {% if status == 'active' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                🟢 Active - Voting Open
+                            </span>
+                        {% elif status == 'closed' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                🔴 Closed - Results Final
+                            </span>
+                        {% elif status == 'draft' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                ⚪ Draft - Not Published
+                            </span>
+                        {% endif %}
+                        
+                        {% if decision.dt_close %}
+                            <span class="text-sm text-gray-500">
+                                {% if status == 'active' %}
+                                    Voting closes {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
+                                {% else %}
+                                    Voting closed {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="text-3xl font-bold text-gray-900">{{ decision.title }}</h1>
+                    <p class="mt-2 text-gray-600">{{ community.name }}</p>
+                </div>
+                
+                <div class="flex space-x-3">
+                    {% if can_edit %}
+                        <a href="{% url 'democracy:decision_edit' community.id decision.id %}" 
+                           class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                            ✏️ Edit
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'democracy:decision_list' community.id %}" 
+                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                        ← Back to Decisions
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Decision Description -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Decision Details</h2>
+                    <div class="prose prose-gray max-w-none">
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ decision.description }}</p>
+                    </div>
+                </div>
+
+                <!-- Voting Interface -->
+                {% if can_vote %}
+                <div class="bg-white rounded-lg shadow p-6" id="voting-section">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">Cast Your Vote</h2>
+                        {% if user_ballot %}
+                            <span class="text-sm text-blue-600 font-medium">You have already voted - you can change your vote anytime before the deadline</span>
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post" id="vote-form" action="{% url 'democracy:vote_submit' community.id decision.id %}">
+                        {% csrf_token %}
+                        
+                        <!-- Choices with Star Rating -->
+                        <div class="space-y-6 mb-8">
+                            {% for choice in decision.choices.all %}
+                                <div class="border border-gray-200 rounded-lg p-6">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="flex-1">
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ choice.title }}</h3>
+                                            {% if choice.description %}
+                                                <p class="text-gray-600 text-sm">{{ choice.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Star Rating Interface -->
+                                    <div class="flex items-center space-x-4">
+                                        <span class="text-sm font-medium text-gray-700">Your rating:</span>
+                                        <div class="flex items-center space-x-1 star-rating" data-choice-id="{{ choice.id }}">
+                                            {% for star in "12345" %}
+                                                <button type="button" 
+                                                        class="star text-3xl text-gray-300 hover:text-yellow-400 transition-colors focus:outline-none"
+                                                        data-rating="{{ star }}"
+                                                        title="{{ star }} star{{ star|pluralize }}">
+                                                    ☆
+                                                </button>
+                                            {% endfor %}
+                                            <span class="ml-3 text-sm text-gray-600 rating-text">0 stars - No rating</span>
+                                        </div>
+                                        <input type="hidden" name="choice_{{ choice.id }}" value="0" class="rating-input">
+                                    </div>
+                                    
+                                    <!-- Rating Labels -->
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        <div class="flex justify-between">
+                                            <span>0 = No preference</span>
+                                            <span>1 = Strongly oppose</span>
+                                            <span>2 = Oppose</span>
+                                            <span>3 = Neutral</span>
+                                            <span>4 = Support</span>
+                                            <span>5 = Strongly support</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Tags Input -->
+                        <div class="mb-6">
+                            <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tags for this vote (optional)
+                            </label>
+                            <input type="text" 
+                                   name="tags" 
+                                   id="tags"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Add tags like 'budget, environment, maintenance' to help others follow your expertise"
+                                   value="{% if user_ballot %}{{ user_ballot.tags }}{% endif %}">
+                            <p class="mt-1 text-sm text-gray-500">
+                                Tags help other community members follow your expertise on specific topics for delegation.
+                            </p>
+                        </div>
+                        
+                        <!-- Anonymity Toggle -->
+                        <div class="mb-6">
+                            <div class="flex items-center">
+                                <input type="checkbox" 
+                                       name="is_anonymous" 
+                                       id="is_anonymous"
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                       {% if user_ballot.is_anonymous or user_membership.is_anonymous_by_default %}checked{% endif %}>
+                                <label for="is_anonymous" class="ml-2 block text-sm text-gray-700">
+                                    Vote anonymously (your identity will be hidden in public results)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                            <div class="text-sm text-gray-500">
+                                You can change your vote anytime before {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
+                            </div>
+                            <div class="flex space-x-3">
+                                <button type="button" 
+                                        id="save-draft-btn"
+                                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                                    Save Draft
+                                </button>
+                                <button type="submit" 
+                                        id="submit-vote-btn"
+                                        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                                    {% if user_ballot %}Update Vote{% else %}Submit Vote{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Current Results (if available) -->
+                {% if current_results or status == 'closed' %}
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-6">
+                        {% if status == 'closed' %}Final Results{% else %}Current Results{% endif %}
+                    </h2>
+                    
+                    {% if current_results %}
+                        <!-- Display results from the Result model -->
+                        <div class="space-y-4">
+                            <div class="prose prose-gray max-w-none">
+                                {{ current_results.report|linebreaks }}
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Simple vote counts if no formal results yet -->
+                        <div class="space-y-4">
+                            {% for choice in decision.choices.all %}
+                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                    <div>
+                                        <h3 class="font-medium text-gray-900">{{ choice.title }}</h3>
+                                        {% if choice.description %}
+                                            <p class="text-sm text-gray-600">{{ choice.description }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-lg font-semibold text-gray-900">
+                                            {{ choice.get_vote_count }} vote{{ choice.get_vote_count|pluralize }}
+                                        </div>
+                                        {% if choice.get_average_stars %}
+                                            <div class="text-sm text-gray-600">
+                                                Avg: {{ choice.get_average_stars|floatformat:1 }} stars
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Voting Statistics -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Voting Statistics</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Total Votes</span>
+                            <span class="font-semibold text-gray-900">{{ stats.total_ballots }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Eligible Voters</span>
+                            <span class="font-semibold text-gray-900">{{ stats.voting_members }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Participation Rate</span>
+                            <span class="font-semibold text-gray-900">{{ stats.participation_rate }}%</span>
+                        </div>
+                        {% if decision.dt_close %}
+                            <div class="pt-4 border-t border-gray-200">
+                                <div class="text-sm text-gray-600">
+                                    {% if status == 'active' %}
+                                        <strong>Voting closes:</strong><br>
+                                        {{ decision.dt_close|date:"l, M j, Y" }}<br>
+                                        {{ decision.dt_close|date:"g:i A" }}
+                                    {% else %}
+                                        <strong>Voting closed:</strong><br>
+                                        {{ decision.dt_close|date:"l, M j, Y" }}<br>
+                                        {{ decision.dt_close|date:"g:i A" }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Decision Info -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Decision Info</h3>
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <span class="text-gray-600">Created:</span>
+                            <span class="font-medium text-gray-900">{{ decision.created|date:"M j, Y" }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Choices:</span>
+                            <span class="font-medium text-gray-900">{{ decision.choices.count }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Voting Method:</span>
+                            <span class="font-medium text-gray-900">STAR Voting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Your Vote Status -->
+                {% if user_ballot %}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-2">Your Vote</h3>
+                    <div class="text-sm text-blue-800">
+                        <p class="mb-2">✓ You have voted on this decision</p>
+                        {% if user_ballot.tags %}
+                            <p class="mb-2"><strong>Tags:</strong> {{ user_ballot.tags }}</p>
+                        {% endif %}
+                        <p class="mb-2">
+                            <strong>Anonymous:</strong> 
+                            {% if user_ballot.is_anonymous %}Yes{% else %}No{% endif %}
+                        </p>
+                        {% if status == 'active' %}
+                            <p class="text-xs">You can change your vote anytime before the deadline.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% elif can_vote %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-yellow-900 mb-2">Vote Needed</h3>
+                    <p class="text-sm text-yellow-800">
+                        You haven't voted on this decision yet. Cast your vote using the STAR rating system on the left.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize star ratings
+    const starRatings = document.querySelectorAll('.star-rating');
+    
+    starRatings.forEach(rating => {
+        const stars = rating.querySelectorAll('.star');
+        const ratingText = rating.querySelector('.rating-text');
+        const hiddenInput = rating.parentElement.querySelector('.rating-input');
+        const choiceId = rating.dataset.choiceId;
+        
+        // Set initial rating if user has already voted
+        {% if user_ballot %}
+            const existingVotes = {
+                {% for vote in user_ballot.votes.all %}
+                    {{ vote.choice.id }}: {{ vote.stars }},
+                {% endfor %}
+            };
+            
+            if (existingVotes[choiceId]) {
+                setRating(rating, existingVotes[choiceId]);
+            }
+        {% endif %}
+        
+        // Add click handlers
+        stars.forEach((star, index) => {
+            star.addEventListener('click', function() {
+                const rating_value = index + 1;
+                setRating(rating, rating_value);
+            });
+            
+            // Hover effects
+            star.addEventListener('mouseenter', function() {
+                highlightStars(stars, index + 1);
+            });
+        });
+        
+        // Reset on mouse leave
+        rating.addEventListener('mouseleave', function() {
+            const currentRating = parseInt(hiddenInput.value) || 0;
+            highlightStars(stars, currentRating);
+        });
+    });
+    
+    function setRating(ratingContainer, value) {
+        const stars = ratingContainer.querySelectorAll('.star');
+        const ratingText = ratingContainer.querySelector('.rating-text');
+        const hiddenInput = ratingContainer.parentElement.querySelector('.rating-input');
+        
+        hiddenInput.value = value;
+        highlightStars(stars, value);
+        
+        // Update text
+        const labels = {
+            0: '0 stars - No rating',
+            1: '1 star - Strongly oppose',
+            2: '2 stars - Oppose', 
+            3: '3 stars - Neutral',
+            4: '4 stars - Support',
+            5: '5 stars - Strongly support'
+        };
+        ratingText.textContent = labels[value] || `${value} stars`;
+    }
+    
+    function highlightStars(stars, count) {
+        stars.forEach((star, index) => {
+            if (index < count) {
+                star.textContent = '★';
+                star.classList.add('text-yellow-400');
+                star.classList.remove('text-gray-300');
+            } else {
+                star.textContent = '☆';
+                star.classList.add('text-gray-300');
+                star.classList.remove('text-yellow-400');
+            }
+        });
+    }
+    
+    // Form validation
+    document.getElementById('vote-form').addEventListener('submit', function(e) {
+        const ratings = document.querySelectorAll('.rating-input');
+        let hasRating = false;
+        
+        ratings.forEach(input => {
+            if (parseInt(input.value) > 0) {
+                hasRating = true;
+            }
+        });
+        
+        if (!hasRating) {
+            e.preventDefault();
+            alert('Please rate at least one choice with 1 or more stars before submitting your vote.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}
