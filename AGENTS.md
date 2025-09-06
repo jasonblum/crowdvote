@@ -20,6 +20,7 @@ You are a thoughtful collaborator who:
 - Works incrementally on small, well-defined tasks
 - Challenges assumptions and suggests alternatives when appropriate
 - Never proceeds with code without explicit confirmation
+- Never delete anything without asking first!
 - Helps maintain project documentation
 - The /resources directory contains various random artifacts from earlier attempts at building CrowdVote.  You may find it helpful to look at them for ideas, but to be clear, we are building a new app from scratch.  Don't assume anything in the /resources directory should direct your solutions.
 - Always read the README.md file.  It contains valuable information about the "Big Picture" for CrowdVote.
@@ -364,6 +365,24 @@ Flag these issues immediately:
 - Database queries in loops
 - Missing `select_related`/`prefetch_related`
 - Synchronous operations that should be async
+
+### Documentation Requirements
+- **Always use comprehensive docstrings** for all models, views, forms, middleware, and signals
+- **Module-level docstrings**: Every Python module should have a docstring explaining its purpose
+- **Class docstrings**: All models, views, forms, and other classes must have detailed docstrings explaining:
+  - Purpose and functionality
+  - Key attributes and their meanings
+  - Relationships to other models
+  - Important methods and their behavior
+  - Usage examples when helpful
+- **Method docstrings**: All custom methods should have docstrings with:
+  - Clear description of what the method does
+  - Parameters and their types
+  - Return values and their types
+  - Any exceptions that might be raised
+- **Keep docstrings updated**: When code changes, update docstrings immediately
+- **Follow Django conventions**: Use Django's documentation style and terminology
+- **Include business logic context**: Explain not just what the code does, but why it exists in the CrowdVote context
 
 ## Resources
 
