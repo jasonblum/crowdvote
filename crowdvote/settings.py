@@ -69,10 +69,9 @@ SITE_ID = 1
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False  # We'll generate usernames during onboarding
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True  # Required for magic links
-ACCOUNT_LOGIN_BY_CODE_ENABLED = True  # Magic links
-ACCOUNT_LOGIN_BY_CODE_TIMEOUT = 300  # 5 minutes
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require verification for magic links
+ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = False  # We'll use custom magic links
+ACCOUNT_LOGIN_BY_CODE_ENABLED = False  # Disable codes, use links
 ACCOUNT_PREVENT_ENUMERATION = False  # Allow magic links for unknown emails
 ACCOUNT_RATE_LIMITS = {
     'login_failed': '3/5m',  # 3 attempts per 5 minutes

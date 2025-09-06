@@ -8,9 +8,16 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
+    # Magic link authentication
+    path('request-magic-link/', views.request_magic_link, name='request_magic_link'),
+    path('magic-login/<str:token>/', views.magic_link_login, name='magic_link_login'),
+    
+    # Profile and onboarding
     path('profile/setup/', views.profile_setup, name='profile_setup'),
     path('check-username/', views.check_username_availability, name='check_username'),
     path('generate-username/', views.generate_new_username, name='generate_username'),
+    
+    # Community features
     path('communities/', views.community_discovery, name='community_discovery'),
     path('apply/<uuid:community_id>/', views.apply_to_community, name='apply_to_community'),
 ]

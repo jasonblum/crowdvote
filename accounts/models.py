@@ -7,6 +7,9 @@ following/delegation system that enables CrowdVote's delegative democracy featur
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+import uuid
 
 from shared.models import BaseModel
 
@@ -304,3 +307,140 @@ class CommunityApplication(BaseModel):
         
         self.status = 'withdrawn'
         self.save()
+
+
+class MagicLink(BaseModel):
+    """
+    Represents a magic link token for passwordless authentication.
+    
+    Magic links allow users to log in by clicking a link sent to their email,
+    without needing to remember passwords or enter codes. This model stores
+    secure tokens that can be used once and expire after a short time.
+    
+    Features:
+    - Works for both new and existing users
+    - Secure random tokens that can't be guessed
+    - Automatic expiration after 15 minutes
+    - One-time use (consumed after successful login)
+    - Email tracking for audit purposes
+    
+    Attributes:
+        email (EmailField): Email address this magic link was sent to
+        token (CharField): Secure random token for the magic link
+        expires_at (DateTimeField): When this magic link expires
+        used_at (DateTimeField): When this magic link was used (null if unused)
+        created_user (ForeignKey): User created if this was for a new user
+    """
+    
+    email = models.EmailField(
+        help_text="Email address this magic link was sent to"
+    )
+    
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        help_text="Secure random token for the magic link URL"
+    )
+    
+    expires_at = models.DateTimeField(
+        help_text="When this magic link expires and becomes invalid"
+    )
+    
+    used_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this magic link was successfully used (null if unused)"
+    )
+    
+    created_user = models.ForeignKey(
+        CustomUser,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text="User account that was created using this magic link"
+    )
+
+    class Meta:
+        ordering = ['-created']
+        verbose_name = "Magic Link"
+        verbose_name_plural = "Magic Links"
+
+    def __str__(self):
+        """Return string representation of the magic link."""
+        status = "used" if self.used_at else ("expired" if self.is_expired else "active")
+        return f"Magic link for {self.email} ({status})"
+
+    @classmethod
+    def create_for_email(cls, email):
+        """
+        Create a new magic link for the given email address.
+        
+        Args:
+            email (str): Email address to create magic link for
+            
+        Returns:
+            MagicLink: New magic link instance
+        """
+        # Generate secure random token
+        token = get_random_string(48, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+        
+        # Set expiration to 15 minutes from now
+        expires_at = timezone.now() + timezone.timedelta(minutes=15)
+        
+        return cls.objects.create(
+            email=email,
+            token=token,
+            expires_at=expires_at
+        )
+
+    @property
+    def is_expired(self):
+        """Check if this magic link has expired."""
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_used(self):
+        """Check if this magic link has been used."""
+        return self.used_at is not None
+
+    @property
+    def is_valid(self):
+        """Check if this magic link is still valid (not expired and not used)."""
+        return not self.is_expired and not self.is_used
+
+    def use(self):
+        """
+        Mark this magic link as used.
+        
+        Returns:
+            bool: True if successfully marked as used, False if already used/expired
+        """
+        if not self.is_valid:
+            return False
+        
+        self.used_at = timezone.now()
+        self.save()
+        return True
+
+    def get_login_url(self, request=None):
+        """
+        Generate the complete magic link URL.
+        
+        Args:
+            request: Django request object for building absolute URL
+            
+        Returns:
+            str: Complete magic link URL
+        """
+        from django.urls import reverse
+        from django.contrib.sites.models import Site
+        
+        path = reverse('accounts:magic_link_login', kwargs={'token': self.token})
+        
+        if request:
+            return request.build_absolute_uri(path)
+        else:
+            # Fallback to site domain
+            site = Site.objects.get_current()
+            protocol = 'https' if site.domain != 'localhost:8000' else 'http'
+            return f"{protocol}://{site.domain}{path}"

@@ -7,11 +7,15 @@ profile setup, username validation, and onboarding flows.
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login
 from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
 from .utils import generate_safe_username, validate_username
+from .models import MagicLink
 
 User = get_user_model()
 
@@ -51,7 +55,7 @@ def profile_setup(request):
             request.user.save()
             
             messages.success(request, f"Welcome to CrowdVote, {first_name}! 🎉")
-            return redirect('community_discovery')
+            return redirect('accounts:community_discovery')
         else:
             if not is_valid:
                 messages.error(request, error_message)
@@ -241,3 +245,141 @@ def apply_to_community(request, community_id):
             'message': 'An error occurred while submitting your application',
             'status': 'error'
         })
+
+
+@require_POST
+def request_magic_link(request):
+    """
+    Handle magic link requests for any email address.
+    
+    This view:
+    1. Creates a magic link token
+    2. Sends an email with a clickable link (not a code)
+    3. Works for both new and existing users
+    4. Returns a success message regardless of user existence (security)
+    """
+    email = request.POST.get('email', '').strip().lower()
+    
+    if not email:
+        messages.error(request, "Please enter a valid email address")
+        return redirect('home')
+    
+    # Create magic link for any email
+    magic_link = MagicLink.create_for_email(email)
+    
+    # Generate the clickable URL
+    login_url = magic_link.get_login_url(request)
+    
+    # Prepare email content
+    context = {
+        'email': email,
+        'login_url': login_url,
+        'site_name': 'CrowdVote',
+        'expires_minutes': 15,
+    }
+    
+    # Email content
+    subject = 'Your CrowdVote Magic Link 🪄'
+    message = f"""
+Hello!
+
+Click the link below to sign into CrowdVote:
+
+{login_url}
+
+This link will expire in 15 minutes and can only be used once.
+
+If you didn't request this, you can safely ignore this email.
+
+Happy voting!
+The CrowdVote Team
+"""
+    
+    try:
+        # Send the magic link email
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        
+        messages.success(
+            request, 
+            f"✨ Magic link sent to {email}! Check your email and click the link to sign in."
+        )
+        
+    except Exception as e:
+        messages.error(
+            request,
+            "We couldn't send your magic link right now. Please try again in a few minutes."
+        )
+    
+    return redirect('home')
+
+
+def magic_link_login(request, token):
+    """
+    Handle magic link login for the given token.
+    
+    This view:
+    1. Validates the magic link token
+    2. For existing users: logs them in directly
+    3. For new users: creates account and redirects to profile setup
+    4. Marks the magic link as used
+    """
+    try:
+        magic_link = MagicLink.objects.get(token=token)
+    except MagicLink.DoesNotExist:
+        messages.error(request, "Invalid magic link. Please request a new one.")
+        return redirect('home')
+    
+    # Check if magic link is still valid
+    if not magic_link.is_valid:
+        if magic_link.is_expired:
+            messages.error(request, "This magic link has expired. Please request a new one.")
+        else:
+            messages.error(request, "This magic link has already been used. Please request a new one.")
+        return redirect('home')
+    
+    # Mark magic link as used
+    magic_link.use()
+    
+    # Check if user already exists
+    try:
+        user = User.objects.get(email=magic_link.email)
+        # Existing user - log them in
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        
+        # Check if they have a complete profile
+        if user.first_name and user.username:
+            # Existing user with complete profile - redirect to dashboard
+            messages.success(request, f"Welcome back, {user.first_name}! 👋")
+            return redirect('accounts:community_discovery')  # Or dashboard when we build it
+        else:
+            # Existing user without complete profile - redirect to profile setup
+            messages.success(request, "Welcome back! Please complete your profile.")
+            return redirect('accounts:profile_setup')
+            
+    except User.DoesNotExist:
+        # New user - create account
+        username = generate_safe_username()  # Temporary username
+        user = User.objects.create_user(
+            email=magic_link.email,
+            username=username,  # Temporary - user will change this
+            first_name='',  # User will set this in profile setup
+        )
+        
+        # Associate the created user with the magic link
+        magic_link.created_user = user
+        magic_link.save()
+        
+        # Log them in
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        
+        messages.success(
+            request, 
+            "🎉 Welcome to CrowdVote! Let's set up your profile."
+        )
+        return redirect('accounts:profile_setup')
