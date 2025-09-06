@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.get_full_name_or_username }} - CrowdVote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="px-6 py-8">
+                <div class="flex items-center space-x-6">
+                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl font-bold text-blue-600">
+                            {{ member.first_name|first|default:member.username|first }}
+                        </span>
+                    </div>
+                    <div class="flex-1">
+                        <h1 class="text-3xl font-bold text-gray-900">
+                            {{ member.get_full_name_or_username }}
+                        </h1>
+                        <p class="text-lg text-gray-600">@{{ member.username }}</p>
+                        {% if is_own_profile %}
+                            <p class="text-sm text-blue-600 mt-2">This is your profile</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex space-x-4 text-center">
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">{{ following_count }}</p>
+                            <p class="text-sm text-gray-500">Following</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold text-gray-900">{{ followers_count }}</p>
+                            <p class="text-sm text-gray-500">Followers</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not can_view_details and not is_own_profile %}
+            <!-- Limited access message -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-yellow-600 text-xl">🔒</span>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-yellow-800">Limited Profile Access</h3>
+                        <p class="text-yellow-700 mt-1">
+                            You can only see detailed information for members of communities you both belong to.
+                            Join shared communities to see more details and make delegation decisions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Communities -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">
+                        {% if is_own_profile %}
+                            My Communities
+                        {% else %}
+                            Shared Communities
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="p-6">
+                    {% if visible_memberships %}
+                        <div class="space-y-4">
+                            {% for membership in visible_memberships %}
+                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-3">
+                                            <h3 class="font-medium text-gray-900">
+                                                {{ membership.community.name }}
+                                            </h3>
+                                            <div class="flex space-x-1">
+                                                {% if membership.is_community_manager %}
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                        👑 Manager
+                                                    </span>
+                                                {% endif %}
+                                                {% if membership.is_voting_community_member %}
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        🗳️ Voter
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        📢 Lobbyist
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <p class="text-sm text-gray-500 mt-1">
+                                            Member since {{ membership.dt_joined|date:"M j, Y" }}
+                                        </p>
+                                    </div>
+                                    <a href="{% url 'democracy:community_detail' membership.community.id %}" 
+                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        View Community
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <span class="text-2xl">🏘️</span>
+                            </div>
+                            {% if is_own_profile %}
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Communities Yet</h3>
+                                <p class="text-gray-500 mb-4">Join communities to start participating in democracy!</p>
+                                <a href="{% url 'accounts:community_discovery' %}" 
+                                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                    Browse Communities
+                                </a>
+                            {% else %}
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Shared Communities</h3>
+                                <p class="text-gray-500">You don't belong to any of the same communities as {{ member.first_name|default:member.username }}.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Delegation Network -->
+            {% if can_view_details or is_own_profile %}
+            <div class="space-y-6">
+                <!-- Following -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            {% if is_own_profile %}
+                                People I Follow
+                            {% else %}
+                                {{ member.first_name|default:member.username }} Follows
+                            {% endif %}
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        {% if following %}
+                            <div class="space-y-3">
+                                {% for follow in following %}
+                                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                                <span class="text-sm font-medium text-gray-600">
+                                                    {{ follow.followee.first_name|first|default:follow.followee.username|first }}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-900">
+                                                    {{ follow.followee.get_full_name_or_username }}
+                                                </p>
+                                                {% if follow.tags %}
+                                                    <p class="text-sm text-gray-500">
+                                                        Topics: {{ follow.tags }}
+                                                    </p>
+                                                {% else %}
+                                                    <p class="text-sm text-gray-500">All topics</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'accounts:member_profile' follow.followee.username %}" 
+                                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                            View
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if following_count > 10 %}
+                                <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+                                    <p class="text-sm text-gray-500">
+                                        Showing 10 of {{ following_count }} people followed
+                                    </p>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-6">
+                                <p class="text-gray-500">
+                                    {% if is_own_profile %}
+                                        You're not following anyone yet. Follow experts in your communities to delegate your votes!
+                                    {% else %}
+                                        {{ member.first_name|default:member.username }} isn't following anyone yet.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Followers -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            {% if is_own_profile %}
+                                My Followers
+                            {% else %}
+                                {{ member.first_name|default:member.username }}'s Followers
+                            {% endif %}
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        {% if followers %}
+                            <div class="space-y-3">
+                                {% for follower in followers %}
+                                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                                <span class="text-sm font-medium text-gray-600">
+                                                    {{ follower.follower.first_name|first|default:follower.follower.username|first }}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-900">
+                                                    {{ follower.follower.get_full_name_or_username }}
+                                                </p>
+                                                {% if follower.tags %}
+                                                    <p class="text-sm text-gray-500">
+                                                        Topics: {{ follower.tags }}
+                                                    </p>
+                                                {% else %}
+                                                    <p class="text-sm text-gray-500">All topics</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'accounts:member_profile' follower.follower.username %}" 
+                                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                            View
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if followers_count > 10 %}
+                                <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+                                    <p class="text-sm text-gray-500">
+                                        Showing 10 of {{ followers_count }} followers
+                                    </p>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-6">
+                                <p class="text-gray-500">
+                                    {% if is_own_profile %}
+                                        No one is following you yet. Build expertise by voting and tagging decisions thoughtfully!
+                                    {% else %}
+                                        {{ member.first_name|default:member.username }} doesn't have any followers yet.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        {% if not is_own_profile and can_view_details %}
+        <div class="mt-8 bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Delegation Actions</h3>
+            <div class="flex space-x-4">
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                    Follow {{ member.first_name|default:member.username }}
+                </button>
+                <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                    Send Message
+                </button>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+                Following allows you to delegate your votes to {{ member.first_name|default:member.username }} on specific topics.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

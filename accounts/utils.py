@@ -70,7 +70,7 @@ def generate_safe_username():
     return fallback
 
 
-def is_username_available(username):
+def is_username_available(username, exclude_user=None):
     """
     Check if a username is available (not taken by another user).
     
@@ -78,22 +78,30 @@ def is_username_available(username):
     
     Args:
         username (str): The username to check
+        exclude_user (User, optional): User to exclude from the check (for profile updates)
         
     Returns:
         bool: True if username is available, False if taken
     """
     if not username or len(username.strip()) == 0:
         return False
+    
+    queryset = User.objects.filter(username__iexact=username.strip())
+    
+    # Exclude the current user if provided (for profile updates)
+    if exclude_user:
+        queryset = queryset.exclude(id=exclude_user.id)
         
-    return not User.objects.filter(username__iexact=username.strip()).exists()
+    return not queryset.exists()
 
 
-def validate_username(username):
+def validate_username(username, exclude_user=None):
     """
     Validate a username according to CrowdVote rules.
     
     Args:
         username (str): The username to validate
+        exclude_user (User, optional): User to exclude from availability check (for profile updates)
         
     Returns:
         tuple: (is_valid: bool, error_message: str or None)
@@ -124,7 +132,7 @@ def validate_username(username):
         return False, "Username can only contain letters and numbers"
     
     # Availability check
-    if not is_username_available(username):
+    if not is_username_available(username, exclude_user):
         return False, "Username is already taken"
     
     return True, None

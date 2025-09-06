@@ -21,6 +21,56 @@ User = get_user_model()
 
 
 @login_required
+def dashboard(request):
+    """
+    User dashboard showing communities, applications, and recent activity.
+    
+    This is the main landing page for authenticated users, providing:
+    - My Communities section with joined communities
+    - Pending applications status
+    - Recent decisions and activity
+    - Quick navigation to key features
+    """
+    from democracy.models import Community
+    from .models import CommunityApplication
+    
+    # Get user's communities with membership details
+    user_memberships = request.user.memberships.select_related('community').order_by('-dt_joined')
+    
+    # Get pending applications
+    pending_applications = CommunityApplication.objects.filter(
+        user=request.user,
+        status='pending'
+    ).select_related('community').order_by('-created')
+    
+    # Get recent applications (approved/rejected)
+    recent_applications = CommunityApplication.objects.filter(
+        user=request.user,
+        status__in=['approved', 'rejected']
+    ).select_related('community').order_by('-reviewed_at')[:5]
+    
+    # Get available communities to join (not a member, no pending application)
+    user_community_ids = set(user_memberships.values_list('community_id', flat=True))
+    pending_community_ids = set(pending_applications.values_list('community_id', flat=True))
+    excluded_ids = user_community_ids.union(pending_community_ids)
+    
+    available_communities = Community.objects.exclude(
+        id__in=excluded_ids
+    ).order_by('name')[:3]  # Show top 3 suggestions
+    
+    context = {
+        'user_memberships': user_memberships,
+        'pending_applications': pending_applications,
+        'recent_applications': recent_applications,
+        'available_communities': available_communities,
+        'total_communities': user_memberships.count(),
+        'total_pending': pending_applications.count(),
+    }
+    
+    return render(request, 'accounts/dashboard.html', context)
+
+
+@login_required
 def profile_setup(request):
     """
     Profile setup page for new users after email verification.
@@ -34,7 +84,7 @@ def profile_setup(request):
     """
     # Check if user already has a complete profile
     if request.user.username and hasattr(request.user, 'first_name') and request.user.first_name:
-        return redirect('community_discovery')
+        return redirect('accounts:dashboard')
     
     # Generate a suggested username
     suggested_username = generate_safe_username()
@@ -44,8 +94,8 @@ def profile_setup(request):
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
         
-        # Validate username
-        is_valid, error_message = validate_username(username)
+        # Validate username (exclude current user to allow keeping same username)
+        is_valid, error_message = validate_username(username, exclude_user=request.user)
         
         if is_valid and first_name:
             # Update user profile
@@ -55,7 +105,7 @@ def profile_setup(request):
             request.user.save()
             
             messages.success(request, f"Welcome to CrowdVote, {first_name}! 🎉")
-            return redirect('accounts:community_discovery')
+            return redirect('accounts:dashboard')
         else:
             if not is_valid:
                 messages.error(request, error_message)
@@ -86,7 +136,9 @@ def check_username_availability(request):
             'class': ''
         })
     
-    is_valid, error_message = validate_username(username)
+    # Exclude current user from availability check if they're logged in
+    exclude_user = request.user if request.user.is_authenticated else None
+    is_valid, error_message = validate_username(username, exclude_user=exclude_user)
     
     if is_valid:
         return JsonResponse({
@@ -280,6 +332,98 @@ def apply_to_community(request, community_id):
         )
 
 
+@login_required
+@require_POST
+def leave_community(request, community_id):
+    """
+    Allow users to leave a community they belong to.
+    
+    Removes the user's membership from the community. Users cannot leave
+    if they are the only manager of the community.
+    """
+    from democracy.models import Community, Membership
+    from django.shortcuts import get_object_or_404
+    
+    community = get_object_or_404(Community, id=community_id)
+    
+    try:
+        membership = Membership.objects.get(
+            member=request.user,
+            community=community
+        )
+    except Membership.DoesNotExist:
+        messages.error(request, "You are not a member of this community.")
+        return redirect('accounts:dashboard')
+    
+    # Check if user is the only manager
+    if membership.is_community_manager:
+        manager_count = community.get_managers().count()
+        if manager_count <= 1:
+            messages.error(
+                request, 
+                f"You cannot leave {community.name} because you are the only manager. "
+                "Please promote another member to manager first."
+            )
+            return redirect('accounts:dashboard')
+    
+    # Remove membership
+    community_name = community.name
+    membership.delete()
+    
+    messages.success(
+        request, 
+        f"You have successfully left {community_name}. You can reapply anytime if you change your mind."
+    )
+    
+    return redirect('accounts:dashboard')
+
+
+@login_required
+def member_profile(request, username):
+    """
+    Display a member's public profile for delegation decisions.
+    
+    Shows basic member information, communities they belong to,
+    and their role in each community to help other users make
+    delegation decisions.
+    """
+    from django.shortcuts import get_object_or_404
+    
+    member = get_object_or_404(User, username=username)
+    
+    # Get member's communities that the current user can see
+    # (only communities where current user is also a member)
+    user_community_ids = set()
+    if request.user.is_authenticated:
+        user_community_ids = set(
+            request.user.memberships.values_list('community_id', flat=True)
+        )
+    
+    # Get member's memberships in communities the current user can see
+    visible_memberships = member.memberships.filter(
+        community_id__in=user_community_ids
+    ).select_related('community').order_by('community__name')
+    
+    # Get member's following relationships (who they follow)
+    following = member.followings.select_related('followee').order_by('followee__username')
+    
+    # Get member's followers (who follows them)
+    followers = member.followers.select_related('follower').order_by('follower__username')
+    
+    context = {
+        'member': member,
+        'visible_memberships': visible_memberships,
+        'following_count': following.count(),
+        'followers_count': followers.count(),
+        'following': following[:10],  # Show first 10
+        'followers': followers[:10],  # Show first 10
+        'is_own_profile': request.user == member,
+        'can_view_details': bool(visible_memberships.exists()),
+    }
+    
+    return render(request, 'accounts/member_profile.html', context)
+
+
 @require_POST
 def request_magic_link(request):
     """
@@ -389,7 +533,7 @@ def magic_link_login(request, token):
         if user.first_name and user.username:
             # Existing user with complete profile - redirect to dashboard
             messages.success(request, f"Welcome back, {user.first_name}! 👋")
-            return redirect('accounts:community_discovery')  # Or dashboard when we build it
+            return redirect('accounts:dashboard')
         else:
             # Existing user without complete profile - redirect to profile setup
             messages.success(request, "Welcome back! Please complete your profile.")

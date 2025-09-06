@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Manage {{ community.name }} - CrowdVote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        Manage {{ community.name }}
+                    </h1>
+                    <p class="mt-2 text-gray-600">
+                        Community management dashboard
+                    </p>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{% url 'democracy:community_detail' community.id %}" 
+                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium">
+                        View Community
+                    </a>
+                    <a href="{% url 'accounts:dashboard' %}" 
+                       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600 font-semibold">👥</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Total Members</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.total_members }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <span class="text-green-600 font-semibold">🗳️</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Voters</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.voting_members }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600 font-semibold">📢</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Lobbyists</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.lobbyists }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <span class="text-purple-600 font-semibold">👑</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Managers</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.managers }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <span class="text-yellow-600 font-semibold">⏳</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Pending</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.pending_applications }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Community Settings -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Community Settings</h2>
+                </div>
+                <div class="p-6 space-y-6">
+                    <!-- Description -->
+                    <form method="post" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_description">
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                                Community Description
+                            </label>
+                            <textarea name="description" 
+                                      id="description" 
+                                      rows="4" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      placeholder="Describe your community's purpose and goals...">{{ community.description }}</textarea>
+                        </div>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+                            Update Description
+                        </button>
+                    </form>
+
+                    <!-- Auto-approval toggle -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle_auto_approve">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-900">Auto-approve Applications</h3>
+                                    <p class="text-sm text-gray-500">
+                                        {% if community.auto_approve_applications %}
+                                            New members are automatically approved (demo mode)
+                                        {% else %}
+                                            Applications require manual review
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <button type="submit" 
+                                        class="px-4 py-2 {% if community.auto_approve_applications %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white rounded-md font-medium">
+                                    {% if community.auto_approve_applications %}
+                                        Disable Auto-approval
+                                    {% else %}
+                                        Enable Auto-approval
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Applications -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">
+                        Pending Applications ({{ stats.pending_applications }})
+                    </h2>
+                </div>
+                <div class="p-6">
+                    {% if pending_applications %}
+                        <div class="space-y-4">
+                            {% for application in pending_applications %}
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <span class="text-blue-600 font-semibold">
+                                                    {{ application.user.first_name|first|default:application.user.username|first }}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-medium text-gray-900">
+                                                    {{ application.user.get_full_name_or_username }}
+                                                </h3>
+                                                <p class="text-sm text-gray-500">
+                                                    Applied {{ application.created|date:"M j, Y" }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            Pending
+                                        </span>
+                                    </div>
+                                    
+                                    {% if application.application_message %}
+                                        <div class="mb-3 p-3 bg-gray-50 rounded-md">
+                                            <p class="text-sm text-gray-700">{{ application.application_message }}</p>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="flex space-x-2">
+                                        <form method="post" action="{% url 'democracy:manage_application' community.id application.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" 
+                                                    class="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                                                Approve
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{% url 'democracy:manage_application' community.id application.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="submit" 
+                                                    class="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700">
+                                                Reject
+                                            </button>
+                                        </form>
+                                        <a href="{% url 'accounts:member_profile' application.user.username %}" 
+                                           class="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50">
+                                            View Profile
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <span class="text-2xl">📋</span>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Pending Applications</h3>
+                            <p class="text-gray-500">All applications have been reviewed.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        {% if recent_applications %}
+        <div class="mt-8 bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Application Activity</h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3">
+                    {% for application in recent_applications %}
+                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <span class="text-sm font-medium text-gray-600">
+                                        {{ application.user.first_name|first|default:application.user.username|first }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">
+                                        {{ application.user.get_full_name_or_username }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">
+                                        {% if application.status == 'approved' %}
+                                            Approved by {{ application.reviewed_by.get_full_name_or_username }} on {{ application.reviewed_at|date:"M j, Y" }}
+                                        {% elif application.status == 'rejected' %}
+                                            Rejected by {{ application.reviewed_by.get_full_name_or_username }} on {{ application.reviewed_at|date:"M j, Y" }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            {% if application.status == 'approved' %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✅ Approved
+                                </span>
+                            {% elif application.status == 'rejected' %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    ❌ Rejected
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

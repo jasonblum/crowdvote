@@ -24,6 +24,12 @@
                 <!-- User Actions -->
                 <div class="flex space-x-4">
                     {% if user_membership %}
+                        {% if user_membership.is_community_manager %}
+                            <a href="{% url 'democracy:community_manage' community.id %}" 
+                               class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                👑 Manage Community
+                            </a>
+                        {% endif %}
                         <span class="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium">
                             ✓ Member
                             {% if user_membership.is_community_manager %}• Manager{% endif %}
@@ -120,11 +126,14 @@
                             </div>
                             <div>
                                 <div class="font-medium text-gray-900">
-                                    {% if membership.member.first_name %}
-                                        {{ membership.member.first_name }} {{ membership.member.last_name }}
-                                    {% else %}
-                                        {{ membership.member.username }}
-                                    {% endif %}
+                                    <a href="{% url 'accounts:member_profile' membership.member.username %}" 
+                                       class="hover:text-blue-600 transition-colors">
+                                        {% if membership.member.first_name %}
+                                            {{ membership.member.first_name }} {{ membership.member.last_name }}
+                                        {% else %}
+                                            {{ membership.member.username }}
+                                        {% endif %}
+                                    </a>
                                 </div>
                                 <div class="text-sm text-gray-600">@{{ membership.member.username }}</div>
                             </div>
