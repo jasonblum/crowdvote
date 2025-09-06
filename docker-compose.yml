@@ -5,12 +5,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    env_file:
+      - .env.local
     ports:
       - "8000:8000"
     volumes:
       - .:/app
     environment:
-      - DEBUG=True
       - PGDATABASE=crowdvote_dev
       - PGUSER=postgres
       - PGPASSWORD=postgres
