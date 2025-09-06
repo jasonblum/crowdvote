@@ -38,10 +38,14 @@
                         {% elif "Springfield" in data.community.name %}🏭
                         {% else %}🏛️{% endif %}
                     </span>
-                    <div>
+                    <div class="flex-1">
                         <h3 class="text-xl font-bold text-gray-800">{{ data.community.name }}</h3>
                         <p class="text-gray-600">{{ data.voting_member_count }} voting members • {{ data.member_count }} total</p>
                     </div>
+                    <a href="{% url 'democracy:community_detail' data.community.id %}" 
+                       class="text-crowdvote-blue hover:text-blue-700 font-medium text-sm">
+                        View Details →
+                    </a>
                 </div>
                 <p class="text-gray-700 mb-6">
                     {{ data.community.description|truncatewords:25 }}

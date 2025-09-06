@@ -1,0 +1,30 @@
+{% if status == 'member' %}
+    <div class="w-full bg-green-100 text-green-800 font-semibold py-3 px-6 rounded-lg text-center">
+        ✅ You're a Member!
+    </div>
+{% elif status == 'pending' %}
+    <div class="w-full bg-yellow-100 text-yellow-800 font-semibold py-3 px-6 rounded-lg text-center">
+        ⏳ Application Pending
+    </div>
+{% elif status == 'approved' %}
+    <div class="w-full bg-green-100 text-green-800 font-semibold py-3 px-6 rounded-lg text-center">
+        🎉 {{ message }}
+    </div>
+    <script>
+        // Auto-redirect to community detail page after success
+        setTimeout(function() {
+            window.location.href = "{% url 'democracy:community_detail' community.id %}";
+        }, 2000);
+    </script>
+{% elif status == 'rejected' %}
+    <button hx-post="{% url 'accounts:apply_to_community' community.id %}"
+            hx-target="#community-{{ community.id }}-status"
+            hx-swap="innerHTML"
+            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">
+        🔄 Reapply
+    </button>
+{% elif status == 'error' %}
+    <div class="w-full bg-red-100 text-red-800 font-semibold py-3 px-6 rounded-lg text-center">
+        ❌ {{ message }}
+    </div>
+{% endif %}

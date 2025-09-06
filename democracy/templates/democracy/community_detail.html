@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}{{ community.name }} - CrowdVote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+    <div class="max-w-6xl mx-auto px-6">
+        
+        <!-- Community Header -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-blue-200">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <span class="text-4xl mr-4">
+                        {% if "Minion" in community.name %}🍌
+                        {% elif "Springfield" in community.name %}🏭
+                        {% else %}🏛️{% endif %}
+                    </span>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">{{ community.name }}</h1>
+                        <p class="text-gray-600">{{ stats.total_members }} members • {{ stats.voting_members }} voters</p>
+                    </div>
+                </div>
+                
+                <!-- User Actions -->
+                <div class="flex space-x-4">
+                    {% if user_membership %}
+                        <span class="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium">
+                            ✓ Member
+                            {% if user_membership.is_community_manager %}• Manager{% endif %}
+                        </span>
+                    {% elif user_application %}
+                        <span class="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-medium">
+                            ⏳ Application {{ user_application.status|title }}
+                        </span>
+                    {% else %}
+                        <a href="{% url 'accounts:community_discovery' %}" 
+                           class="bg-crowdvote-blue hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                            Apply to Join
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'accounts:community_discovery' %}" 
+                       class="text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg font-medium">
+                        ← Back to Communities
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Community Description -->
+            <p class="text-gray-700 text-lg leading-relaxed mb-6">
+                {{ community.description }}
+            </p>
+            
+            <!-- Community Stats -->
+            <div class="grid grid-cols-4 gap-4 text-center">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold text-blue-600">{{ stats.total_members }}</div>
+                    <div class="text-sm text-blue-800">Total Members</div>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold text-green-600">{{ stats.voting_members }}</div>
+                    <div class="text-sm text-green-800">Voters</div>
+                </div>
+                <div class="bg-yellow-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold text-yellow-600">{{ stats.lobbyists }}</div>
+                    <div class="text-sm text-yellow-800">Lobbyists</div>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold text-purple-600">{{ stats.managers }}</div>
+                    <div class="text-sm text-purple-800">Managers</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Community Members</h2>
+                
+                <!-- Member Filters -->
+                <div class="flex space-x-2">
+                    <a href="?role=all" class="{% if role_filter == 'all' %}bg-crowdvote-blue text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                        All ({{ stats.total_members }})
+                    </a>
+                    <a href="?role=managers" class="{% if role_filter == 'managers' %}bg-purple-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                        Managers ({{ stats.managers }})
+                    </a>
+                    <a href="?role=voters" class="{% if role_filter == 'voters' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                        Voters ({{ stats.voting_members }})
+                    </a>
+                    <a href="?role=lobbyists" class="{% if role_filter == 'lobbyists' %}bg-yellow-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                        Lobbyists ({{ stats.lobbyists }})
+                    </a>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <form method="GET" class="mb-6">
+                <input type="hidden" name="role" value="{{ role_filter }}">
+                <div class="flex">
+                    <input type="text" 
+                           name="search" 
+                           value="{{ search_query }}"
+                           placeholder="Search members..."
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-crowdvote-blue focus:border-transparent">
+                    <button type="submit" 
+                            class="bg-crowdvote-blue hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg">
+                        Search
+                    </button>
+                </div>
+            </form>
+
+            <!-- Members List -->
+            <div class="space-y-3">
+                {% for membership in memberships %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-crowdvote-blue rounded-full flex items-center justify-center text-white font-semibold mr-4">
+                                {{ membership.member.first_name|first|default:membership.member.username|first }}
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">
+                                    {% if membership.member.first_name %}
+                                        {{ membership.member.first_name }} {{ membership.member.last_name }}
+                                    {% else %}
+                                        {{ membership.member.username }}
+                                    {% endif %}
+                                </div>
+                                <div class="text-sm text-gray-600">@{{ membership.member.username }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Role Badges -->
+                        <div class="flex space-x-2">
+                            {% if membership.is_community_manager %}
+                                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
+                                    👑 Manager
+                                </span>
+                            {% endif %}
+                            {% if membership.is_voting_community_member %}
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
+                                    🗳️ Voter
+                                </span>
+                            {% else %}
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                                    📢 Lobbyist
+                                </span>
+                            {% endif %}
+                            <span class="text-xs text-gray-500">
+                                Joined {{ membership.dt_joined|date:"M Y" }}
+                            </span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center py-8 text-gray-500">
+                        {% if search_query %}
+                            No members found matching "{{ search_query }}"
+                        {% else %}
+                            No members found in this role category.
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Decisions (if any) -->
+        {% if recent_decisions %}
+        <div class="bg-white rounded-2xl shadow-xl p-8 mt-8 border border-blue-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Recent Decisions</h2>
+            <div class="space-y-4">
+                {% for decision in recent_decisions %}
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold text-gray-900">{{ decision.title }}</h3>
+                        <p class="text-sm text-gray-600 mt-1">{{ decision.description|truncatewords:20 }}</p>
+                        <div class="text-xs text-gray-500 mt-2">
+                            {% if decision.is_open %}
+                                Open until {{ decision.dt_close|date:"M j, Y g:i A" }}
+                            {% else %}
+                                Closed {{ decision.dt_close|date:"M j, Y" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

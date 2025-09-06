@@ -8,7 +8,7 @@ profile setup, username validation, and onboarding flows.
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model, login
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.core.mail import send_mail
@@ -181,6 +181,7 @@ def apply_to_community(request, community_id):
     HTMX endpoint to apply for community membership.
     
     Creates a new community application and returns updated status.
+    Returns HTML for HTMX requests, JSON for non-HTMX requests.
     """
     from democracy.models import Community
     from .models import CommunityApplication
@@ -189,13 +190,30 @@ def apply_to_community(request, community_id):
     community = get_object_or_404(Community, id=community_id)
     application_message = request.POST.get('message', '').strip()
     
+    def return_response(success, message, status):
+        """Helper to return appropriate response type"""
+        context = {
+            'success': success,
+            'message': message,
+            'status': status,
+            'community': community
+        }
+        
+        if request.htmx:
+            # Return HTML for HTMX requests
+            html = render_to_string('accounts/community_status.html', context, request=request)
+            return HttpResponse(html)
+        else:
+            # Return JSON for non-HTMX requests
+            return JsonResponse(context)
+    
     # Check if user is already a member
     if community.members.filter(id=request.user.id).exists():
-        return JsonResponse({
-            'success': False,
-            'message': 'You are already a member of this community',
-            'status': 'member'
-        })
+        return return_response(
+            success=False,
+            message='You are already a member of this community',
+            status='member'
+        )
     
     # Check for existing application
     existing_app = CommunityApplication.objects.filter(
@@ -205,11 +223,11 @@ def apply_to_community(request, community_id):
     
     if existing_app:
         if existing_app.status == 'pending':
-            return JsonResponse({
-                'success': False,
-                'message': 'You already have a pending application',
-                'status': 'pending'
-            })
+            return return_response(
+                success=False,
+                message='You already have a pending application',
+                status='pending'
+            )
         elif existing_app.status == 'rejected':
             # Allow reapplication after rejection
             existing_app.status = 'pending'
@@ -219,11 +237,11 @@ def apply_to_community(request, community_id):
             existing_app.reviewer_notes = ''
             existing_app.save()
             
-            return JsonResponse({
-                'success': True,
-                'message': f'Your application to {community.name} has been resubmitted!',
-                'status': 'pending'
-            })
+            return return_response(
+                success=True,
+                message=f'Your application to {community.name} has been resubmitted!',
+                status='pending'
+            )
     
     # Create new application
     try:
@@ -233,18 +251,33 @@ def apply_to_community(request, community_id):
             application_message=application_message
         )
         
-        return JsonResponse({
-            'success': True,
-            'message': f'Your application to {community.name} has been submitted!',
-            'status': 'pending'
-        })
+        # Check if community has auto-approval enabled
+        if community.auto_approve_applications:
+            # Auto-approve the application immediately
+            membership = application.approve(
+                reviewer=request.user,  # Self-approval for auto-approval
+                notes='Auto-approved for demo community'
+            )
+            
+            return return_response(
+                success=True,
+                message=f'Welcome to {community.name}! You have been automatically approved.',
+                status='approved'
+            )
+        else:
+            # Standard manual approval process
+            return return_response(
+                success=True,
+                message=f'Your application to {community.name} has been submitted!',
+                status='pending'
+            )
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': 'An error occurred while submitting your application',
-            'status': 'error'
-        })
+        return return_response(
+            success=False,
+            message='An error occurred while submitting your application',
+            status='error'
+        )
 
 
 @require_POST
