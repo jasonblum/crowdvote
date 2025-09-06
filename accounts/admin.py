@@ -20,13 +20,12 @@ class FollowingAdmin(admin.ModelAdmin):
     """
     Admin interface for Following relationships.
     """
-    list_display = ['follower', 'followee', 'created']
-    list_filter = ['created', 'modified']
-    search_fields = ['follower__username', 'followee__username']
+    list_display = ['follower', 'followee', 'tags_display', 'order', 'created']
+    list_filter = ['order', 'created', 'modified']
+    search_fields = ['follower__username', 'followee__username', 'tags']
     raw_id_fields = ['follower', 'followee']
     
-    # TODO: Re-enable when tagging is implemented
-    # def tag_list(self, obj):
-    #     """Display tags as a comma-separated list."""
-    #     return ", ".join(o.name for o in obj.tags.all())
-    # tag_list.short_description = 'Tags'
+    def tags_display(self, obj):
+        """Display tags as a comma-separated list."""
+        return obj.tags if obj.tags else "(all tags)"
+    tags_display.short_description = 'Tags'

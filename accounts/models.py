@@ -92,16 +92,20 @@ class Following(BaseModel):
         on_delete=models.PROTECT,
         help_text="The user being followed (receiving delegated voting power)."
     )
-    # TODO: Re-implement tagging with UUID-compatible solution
-    # This will enable topic-specific delegation (e.g., follow Alice on "budget" 
-    # but Bob on "environment")
-    # tags = TaggableManager(
-    #     help_text="Topics/tags this following relationship applies to (e.g., 'budget', 'environment')"
-    # )
+    tags = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Comma-separated tags to follow this user on (e.g., 'environmental,fiscal'). Empty = follow on all tags."
+    )
+    order = models.PositiveIntegerField(
+        default=1,
+        help_text="Priority order for tie-breaking (lower numbers = higher priority)"
+    )
 
     class Meta:
         ordering = [
             "follower__username",
+            "order",
             "followee__username",
         ]
         verbose_name = "Following Relationship"

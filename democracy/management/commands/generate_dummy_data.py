@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from accounts.models import Following
-from democracy.models import Community, Membership
+from democracy.models import Community, Membership, Decision, Choice, Ballot, Vote
 
 User = get_user_model()
 
@@ -37,15 +37,23 @@ class Command(BaseCommand):
             users = self.create_users_for_community(community, users_per_community)
             all_users.extend(users)
         
-        # Create following relationships (simplified without tags for now)
+        # Create following relationships with tags and order
         self.create_following_relationships(all_users)
+        
+        # Create test decisions for each community
+        decisions = self.create_test_decisions(communities)
+        
+        # Create some manual votes from key users
+        self.create_manual_votes(decisions, all_users)
         
         self.stdout.write(
             self.style.SUCCESS(
                 f'Successfully generated dummy data:\n'
                 f'- {len(communities)} communities\n'
                 f'- {len(all_users)} users\n'
-                f'- Following relationships with multi-level delegation chains'
+                f'- {len(decisions)} test decisions\n'
+                f'- Following relationships with tag-based delegation\n'
+                f'- Manual votes from key community members'
             )
         )
 
@@ -295,11 +303,210 @@ class Command(BaseCommand):
         
         self.stdout.write(f'Created following relationships for {community_name} community')
 
-    def create_following_relationship(self, follower, followee):
-        """Create a following relationship, avoiding duplicates."""
+    def create_following_relationship(self, follower, followee, order=1):
+        """Create a following relationship with tags and order, avoiding duplicates."""
         # Check if relationship already exists
         existing = Following.objects.filter(follower=follower, followee=followee).first()
         
         if not existing:
-            # Create new relationship
-            Following.objects.create(follower=follower, followee=followee)
+            # Common tags for different types of users  
+            tag_options = [
+                "environmental",
+                "fiscal", 
+                "safety",
+                "infrastructure",
+                "governance",
+                "beautification"
+            ]
+            
+            # 70% chance of specific tags, 30% chance of following on all issues
+            if random.random() < 0.7:
+                # Follow on 1-3 specific tags
+                num_tags = random.randint(1, 3)
+                selected_tags = random.sample(tag_options, num_tags)
+                tags = ",".join(selected_tags)
+            else:
+                # Follow on all issues (empty tags)
+                tags = ""
+            
+            # Create new relationship with tags and order
+            Following.objects.create(
+                follower=follower, 
+                followee=followee,
+                tags=tags,
+                order=order
+            )
+
+    def create_test_decisions(self, communities):
+        """Create test decisions for each community."""
+        decisions = []
+        
+        for community in communities:
+            if community.name == 'Minion Collective':
+                decisions.extend(self.create_minion_decisions(community))
+            else:  # Springfield Town Council
+                decisions.extend(self.create_springfield_decisions(community))
+        
+        return decisions
+    
+    def create_minion_decisions(self, community):
+        """Create Minion-themed decisions."""
+        decisions_data = [
+            {
+                'title': 'Daily Banana Budget Allocation',
+                'description': 'How should we allocate our daily banana budget between fresh bananas, banana smoothies, and banana bread? This decision affects our nutritional strategy and morale.',
+                'choices': [
+                    ('50% Fresh, 30% Smoothies, 20% Bread', 'Prioritize fresh bananas for maximum potassium intake'),
+                    ('40% Fresh, 40% Smoothies, 20% Bread', 'Balanced approach with equal smoothie allocation'),
+                    ('60% Fresh, 20% Smoothies, 20% Bread', 'Traditional approach focusing on whole bananas')
+                ]
+            },
+            {
+                'title': 'World Domination Strategy Meeting Schedule',
+                'description': 'When should we hold our weekly world domination planning meetings? Consider minion energy levels and optimal plotting conditions.',
+                'choices': [
+                    ('Monday 9 AM', 'Start the week with fresh evil energy'),
+                    ('Wednesday 2 PM', 'Mid-week when creative scheming peaks'),
+                    ('Friday 4 PM', 'End the week with diabolical planning')
+                ]
+            }
+        ]
+        
+        decisions = []
+        for i, data in enumerate(decisions_data):
+            # Create decision that closes in 1-7 days
+            close_time = timezone.now() + timedelta(days=random.randint(1, 7))
+            
+            decision = Decision.objects.create(
+                title=data['title'],
+                description=data['description'],
+                dt_close=close_time,
+                community=community
+            )
+            
+            # Create choices
+            for choice_title, choice_desc in data['choices']:
+                Choice.objects.create(
+                    title=choice_title,
+                    description=choice_desc,
+                    decision=decision
+                )
+            
+            decisions.append(decision)
+        
+        return decisions
+    
+    def create_springfield_decisions(self, community):
+        """Create Springfield-themed decisions."""
+        decisions_data = [
+            {
+                'title': 'Nuclear Plant Safety Inspection Frequency',
+                'description': 'How often should we conduct safety inspections at the Springfield Nuclear Plant? Consider public safety vs. operational costs.',
+                'choices': [
+                    ('Monthly Inspections', 'Maximum safety with monthly comprehensive checks'),
+                    ('Quarterly Inspections', 'Balanced approach with seasonal reviews'),
+                    ('Bi-Annual Inspections', 'Cost-effective approach with twice yearly checks')
+                ]
+            },
+            {
+                'title': 'Downtown Donut Shop Zoning Request',
+                'description': 'Should we approve a new donut shop location next to the existing Lard Lad Donuts? Consider competition policy and citizen sugar intake.',
+                'choices': [
+                    ('Approve New Location', 'Encourage healthy competition and donut innovation'),
+                    ('Deny - Protect Existing Business', 'Support current local donut monopoly'),
+                    ('Approve with Restrictions', 'Allow but limit hours and donut types')
+                ]
+            }
+        ]
+        
+        decisions = []
+        for i, data in enumerate(decisions_data):
+            # Create decision that closes in 1-7 days
+            close_time = timezone.now() + timedelta(days=random.randint(1, 7))
+            
+            decision = Decision.objects.create(
+                title=data['title'],
+                description=data['description'],
+                dt_close=close_time,
+                community=community
+            )
+            
+            # Create choices
+            for choice_title, choice_desc in data['choices']:
+                Choice.objects.create(
+                    title=choice_title,
+                    description=choice_desc,
+                    decision=decision
+                )
+            
+            decisions.append(decision)
+        
+        return decisions
+    
+    def create_manual_votes(self, decisions, all_users):
+        """Create manual votes from key community members with tags."""
+        for decision in decisions:
+            # Get community members
+            community_users = [
+                m.member for m in decision.community.memberships.all()
+            ]
+            
+            # Have 20-30% of users vote manually
+            num_voters = int(len(community_users) * random.uniform(0.2, 0.3))
+            voters = random.sample(community_users, min(num_voters, len(community_users)))
+            
+            for voter in voters:
+                # Create ballot
+                ballot = Ballot.objects.create(
+                    decision=decision,
+                    voter=voter,
+                    is_calculated=False,  # Manual vote
+                    is_anonymous=random.choice([True, False]),
+                    tags=self.get_decision_tags(decision),
+                    comments=f"Manual vote by {voter.username}"
+                )
+                
+                # Create votes for each choice (STAR voting: 0-5 stars)
+                for choice in decision.choices.all():
+                    stars = random.randint(0, 5)
+                    Vote.objects.create(
+                        choice=choice,
+                        ballot=ballot,
+                        stars=stars
+                    )
+        
+        self.stdout.write(f'Created manual votes for {len(decisions)} decisions')
+    
+    def get_decision_tags(self, decision):
+        """Determine appropriate tags for a decision based on its content."""
+        title_lower = decision.title.lower()
+        description_lower = decision.description.lower()
+        
+        tags = []
+        
+        # Environmental tags
+        if any(word in title_lower + description_lower for word in 
+               ['banana', 'plant', 'safety', 'environmental', 'nuclear']):
+            tags.append('environmental')
+        
+        # Fiscal tags  
+        if any(word in title_lower + description_lower for word in
+               ['budget', 'cost', 'allocation', 'money', 'financial']):
+            tags.append('fiscal')
+        
+        # Safety tags
+        if any(word in title_lower + description_lower for word in
+               ['safety', 'inspection', 'nuclear', 'protection']):
+            tags.append('safety')
+        
+        # Governance tags
+        if any(word in title_lower + description_lower for word in
+               ['meeting', 'schedule', 'policy', 'zoning', 'approval']):
+            tags.append('governance')
+        
+        # Infrastructure tags
+        if any(word in title_lower + description_lower for word in
+               ['location', 'shop', 'building', 'infrastructure']):
+            tags.append('infrastructure')
+        
+        return ','.join(tags) if tags else 'general'

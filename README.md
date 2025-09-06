@@ -21,7 +21,7 @@
 
 ## Overview
 
-CrowdVote is a Django-based web application that enables communities to make decisions together through a revolutionary voting system that combines **instant runoff voting** with **delegative democracy**. Unlike traditional voting systems, CrowdVote allows community members to either vote directly on issues or delegate their voting power to trusted members on specific topics through a tagging system.
+CrowdVote is a Django-based web application that enables communities to make decisions together through a revolutionary voting system that combines **STAR Voting** (Score Then Automatic Runoff) with **transitively delegative democracy**. Unlike traditional voting systems, CrowdVote allows community members to either vote directly on issues or delegate their voting power to trusted members on specific topics through a tagging system.
 
 **TL;DR**: CrowdVote unlocks representation from fixed electoral terms by creating a free market where community members can:
 - Vote directly on each referendum

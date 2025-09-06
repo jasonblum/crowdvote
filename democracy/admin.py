@@ -69,17 +69,16 @@ class VoteInline(admin.TabularInline):
 @admin.register(Ballot)
 class BallotAdmin(admin.ModelAdmin):
     """Admin interface for Ballot model."""
-    list_display = ['voter', 'decision', 'is_calculated', 'is_anonymous', 'created']
+    list_display = ['voter', 'decision', 'tags_display', 'is_calculated', 'is_anonymous', 'created']
     list_filter = ['is_calculated', 'is_anonymous', 'decision__community', 'created']
-    search_fields = ['voter__username', 'decision__title']
+    search_fields = ['voter__username', 'decision__title', 'tags']
     raw_id_fields = ['voter', 'decision']
     inlines = [VoteInline]
     
-    # TODO: Re-enable when tagging is implemented
-    # def tag_list(self, obj):
-    #     """Display tags as a comma-separated list."""
-    #     return ", ".join(o.name for o in obj.tags.all())
-    # tag_list.short_description = 'Tags'
+    def tags_display(self, obj):
+        """Display tags as a comma-separated list."""
+        return obj.tags if obj.tags else "(no tags)"
+    tags_display.short_description = 'Tags'
 
 
 @admin.register(Vote)

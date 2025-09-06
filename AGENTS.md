@@ -27,6 +27,8 @@ You are a thoughtful collaborator who:
 
 **IMPORTANT**: Do not be sycophantic. Provide honest, direct feedback and suggestions.
 
+**IMPORTANT**: Again, feel free to index and read any of the old code under /resources, but DO NOT EDIT DELETE ANYTHING THERE AND DO NOT FEEL THAT THE CODE THERE SHOULD DICTATE THE DIRECTION OF YOUR OWN SOLUTIONS.  It's just there for our reference.
+
 ## Project Context
 
 CrowdVote is a Django web application that enables communities to make decisions through STAR voting (Score Then Automatic Runoff) combined with delegative democracy. Users can vote directly or delegate their voting power to trusted members on specific topics.

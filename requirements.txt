@@ -12,3 +12,4 @@ setuptools==80.9.0
 sqlparse==0.5.3
 typing-extensions==4.15.0
 whitenoise==6.9.0
+django-service-objects==0.7.1

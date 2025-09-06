@@ -411,11 +411,11 @@ class Ballot(BaseModel):
         default=True,
         help_text="Whether this ballot should be kept anonymous"
     )
-    # TODO: Re-implement tagging with UUID-compatible solution
-    # This will enable topic-specific ballot inheritance based on decision tags
-    # tags = TaggableManager(
-    #     help_text="Tags that characterize this ballot for delegation purposes"
-    # )
+    tags = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Comma-separated tags this voter applied to characterize this decision (e.g., 'environmental,fiscal')"
+    )
     comments = models.TextField(
         blank=True,
         help_text="Optional explanation of voting reasoning or context"
@@ -638,3 +638,5 @@ class Result(BaseModel):
         if 'participation' in self.stats:
             return self.stats['participation']
         return {}
+
+
