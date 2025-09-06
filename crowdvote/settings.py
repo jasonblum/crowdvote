@@ -44,8 +44,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # Required for allauth
     
     # Third-party apps
+    'allauth',
+    'allauth.account',
     'taggit',
     
     # CrowdVote apps
@@ -54,6 +57,37 @@ INSTALLED_APPS = [
     'democracy',
 ]
 
+# Django Allauth Configuration
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1
+
+# Allauth settings for magic link authentication
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False  # We'll generate usernames during onboarding
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True  # Required for magic links
+ACCOUNT_LOGIN_BY_CODE_ENABLED = True  # Magic links
+ACCOUNT_LOGIN_BY_CODE_TIMEOUT = 300  # 5 minutes
+ACCOUNT_PREVENT_ENUMERATION = False  # Allow magic links for unknown emails
+ACCOUNT_RATE_LIMITS = {
+    'login_failed': '3/5m',  # 3 attempts per 5 minutes
+}
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
+ACCOUNT_ADAPTER = 'accounts.adapters.CrowdVoteAccountAdapter'
+
+# Redirect URLs
+LOGIN_REDIRECT_URL = '/profile/profile/setup/'
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/profile/profile/setup/'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -61,6 +95,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # Required for allauth
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -136,6 +171,36 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+
+# Email Configuration
+if DEBUG:
+    # Development: Show emails in console
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_HOST = 'localhost'
+    EMAIL_PORT = 1025
+    DEFAULT_FROM_EMAIL = 'noreply@crowdvote.local'
+else:
+    # Production: Use Mailgun (recommended) or other SMTP service
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    
+    # SendGrid settings (free 100 emails/day - perfect for demo phase)
+    EMAIL_HOST = env('EMAIL_HOST', default='smtp.sendgrid.net')
+    EMAIL_PORT = env('EMAIL_PORT', default=587)
+    EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
+    EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='apikey')  # This is exactly the string 'apikey'
+    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')  # Your SendGrid API key
+    DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@yourdomain.com')
+    
+    # Future: Mailgun settings (when ready to scale)
+    # EMAIL_HOST = 'smtp.mailgun.org'
+    # EMAIL_HOST_USER = env('MAILGUN_SMTP_USERNAME', default='')
+    # EMAIL_HOST_PASSWORD = env('MAILGUN_SMTP_PASSWORD', default='')
+    
+    # Future: Amazon SES settings (most cost-effective at scale)
+    # EMAIL_HOST = 'email-smtp.us-east-1.amazonaws.com'
+    # EMAIL_HOST_USER = env('AWS_SES_ACCESS_KEY_ID', default='')
+    # EMAIL_HOST_PASSWORD = env('AWS_SES_SECRET_ACCESS_KEY', default='')
 
 
 # Static files (CSS, JavaScript, Images)

@@ -3,56 +3,114 @@
 {% block title %}Welcome to CrowdVote{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 50px auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333;">
-    <header style="text-align: center; margin-bottom: 40px;">
-        <h1 style="color: #2563eb; font-size: 3rem; margin-bottom: 10px;">Welcome to CrowdVote</h1>
-        <p style="font-size: 1.2rem; color: #6b7280; margin: 0;">The Democracy App: A platform for Free-Market Representation</p>
-    </header>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <!-- Hero Section -->
+    <div class="max-w-4xl mx-auto px-6 py-16">
+        <div class="text-center mb-16">
+            <!-- Logo/Brand -->
+            <div class="mb-8">
+                <h1 class="text-6xl font-bold text-crowdvote-blue mb-4">
+                    🗳️ CrowdVote
+                </h1>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    The Democracy App: Free-Market Representation for Real Communities
+                </p>
+            </div>
 
-    <section style="background: #f8fafc; padding: 30px; border-radius: 8px; margin-bottom: 30px;">
-        <h2 style="color: #1e40af; margin-bottom: 20px;">Real Democracy happens between elections.</h2>
-        <p style="font-size: 1.1rem;">
-            CrowdVote enables communities to make decisions together through a revolutionary voting system that combines 
-            <strong>STAR voting</strong> (Score Then Automatic Runoff) with <strong>delegative democracy</strong>.
-        </p>
-    </section>
+            <!-- Tagline -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-blue-100">
+                <h2 class="text-3xl font-semibold text-crowdvote-purple mb-4">
+                    Real Democracy happens between elections.
+                </h2>
+                <p class="text-lg text-gray-700 leading-relaxed">
+                    Vote directly or delegate to trusted experts on specific topics. 
+                    Build influence through expertise, not campaign contributions.
+                </p>
+            </div>
 
-    <section style="margin-bottom: 30px;">
-        <h3 style="color: #1e40af; margin-bottom: 15px;">Key Features</h3>
-        <ul style="list-style: none; padding: 0;">
-            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
-                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
-                <strong>Vote directly</strong> on each referendum
-            </li>
-            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
-                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
-                <strong>Delegate your vote</strong> to trusted members on specific topics
-            </li>
-            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
-                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
-                <strong>Tag-based following</strong> - follow different people for different issues
-            </li>
-            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
-                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
-                <strong>Transitive voting</strong> - inherit votes through chains of trust
-            </li>
-            <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
-                <span style="position: absolute; left: 0; color: #10b981;">✓</span>
-                <strong>Always override</strong> - maintain the ability to vote directly
-            </li>
-        </ul>
-    </section>
-
-    <section style="text-align: center; background: #eef2ff; padding: 25px; border-radius: 8px;">
-        <h3 style="color: #1e40af; margin-bottom: 15px;">CrowdVote = Free Market Representation</h3>
-        <p style="margin-bottom: 20px;">
-            Rather than tying representation to fixed electoral terms, CrowdVote creates a marketplace 
-            where community members compete to earn and retain trust on specific issues.
-        </p>
-        <div style="margin-top: 20px;">
-            <strong style="color: #7c3aed;">Development Status:</strong> 
-            <span style="color: #059669;">Active Development - Docker + Railway Deployment Complete! 🚀</span>
+            <!-- Email Signup Form -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200 max-w-md mx-auto">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-6">
+                    Experience Democracy in Action
+                </h3>
+                <p class="text-gray-600 mb-6">
+                    Enter your email to receive a magic link and join the CrowdVote community
+                </p>
+                
+                <form method="post" action="{% url 'account_request_login_code' %}" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <input type="email" 
+                               name="email" 
+                               placeholder="your.email@example.com"
+                               required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crowdvote-blue focus:border-transparent transition-all duration-200 text-lg">
+                    </div>
+                    <button type="submit" 
+                            class="w-full bg-crowdvote-blue hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        Send Magic Link ✨
+                    </button>
+                </form>
+                
+                <p class="text-sm text-gray-500 mt-4">
+                    No passwords required. We'll send you a secure link to get started.
+                </p>
+            </div>
         </div>
-    </section>
+
+        <!-- Features Grid -->
+        <div class="grid md:grid-cols-2 gap-8 mb-16">
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-green-100">
+                <div class="flex items-center mb-4">
+                    <span class="text-2xl mr-3">🎯</span>
+                    <h3 class="text-xl font-semibold text-gray-800">Vote or Delegate</h3>
+                </div>
+                <p class="text-gray-600">
+                    Vote directly on issues you care about, or delegate to trusted experts on specific topics like "environmental" or "fiscal"
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-purple-100">
+                <div class="flex items-center mb-4">
+                    <span class="text-2xl mr-3">🔗</span>
+                    <h3 class="text-xl font-semibold text-gray-800">Tag-Based Following</h3>
+                </div>
+                <p class="text-gray-600">
+                    Follow Mauricio on environmental issues and Joe on fiscal matters. Build expertise networks that matter.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-blue-100">
+                <div class="flex items-center mb-4">
+                    <span class="text-2xl mr-3">⭐</span>
+                    <h3 class="text-xl font-semibold text-gray-800">STAR Voting</h3>
+                </div>
+                <p class="text-gray-600">
+                    Score choices 0-5 stars, then automatic runoff between top two. More nuanced than yes/no voting.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-lg border border-yellow-100">
+                <div class="flex items-center mb-4">
+                    <span class="text-2xl mr-3">🔍</span>
+                    <h3 class="text-xl font-semibold text-gray-800">Complete Transparency</h3>
+                </div>
+                <p class="text-gray-600">
+                    Every decision is auditable. See exactly who influenced what, how votes flowed through trust networks.
+                </p>
+            </div>
+        </div>
+
+        <!-- Demo Status -->
+        <div class="text-center bg-gradient-to-r from-crowdvote-purple to-crowdvote-blue rounded-2xl p-8 text-white">
+            <h3 class="text-2xl font-bold mb-4">🚀 Live Demo Available</h3>
+            <p class="text-lg mb-4">
+                Join the Minions or Springfield communities and experience tag-based delegation in action!
+            </p>
+            <div class="text-sm opacity-90">
+                <strong>454 users</strong> • <strong>4 active decisions</strong> • <strong>Full STAR voting system</strong>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

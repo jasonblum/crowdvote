@@ -13,3 +13,5 @@ sqlparse==0.5.3
 typing-extensions==4.15.0
 whitenoise==6.9.0
 django-service-objects==0.7.1
+django-allauth==64.0.0
+wonderwords==2.2.0

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Discover Communities - CrowdVote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+    <div class="max-w-4xl mx-auto px-6">
+        <!-- Progress Indicator -->
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center space-x-4 mb-4">
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">✓</div>
+                <div class="w-16 h-1 bg-green-500"></div>
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">✓</div>
+                <div class="w-16 h-1 bg-crowdvote-blue"></div>
+                <div class="w-8 h-8 bg-crowdvote-blue rounded-full flex items-center justify-center text-white font-semibold">3</div>
+            </div>
+            <p class="text-gray-600">Email Verified → Profile Setup → <strong>Community Selection</strong></p>
+        </div>
+
+        <!-- Welcome Message -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">
+                🌍 Discover Communities
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Join communities where real democracy happens between elections. 
+                Vote directly or delegate to trusted experts on topics you care about.
+            </p>
+        </div>
+
+        <!-- Real Communities -->
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+            {% for data in community_data %}
+            <div class="bg-white rounded-xl p-8 shadow-lg border border-gray-200">
+                <div class="flex items-center mb-4">
+                    <span class="text-3xl mr-4">
+                        {% if "Minion" in data.community.name %}🍌
+                        {% elif "Springfield" in data.community.name %}🏭
+                        {% else %}🏛️{% endif %}
+                    </span>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">{{ data.community.name }}</h3>
+                        <p class="text-gray-600">{{ data.voting_member_count }} voting members • {{ data.member_count }} total</p>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-6">
+                    {{ data.community.description|truncatewords:25 }}
+                </p>
+                
+                <!-- Community Tags (placeholder for now) -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    {% if "Minion" in data.community.name %}
+                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">environmental</span>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">fiscal</span>
+                        <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">workplace</span>
+                    {% elif "Springfield" in data.community.name %}
+                        <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">safety</span>
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">business</span>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">zoning</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Application Status & Button -->
+                <div id="community-{{ data.community.id }}-status">
+                    {% if not is_authenticated %}
+                        <a href="{% url 'account_request_login_code' %}" 
+                           class="w-full inline-block text-center bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg">
+                            Login to Apply
+                        </a>
+                    {% elif data.user_status == 'member' %}
+                        <div class="w-full bg-green-100 text-green-800 font-semibold py-3 px-6 rounded-lg text-center">
+                            ✅ You're a Member!
+                        </div>
+                    {% elif data.user_status == 'pending' %}
+                        <div class="w-full bg-yellow-100 text-yellow-800 font-semibold py-3 px-6 rounded-lg text-center">
+                            ⏳ Application Pending
+                        </div>
+                    {% elif data.user_status == 'rejected' %}
+                        <button hx-post="{% url 'accounts:apply_to_community' data.community.id %}"
+                                hx-target="#community-{{ data.community.id }}-status"
+                                hx-swap="innerHTML"
+                                class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">
+                            🔄 Reapply
+                        </button>
+                    {% else %}
+                        <button hx-post="{% url 'accounts:apply_to_community' data.community.id %}"
+                                hx-target="#community-{{ data.community.id }}-status"
+                                hx-swap="innerHTML"
+                                class="w-full {% if 'Minion' in data.community.name %}bg-yellow-500 hover:bg-yellow-600{% elif 'Springfield' in data.community.name %}bg-green-600 hover:bg-green-700{% else %}bg-crowdvote-blue hover:bg-blue-700{% endif %} text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">
+                            Apply to Join {% if "Minion" in data.community.name %}🍌{% elif "Springfield" in data.community.name %}⚡{% else %}🏛️{% endif %}
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-2 text-center py-12">
+                <p class="text-gray-600 text-lg">No communities available yet.</p>
+                <p class="text-gray-500 mt-2">Communities will appear here as they're created.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Coming Soon -->
+        <div class="text-center bg-white rounded-xl p-8 shadow-lg border border-gray-200">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">🚧 Community Applications Coming Soon</h3>
+            <p class="text-gray-600 mb-6">
+                We're building the community application system! For now, you can explore our 
+                <strong>demo democracy system</strong> to see how CrowdVote works.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/admin/" 
+                   class="bg-crowdvote-blue hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">
+                    🔧 Explore Demo Data (Admin)
+                </a>
+                <a href="/" 
+                   class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">
+                    🏠 Back to Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Democracy Features Preview -->
+        <div class="mt-12 grid md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-4xl mb-3">🗳️</div>
+                <h4 class="font-semibold text-gray-800 mb-2">Vote or Delegate</h4>
+                <p class="text-gray-600 text-sm">Cast your own vote or delegate to trusted experts</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl mb-3">🏷️</div>
+                <h4 class="font-semibold text-gray-800 mb-2">Tag-Based Following</h4>
+                <p class="text-gray-600 text-sm">Follow different people on different topics</p>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl mb-3">🔍</div>
+                <h4 class="font-semibold text-gray-800 mb-2">Complete Transparency</h4>
+                <p class="text-gray-600 text-sm">See exactly how every decision was made</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
