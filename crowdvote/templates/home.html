@@ -1,151 +1,93 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Welcome to CrowdVote{% endblock %}
+{% block title %}CrowdVote - A Platform for Free Market Representation{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-    <!-- Hero Section -->
-    <div class="max-w-4xl mx-auto px-6 py-16">
-        <div class="text-center mb-16">
-            <!-- Logo/Brand -->
-            <div class="mb-8">
-                <h1 class="text-6xl font-bold text-crowdvote-blue mb-4">
-                    🗳️ CrowdVote
-                </h1>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    The Democracy App: Free-Market Representation for Real Communities
-                </p>
-            </div>
+<div class="relative min-h-screen bg-cover bg-center bg-no-repeat" style="background-image: url('{% static 'crowd.jpg' %}');">
+  <!-- Dark overlay for better text readability -->
+  <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+  
+  <!-- Header with just Docs link -->
+  <header class="absolute inset-x-0 top-0 z-50">
+    <nav aria-label="Global" class="flex items-center justify-end p-6 lg:px-8">
+      <div class="flex">
+        <a href="#" class="text-sm/6 font-semibold text-white hover:text-gray-300 transition-colors">
+          Docs <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </nav>
+  </header>
 
-            <!-- Tagline -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-blue-100">
-                <h2 class="text-3xl font-semibold text-crowdvote-purple mb-4">
-                    Real Democracy happens between elections.
-                </h2>
-                <p class="text-lg text-gray-700 leading-relaxed">
-                    Vote directly or delegate to trusted experts on specific topics. 
-                    Build influence through expertise, not campaign contributions.
-                </p>
-            </div>
-
-            <!-- Email Signup Form -->
-            <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200 max-w-md mx-auto">
-                <h3 class="text-2xl font-semibold text-gray-800 mb-6">
-                    Experience Democracy in Action
-                </h3>
-                <p class="text-gray-600 mb-6">
-                    Enter your email to receive a magic link and join the CrowdVote community
-                </p>
-                
-                <!-- Messages Display -->
-                {% if messages %}
-                    <div class="mb-6 space-y-3">
-                        {% for message in messages %}
-                            {% if message.tags == 'success' %}
-                                <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800">
-                                    <div class="flex">
-                                        <span class="text-green-500 mr-3">✉️</span>
-                                        <div>
-                                            <p class="font-medium">{{ message }}</p>
-                                            <p class="text-sm text-green-600 mt-1">
-                                                Check your email and click the link to sign in instantly!
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% elif message.tags == 'error' %}
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-                                    <div class="flex">
-                                        <span class="text-red-500 mr-3">⚠️</span>
-                                        <p class="font-medium">{{ message }}</p>
-                                    </div>
-                                </div>
-                            {% else %}
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800">
-                                    <div class="flex">
-                                        <span class="text-blue-500 mr-3">ℹ️</span>
-                                        <p class="font-medium">{{ message }}</p>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <form method="post" action="{% url 'accounts:request_magic_link' %}" class="space-y-4">
-                    {% csrf_token %}
-                    <div>
-                        <input type="email" 
-                               name="email" 
-                               placeholder="your.email@example.com"
-                               required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crowdvote-blue focus:border-transparent transition-all duration-200 text-lg">
-                    </div>
-                    <button type="submit" 
-                            class="w-full bg-crowdvote-blue hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
-                        Send Magic Link ✨
-                    </button>
-                </form>
-                
-                <p class="text-sm text-gray-500 mt-4">
-                    No passwords required. We'll send you a secure link to get started.
-                </p>
-            </div>
+  <!-- Hero Content -->
+  <div class="relative isolate px-6 pt-14 lg:px-8">
+    <div class="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+      <div class="text-center">
+        <h1 class="text-5xl font-semibold tracking-tight text-balance text-white sm:text-7xl">
+          CrowdVote
+        </h1>
+        <p class="mt-8 text-lg font-medium text-pretty text-gray-200 sm:text-xl/8">
+          A platform for Free Market Representation ...because Real Democracy happens between elections!
+        </p>
+        
+        <!-- Email Signup Form -->
+        <div class="mt-10 mx-auto max-w-md">
+          <!-- Messages Display -->
+          {% if messages %}
+              <div class="mb-6 space-y-3">
+                  {% for message in messages %}
+                      {% if message.tags == 'success' %}
+                          <div class="bg-green-50 bg-opacity-95 border border-green-200 rounded-lg p-4 text-green-800">
+                              <div class="flex">
+                                  <span class="text-green-500 mr-3">✉️</span>
+                                  <div>
+                                      <p class="font-medium">{{ message }}</p>
+                                      <p class="text-sm text-green-600 mt-1">
+                                          Check your email and click the link to sign in instantly!
+                                      </p>
+                                  </div>
+                              </div>
+                          </div>
+                      {% elif message.tags == 'error' %}
+                          <div class="bg-red-50 bg-opacity-95 border border-red-200 rounded-lg p-4 text-red-800">
+                              <div class="flex">
+                                  <span class="text-red-500 mr-3">⚠️</span>
+                                  <p class="font-medium">{{ message }}</p>
+                              </div>
+                          </div>
+                      {% else %}
+                          <div class="bg-blue-50 bg-opacity-95 border border-blue-200 rounded-lg p-4 text-blue-800">
+                              <div class="flex">
+                                  <span class="text-blue-500 mr-3">ℹ️</span>
+                                  <p class="font-medium">{{ message }}</p>
+                              </div>
+                          </div>
+                      {% endif %}
+                  {% endfor %}
+              </div>
+          {% endif %}
+          
+          <form method="post" action="{% url 'accounts:request_magic_link' %}" class="space-y-4">
+              {% csrf_token %}
+              <div>
+                  <input type="email" 
+                         name="email" 
+                         placeholder="your.email@example.com"
+                         required
+                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg bg-white bg-opacity-95">
+              </div>
+              <button type="submit" 
+                      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                  Send Magic Link ✨
+              </button>
+          </form>
+          
+          <p class="text-sm text-gray-200 mt-4">
+              No passwords required. We'll send you a secure link to get started.
+          </p>
         </div>
-
-        <!-- Features Grid -->
-        <div class="grid md:grid-cols-2 gap-8 mb-16">
-            <div class="bg-white rounded-xl p-6 shadow-lg border border-green-100">
-                <div class="flex items-center mb-4">
-                    <span class="text-2xl mr-3">🎯</span>
-                    <h3 class="text-xl font-semibold text-gray-800">Vote or Delegate</h3>
-                </div>
-                <p class="text-gray-600">
-                    Vote directly on issues you care about, or delegate to trusted experts on specific topics like "environmental" or "fiscal"
-                </p>
-            </div>
-
-            <div class="bg-white rounded-xl p-6 shadow-lg border border-purple-100">
-                <div class="flex items-center mb-4">
-                    <span class="text-2xl mr-3">🔗</span>
-                    <h3 class="text-xl font-semibold text-gray-800">Tag-Based Following</h3>
-                </div>
-                <p class="text-gray-600">
-                    Follow Mauricio on environmental issues and Joe on fiscal matters. Build expertise networks that matter.
-                </p>
-            </div>
-
-            <div class="bg-white rounded-xl p-6 shadow-lg border border-blue-100">
-                <div class="flex items-center mb-4">
-                    <span class="text-2xl mr-3">⭐</span>
-                    <h3 class="text-xl font-semibold text-gray-800">STAR Voting</h3>
-                </div>
-                <p class="text-gray-600">
-                    Score choices 0-5 stars, then automatic runoff between top two. More nuanced than yes/no voting.
-                </p>
-            </div>
-
-            <div class="bg-white rounded-xl p-6 shadow-lg border border-yellow-100">
-                <div class="flex items-center mb-4">
-                    <span class="text-2xl mr-3">🔍</span>
-                    <h3 class="text-xl font-semibold text-gray-800">Complete Transparency</h3>
-                </div>
-                <p class="text-gray-600">
-                    Every decision is auditable. See exactly who influenced what, how votes flowed through trust networks.
-                </p>
-            </div>
-        </div>
-
-        <!-- Demo Status -->
-        <div class="text-center bg-gradient-to-r from-crowdvote-purple to-crowdvote-blue rounded-2xl p-8 text-white">
-            <h3 class="text-2xl font-bold mb-4">🚀 Live Demo Available</h3>
-            <p class="text-lg mb-4">
-                Join the Minions or Springfield communities and experience tag-based delegation in action!
-            </p>
-            <div class="text-sm opacity-90">
-                <strong>454 users</strong> • <strong>4 active decisions</strong> • <strong>Full STAR voting system</strong>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

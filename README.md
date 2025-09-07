@@ -30,14 +30,9 @@ CrowdVote is a Django-based web application that enables communities to make dec
 
 ## The CrowdVote Vision
 
-For several years now, I've been daydreaming about building a free and Open Source web application to help people make decisions together. And I have two questions for you:
+CrowdVote brings a process I've been calling Social Democracy (as in "Social Media" …not the political ideology) to local communities such as condo associations, town councils, student governments, and anywhere else you might want to "crowdsource" decisions to a community of people.
 
-Could you use this?
-What would you change?
-
-I call it "CrowdVote", and it brings a process I've been calling Social Democracy (as in "Social Media" …not the political ideology) to local communities such as condo associations, town councils, student governments, and anywhere else you might want to "crowdsource" decisions to a community of people.
-
-Unlike a conventional, web-based polling application however, CrowdVote allows community members to then delegate their votes on to an Instant Runoff between one or more other members whose judgement they trust, whenever - and, specifically, on whichever issues they like.
+Unlike a conventional, web-based polling application, CrowdVote allows community members to delegate their votes on to an Instant Runoff between one or more other members whose judgement they trust, whenever - and, specifically, on whichever issues they like.
 
 This is done through tagging the decisions you are voting on with terms like "budget" or "environment", which allows other members of the community who trust your judgement on such issues, to then follow you (inherit your votes) on those tags.
 
@@ -104,17 +99,52 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under a Creat
 ## Installation
 
 ### Prerequisites
-- Python 3.11+
-- PostgreSQL 14+
-- Docker (optional but recommended)
+- Docker and Docker Compose
+- Git
 
-### Quick Start
+### Quick Start (Docker - Recommended)
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/crowdvote.git
+   git clone https://github.com/jasonblum/crowdvote.git
    cd crowdvote
    ```
+
+2. **Configure environment variables**
+   ```bash
+   # For development, the Docker setup works with defaults
+   # No .env file needed for basic Docker development
+   # (Docker Compose provides the database connection)
+   ```
+
+3. **Start the development environment**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Run initial setup**
+   ```bash
+   # Apply migrations
+   docker-compose exec web python manage.py migrate
+   
+   # Create superuser
+   docker-compose exec web python manage.py createsuperuser
+   
+   # Load demo data (optional but recommended)
+   docker-compose exec web python manage.py generate_dummy_data
+   ```
+
+5. **Visit the application**
+   - **Main app**: http://localhost:8000
+   - **Admin interface**: http://localhost:8000/admin
+
+### Alternative: Local Python Setup
+
+If you prefer to run without Docker:
+
+1. **Prerequisites**
+   - Python 3.11+
+   - PostgreSQL 14+
 
 2. **Set up virtual environment**
    ```bash
@@ -122,58 +152,38 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under a Creat
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Install uv and dependencies**
+3. **Install dependencies**
    ```bash
    # Install uv (fast Python package installer)
    curl -LsSf https://astral.sh/uv/install.sh | sh
-   # Or via Homebrew: brew install uv
    
    # Install dependencies
    uv pip install -r requirements.txt
    ```
 
-4. **Configure environment variables**
+4. **Configure database and run setup**
    ```bash
-   cp .env.example .env
-   # Edit .env with your database credentials and secret key
-   ```
-
-5. **Run migrations**
-   ```bash
+   # Configure environment (create .env file with your settings)
+   # See PRODUCTION_ENV_EXAMPLE.md for environment variable reference
+   
+   # Run migrations and setup
    python manage.py migrate
-   ```
-
-6. **Create superuser**
-   ```bash
    python manage.py createsuperuser
-   ```
-
-7. **Load sample data (optional)**
-   ```bash
-   python manage.py loaddata fixtures/sample_community.json
-   ```
-
-8. **Run the development server**
-   ```bash
+   python manage.py generate_dummy_data
    python manage.py runserver
    ```
 
-### Docker Setup
-
-```bash
-docker-compose up --build
-```
-
 ## Project Goals
 
-### 1. Live Demo with Minions 🎬
-We're building a fun, interactive demonstration where Minions vote on their daily lunch choices. This simulation will showcase:
-- Real-time voting and delegation
-- Dynamic vote inheritance trees
-- Daily referendums (what sandwich for lunch?)
-- Visual representation of democratic emergence
+### 1. Live Democracy Demonstration 🎬
+Experience a fully functional democratic system with real communities making actual decisions:
+- **Minion Collective**: Community governance decisions like "World Domination Meeting Schedule" and "Banana Budget Allocation"
+- **Springfield Town Council**: Municipal decisions including "Nuclear Safety Inspections" and "Donut Shop Zoning"
+- **Real-time voting and delegation**: See tag-based delegation in action
+- **Complete STAR voting**: Score choices 0-5 stars, then automatic runoff
+- **Transparent audit trails**: Track how votes flow through delegation networks
 
-Visit the live demo to see democracy in action!
+Visit http://localhost:8000 after setup to see 454+ users participating in real democratic processes!
 
 ### 2. One-Click Deploy 🚀
 Making CrowdVote accessible to non-technical community leaders through:

@@ -54,8 +54,15 @@ CrowdVote is a Django web application that enables communities to make decisions
 ### Project Structure
 ```
 crowdvote/
-├── security/         # Custom User Model
-TBD ...I haven't built the app yet but will come back to spell this out.
+├── accounts/         # User management, authentication, following relationships
+├── democracy/        # Communities, decisions, voting, STAR voting calculations
+├── shared/           # Shared utilities, BaseModel with UUID primary keys
+├── crowdvote/        # Main Django project (settings, URLs, templates)
+├── static/           # Static files (images, CSS, JS)
+├── staticfiles/      # Collected static files for production
+├── docs/             # Documentation and feature planning
+├── resources/        # Legacy code and reference materials (read-only)
+└── requirements.txt  # Python dependencies
 ```
 
 ### Settings Management
@@ -180,9 +187,10 @@ COPY . .
 - Remove obsolete `version` attribute from docker-compose.yml (Docker Compose v2+)
 
 ### Docker Development Workflow
-1. **Development vs Production**: 
-   - Use virtual environments for dependency management and requirements.txt generation
-   - Use Docker for consistent development and production deployment environments
+1. **Docker-First Development**: 
+   - Use Docker exclusively for both development and production
+   - All Python commands run inside containers via `docker-compose exec web`
+   - Consistent environment across all development machines and production
    - Keep separate `Dockerfile.dev` for development and `Dockerfile` for production
 
 2. **Container Configuration**:
@@ -206,7 +214,7 @@ Based on Railway's Django guide:
    SECRET_KEY=<generate a secure key>
    DEBUG=False
    ALLOWED_HOSTS=.railway.app
-   DJANGO_SETTINGS_MODULE=config.settings.production
+   DJANGO_SETTINGS_MODULE=crowdvote.settings
    ```
 
 2. **Dockerfile for Railway**:
@@ -221,7 +229,7 @@ Based on Railway's Django guide:
    COPY . .
    RUN python manage.py collectstatic --noinput
    EXPOSE 8000
-   CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+   CMD ["gunicorn", "crowdvote.wsgi:application", "--bind", "0.0.0.0:8000"]
    ```
 
 3. **Static Files**: Configure WhiteNoise in settings
@@ -262,22 +270,26 @@ Based on Railway's Django guide:
 
 ### Commands
 ```bash
-# Development
-python manage.py runserver
-python manage.py makemigrations
-python manage.py migrate
-python manage.py createsuperuser
+# Development (all commands run in Docker)
+docker-compose up -d                                    # Start development environment
+docker-compose exec web python manage.py runserver     # Development server (if needed manually)
+docker-compose exec web python manage.py makemigrations # Create migrations
+docker-compose exec web python manage.py migrate       # Apply migrations
+docker-compose exec web python manage.py createsuperuser # Create admin user
 
 # Testing
-pytest -v
-pytest --cov
+docker-compose exec web pytest -v
+docker-compose exec web pytest --cov
 
 # Code quality
-ruff check .
-ruff format .
+docker-compose exec web ruff check .
+docker-compose exec web ruff format .
 
 # Static files
-python manage.py collectstatic --noinput
+docker-compose exec web python manage.py collectstatic --noinput
+
+# Stop development environment
+docker-compose down
 ```
 
 ### Git Workflow
