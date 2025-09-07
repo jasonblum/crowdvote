@@ -12,7 +12,7 @@
   <header class="absolute inset-x-0 top-0 z-50">
     <nav aria-label="Global" class="flex items-center justify-end p-6 lg:px-8">
       <div class="flex">
-        <a href="#" class="text-sm/6 font-semibold text-white hover:text-gray-300 transition-colors">
+        <a href="{% url 'docs' %}" class="text-sm/6 font-semibold text-white hover:text-gray-300 transition-colors">
           Docs <span aria-hidden="true">→</span>
         </a>
       </div>
@@ -23,11 +23,13 @@
   <div class="relative isolate px-6 pt-14 lg:px-8">
     <div class="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
       <div class="text-center">
-        <h1 class="text-5xl font-semibold tracking-tight text-balance text-white sm:text-7xl">
-          CrowdVote
-        </h1>
+        <!-- CrowdVote Logo -->
+        <div class="mb-4">
+          <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-20 sm:h-24 lg:h-28 mx-auto" style="mix-blend-mode: multiply;" />
+        </div>
         <p class="mt-8 text-lg font-medium text-pretty text-gray-200 sm:text-xl/8">
-          A platform for Free Market Representation ...because Real Democracy happens between elections!
+          A platform for Free Market Representation<br/>
+          (...because <i>Real Democracy</i> happens between elections!)
         </p>
         
         <!-- Email Signup Form -->

@@ -11,3 +11,11 @@ def home(request):
     if not settings.DEBUG:
         return render(request, 'under_construction.html')
     return render(request, 'home.html')
+
+
+def docs(request):
+    """
+    Public documentation page with CrowdVote overview, documentation, and FAQs.
+    Accessible without authentication.
+    """
+    return render(request, 'docs.html')

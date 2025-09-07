@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CrowdVote Documentation{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-white">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center py-6">
+        <div class="flex items-center">
+          <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-8 mr-4" />
+          <h1 class="text-2xl font-bold text-gray-900">Documentation</h1>
+        </div>
+        <nav class="flex space-x-8">
+          <a href="{% url 'home' %}" class="text-gray-600 hover:text-gray-900">Home</a>
+          <a href="#overview" class="text-gray-600 hover:text-gray-900">Overview</a>
+          <a href="#documentation" class="text-gray-600 hover:text-gray-900">Documentation</a>
+          <a href="#faqs" class="text-gray-600 hover:text-gray-900">FAQs</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="flex">
+      <!-- Table of Contents Sidebar -->
+      <div class="w-64 flex-shrink-0 mr-8">
+        <div class="sticky top-8">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Table of Contents</h2>
+          <nav class="space-y-2">
+            <a href="#overview" class="block text-blue-600 hover:text-blue-800 py-1">Overview</a>
+            <a href="#documentation" class="block text-blue-600 hover:text-blue-800 py-1">Documentation</a>
+            <a href="#faqs" class="block text-blue-600 hover:text-blue-800 py-1">FAQs</a>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 max-w-4xl">
+        
+        <!-- Overview Section -->
+        <section id="overview" class="mb-16">
+          <h2 class="text-3xl font-bold text-gray-900 mb-8">Overview</h2>
+          
+          <!-- Definition Box -->
+          <div class="bg-blue-50 border-l-4 border-blue-400 p-6 mb-8">
+            <div class="text-sm text-gray-600 mb-2">Definition and Usage</div>
+            <div class="font-mono text-lg">
+              <strong>crowd•vote</strong> /ˈkraʊdvəʊt/ ▸ v.
+            </div>
+            <p class="mt-2 text-gray-700">
+              To crowdsource decisions to an instant runoff between members of a community, who are then free 
+              to crowdsource their votes on to each other, whenever, and on whichever issues they like -- 
+              thereby effecting within their community, a free marketplace in which members can compete to 
+              represent others' interests, socially and unregulated by traditional electoral processes and cycles.
+            </p>
+            <p class="mt-2 text-sm text-gray-600">
+              <em>Example:</em> 'The candidate pledged to crowdvote every official decision to her constituents.'
+            </p>
+            <p class="mt-2 text-xs text-gray-500">
+              ⎻ORIGIN 2007 http://CrowdVote.com (CC BY-SA 4.0)
+            </p>
+          </div>
+
+          <div class="prose prose-lg max-w-none">
+            <p class="text-xl text-gray-600 mb-6">
+              For several years now, I've been daydreaming about building a free and Open Source web application 
+              to help people make decisions together. And I have two questions for you:
+            </p>
+            
+            <ol class="text-lg font-medium text-gray-900 mb-8">
+              <li>Could you use this?</li>
+              <li>What would you change?</li>
+            </ol>
+
+            <p>
+              I call it "CrowdVote", and it brings a process I've been calling <strong>Social Democracy</strong> 
+              (as in "Social Media" …not the political ideology) to local communities such as condo associations, 
+              town councils, student governments, and anywhere else you might want to "crowdsource" decisions to 
+              a community of people.
+            </p>
+
+            <p>
+              Unlike a conventional, web-based polling application however, CrowdVote allows community members to 
+              then delegate their votes on to an Instant Runoff between one or more other members whose judgement 
+              they trust, <em>whenever -</em> and, specifically, <em>on whichever issues they like</em>.
+            </p>
+
+            <p>
+              This is done through <strong>tagging</strong> the decisions you are voting on with terms like 
+              "<em>budget</em>" or "<em>environment</em>", which allows other members of the community who trust 
+              your judgement on such issues, to then <em>follow you</em> (inherit your votes) on those tags.
+            </p>
+
+            <p>
+              Because votes (and their tags) are transitive, the people from whom you inherit your votes may be 
+              inheriting theirs from someone else, and they from someone else, and so on.
+            </p>
+
+            <p>
+              Trees of influence can emerge organically and evolve to more accurately reflect community sentiment 
+              in real time, rather than only once every election cycle.
+            </p>
+
+            <blockquote class="text-xl font-medium text-center my-8 py-4 border-l-4 border-blue-500 pl-6 bg-blue-50">
+              …because Real Democracy happens between elections.
+            </blockquote>
+
+            <h3 class="text-2xl font-bold mt-12 mb-6">A Concrete Example</h3>
+            
+            <p>
+              Say a condo board will decide next Tuesday what color to paint the community room.
+            </p>
+
+            <p>
+              Mary is a board member, and wants to crowdsource her decision on CrowdVote, along with any specific 
+              color choices, whether or not folks can write in their own colors, supporting documentation like 
+              color codes/swatches, contractor proposals, etc…
+            </p>
+
+            <p>
+              Her neighbor Jack sees Mary's published question, and responds by casting a Ranked Choice ballot: 
+              [ '<em>Cathedral Gray</em>', '<em>Aqua Chiffon</em>', '<em>Oceanside</em>' ]. And if Jack wants to 
+              encourage other members of the community to follow him (again, to inherit his ballot) …he'll want 
+              to take a moment to further tag Mary's decision with terms he feels characterize her question and, 
+              more importantly, on which others in the community can follow him: 
+              [ "<em>maintenance</em>", "<em>beautification</em>", "<em>community room</em>" ].
+            </p>
+
+            <p>
+              Now, if their neighbor Sophia is out of town or fails to cast a ballot before next Tuesday for 
+              whatever reason, CrowdVote can attempt to calculate a ballot on her behalf …but only if she has 
+              previously identified in her profile other community members whose judgement she trusts sufficiently 
+              to follow their positions on decisions like this one. Moreover, she may be inheriting votes from lots 
+              of people, on a variety of matters. She may follow Mary on "<em>environmental</em>" issues, Jack on 
+              "<em>maintenance</em>" and "<em>budget</em>," and also Susan on "<em>budget</em>". …CrowdVote just 
+              figures out who's following whom, on which issues, and runs them all through an Instant Runoff to 
+              come up with Sophia's ballot, which she is of course free to override anytime before Tuesday by 
+              logging in to CrowdVote and casting her own.
+            </p>
+
+            <blockquote class="text-xl font-medium text-center my-8 py-4 border-l-4 border-green-500 pl-6 bg-green-50">
+              CrowdVote = Free Market Representation.
+            </blockquote>
+
+            <p>
+              …Rather than tying Representation to a fixed term in office, CrowdVote does something not unlike 
+              what Social Media has done to traditional media: it gives everyone a voice, even if it's only a 
+              re-tweet, +1, Pin or a Like, …all of which are functionally analogous, in the CrowdVote marketplace, 
+              to inheriting a vote.
+            </p>
+
+            <p>
+              People seeking to expand their influence in the community, like Jack above, will <strong>compete</strong> 
+              for followers by voting and tagging decisions thoughtfully, perhaps in conjunction with blogging and 
+              tweeting or otherwise promoting a reputation for expertise in the issues they care about. Lobbyists 
+              will turn their attention to those members with the most followers at any given time. Nobody has to 
+              wait until the next election to be heard. And all of this happens right out of the gate, because when 
+              you first fire CrowdVote up and begin publishing decisions to be voted on, your constituents will all 
+              effectively default to inheriting your vote, leaving you in a position of voting in accordance with 
+              the wishes of people who are all just inheriting your vote…but who are all free now to cast their own 
+              vote, or to follow someone else. They're not stuck with you until the next election!
+            </p>
+
+            <p>
+              Now, CrowdVote won't be able to enforce being used in any particular way. If you run for office on 
+              the pledge to CrowdVote all your decisions and then neglect to do so, or if your community decides 
+              to use CrowdVote itself in lieu of electing representatives at all, CrowdVote has no way to follow 
+              up on what happens after a decision's voting period closes. What CrowdVote <em>can</em> do, however, 
+              is make all data completely transparent and easily queried and audited through a friendly REST-ful API. 
+              Anyone can <em>re-run the numbers</em> anytime they like. And the calculation and tallying of every 
+              ballot is easily delineated in verbose tally reports. Finally, CrowdVote also provides a mechanism 
+              to verify everyone's membership in the community, while preserving the anonymity of the relationship 
+              between their identity and their voting record, thereby allowing voters to remain anonymous, if they like.
+            </p>
+
+            <h3 class="text-2xl font-bold mt-12 mb-6">Technology & Approach</h3>
+            
+            <p>
+              Key characteristics of the project: Social Democracy (as in "Social Media"), STAR Voting 
+              (Score Then Automatic Runoff) as opposed to First-Past-the-Post, folksonomy, Python, Django, 
+              Open Source, Creative Commons, REST API, and modern web technologies.
+            </p>
+
+            <div class="bg-gray-50 p-6 rounded-lg mt-8">
+              <h4 class="text-lg font-semibold mb-4">Key Questions for You:</h4>
+              <ol class="list-decimal list-inside space-y-2">
+                <li>Could you use CrowdVote in your community?</li>
+                <li>What would you change?</li>
+              </ol>
+            </div>
+
+            <div class="bg-blue-50 p-6 rounded-lg mt-8">
+              <h4 class="text-lg font-semibold mb-4">Get Involved</h4>
+              <p>
+                I really appreciate any feedback or words of encouragement at 
+                <strong>jason@CrowdVote.com</strong>, <strong>@CrowdVote</strong> or 
+                <strong>Facebook/CrowdVote</strong>! Beyond just being Open Sourced, I'd love to see this built 
+                such that any non-technical community leader could just deploy their own instance to the cloud 
+                with a simple click of a button.
+              </p>
+            </div>
+
+            <div class="mt-8 text-sm text-gray-600">
+              <p>
+                <strong>License:</strong> CrowdVote and all ideas expressed above by Jason Blum are licensed 
+                under a <a href="https://creativecommons.org/licenses/by-sa/4.0/" class="text-blue-600 hover:underline">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Documentation Section -->
+        <section id="documentation" class="mb-16">
+          <h2 class="text-3xl font-bold text-gray-900 mb-8">Documentation</h2>
+          <div class="prose prose-lg max-w-none">
+            <p class="text-gray-600">
+              Technical documentation is coming soon. For now, check out our 
+              <a href="https://github.com/jasonblum/crowdvote" class="text-blue-600 hover:underline">GitHub repository</a> 
+              for installation instructions and technical details.
+            </p>
+          </div>
+        </section>
+
+        <!-- FAQs Section -->
+        <section id="faqs" class="mb-16">
+          <h2 class="text-3xl font-bold text-gray-900 mb-8">FAQs</h2>
+          <div class="prose prose-lg max-w-none">
+            <p class="text-gray-600">
+              Frequently asked questions will be added here based on community feedback.
+            </p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
