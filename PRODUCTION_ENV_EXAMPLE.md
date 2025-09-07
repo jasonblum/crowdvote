@@ -17,15 +17,18 @@ DATABASE_URL=postgresql://user:password@host:port/database
 
 ## Email Configuration
 
-### SendGrid (Current Setup - 100 emails/day free, perfect for demo)
+### SendPulse (Current Setup - 15,000 emails/month free, perfect for beta)
 ```
-EMAIL_HOST=smtp.sendgrid.net
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=apikey
-EMAIL_HOST_PASSWORD=your-sendgrid-api-key
-DEFAULT_FROM_EMAIL=noreply@yourdomain.com
+SENDPULSE_API_ID=your-sendpulse-api-id
+SENDPULSE_API_SECRET=your-sendpulse-api-secret
+SENDPULSE_FROM_NAME=CrowdVote
+DEFAULT_FROM_EMAIL=noreply@crowdvote.com
 ```
+
+To get your SendPulse credentials:
+1. Log into your SendPulse account
+2. Go to Account Settings > API tab  
+3. Copy your ID and Secret values
 
 ### Future Scaling Options
 

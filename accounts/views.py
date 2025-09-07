@@ -12,12 +12,14 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.core.mail import send_mail
+import logging
 from django.template.loader import render_to_string
 from django.conf import settings
 from .utils import generate_safe_username, validate_username
 from .models import MagicLink
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -124,34 +126,22 @@ def check_username_availability(request):
     """
     HTMX endpoint to check username availability in real-time.
     
-    Returns JSON response with availability status and helpful messages.
+    Returns HTML response with availability status and helpful messages.
     Used for live validation as users type their desired username.
     """
     username = request.POST.get('username', '').strip()
     
     if not username:
-        return JsonResponse({
-            'available': False,
-            'message': '',
-            'class': ''
-        })
+        return HttpResponse('<span class="text-gray-500"></span>')
     
     # Exclude current user from availability check if they're logged in
     exclude_user = request.user if request.user.is_authenticated else None
     is_valid, error_message = validate_username(username, exclude_user=exclude_user)
     
     if is_valid:
-        return JsonResponse({
-            'available': True,
-            'message': f'✅ "{username}" is available!',
-            'class': 'text-green-600'
-        })
+        return HttpResponse(f'<span class="text-green-600">✅ "{username}" is available!</span>')
     else:
-        return JsonResponse({
-            'available': False,
-            'message': f'❌ {error_message}',
-            'class': 'text-red-600'
-        })
+        return HttpResponse(f'<span class="text-red-600">❌ {error_message}</span>')
 
 
 @require_http_methods(["POST"])
@@ -488,10 +478,32 @@ The CrowdVote Team
         )
         
     except Exception as e:
-        messages.error(
-            request,
-            "We couldn't send your magic link right now. Please try again in a few minutes."
-        )
+        # Log the specific error for debugging
+        logger.error(f"Magic link email failed for {email}: {e}")
+        
+        # Check if this might be a rate limiting issue
+        error_str = str(e).lower()
+        if 'rate limit' in error_str or '429' in error_str or 'quota' in error_str:
+            from django.utils.safestring import mark_safe
+            messages.error(
+                request,
+                mark_safe('⚠️ We\'ve reached our daily email limit. Please try again tomorrow or contact <a href="mailto:support@crowdvote.com" class="text-red-600 hover:text-red-800 underline">support@crowdvote.com</a> for immediate assistance.'),
+                extra_tags='safe'
+            )
+        elif 'authentication' in error_str or '401' in error_str:
+            from django.utils.safestring import mark_safe
+            messages.error(
+                request,
+                mark_safe('⚠️ Email service temporarily unavailable. Please contact <a href="mailto:support@crowdvote.com" class="text-red-600 hover:text-red-800 underline">support@crowdvote.com</a> for assistance.'),
+                extra_tags='safe'
+            )
+        else:
+            from django.utils.safestring import mark_safe
+            messages.error(
+                request,
+                mark_safe('📧 We couldn\'t send your magic link right now. Please try again in a few minutes or contact <a href="mailto:support@crowdvote.com" class="text-red-600 hover:text-red-800 underline">support@crowdvote.com</a> if the problem persists.'),
+                extra_tags='safe'
+            )
     
     return redirect('home')
 

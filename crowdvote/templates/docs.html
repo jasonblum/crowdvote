@@ -23,6 +23,17 @@
     </div>
   </header>
 
+  <!-- Support Section -->
+  <div class="bg-blue-50 border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="text-center">
+        <p class="text-sm text-gray-600">
+          Need help? For support, email <a href="mailto:support@crowdvote.com" class="text-blue-600 hover:text-blue-800 font-medium">support@crowdvote.com</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <div class="flex">
@@ -33,7 +44,20 @@
           <nav class="space-y-2">
             <a href="#overview" class="block text-blue-600 hover:text-blue-800 py-1">Overview</a>
             <a href="#documentation" class="block text-blue-600 hover:text-blue-800 py-1">Documentation</a>
-            <a href="#faqs" class="block text-blue-600 hover:text-blue-800 py-1">FAQs</a>
+            <a href="#faqs" class="block text-blue-600 hover:text-blue-800 py-1 font-medium">FAQs</a>
+            <div class="ml-4 space-y-1">
+              <a href="#faq-lobbyists" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• What is a lobbyist?</a>
+              <a href="#faq-ties" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• What happens if there is a tie?</a>
+              <a href="#faq-vote-counting" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• How are votes counted?</a>
+              <a href="#faq-security" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• How secure is CrowdVote?</a>
+              <a href="#faq-publish-decisions" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• Who gets to publish decisions?</a>
+              <a href="#faq-influence-score" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• What does the influence score mean?</a>
+              <a href="#faq-representatives-role" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• Don't representatives do more than vote?</a>
+              <a href="#faq-why-switch" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• Why should my community switch?</a>
+              <a href="#faq-finding-people" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• How do I find people to follow?</a>
+              <a href="#faq-how-to-get" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• How can I get CrowdVote?</a>
+              <a href="#faq-mob-rule" class="block text-blue-500 hover:text-blue-700 py-1 text-sm">• Isn't this just mob rule?</a>
+            </div>
           </nav>
         </div>
       </div>
@@ -66,18 +90,10 @@
           </div>
 
           <div class="prose prose-lg max-w-none">
-            <p class="text-xl text-gray-600 mb-6">
-              For several years now, I've been daydreaming about building a free and Open Source web application 
-              to help people make decisions together. And I have two questions for you:
-            </p>
-            
-            <ol class="text-lg font-medium text-gray-900 mb-8">
-              <li>Could you use this?</li>
-              <li>What would you change?</li>
-            </ol>
 
+            
             <p>
-              I call it "CrowdVote", and it brings a process I've been calling <strong>Social Democracy</strong> 
+              crowdvote it brings a process I've been calling <strong>Social Democracy</strong> 
               (as in "Social Media" …not the political ideology) to local communities such as condo associations, 
               town councils, student governments, and anywhere else you might want to "crowdsource" decisions to 
               a community of people.
@@ -109,7 +125,7 @@
               …because Real Democracy happens between elections.
             </blockquote>
 
-            <h3 class="text-2xl font-bold mt-12 mb-6">A Concrete Example</h3>
+            <h3 class="text-2xl font-bold mt-12 mb-6">A Concrete Example:</h3>
             
             <p>
               Say a condo board will decide next Tuesday what color to paint the community room.
@@ -230,10 +246,10 @@
           <h2 class="text-3xl font-bold text-gray-900 mb-8">FAQs</h2>
           <div class="prose prose-lg max-w-none">
             
-            <div class="space-y-8">
+            <div class="space-y-8 divide-y divide-gray-300">
               <!-- FAQ 1 -->
               <div class="bg-gray-50 p-6 rounded-lg">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                <h3 id="faq-lobbyists" class="text-xl font-semibold text-gray-900 mb-4">
                   What is a lobbyist? (… Or why are some members' votes not counted?)
                 </h3>
                 <p class="text-gray-700 leading-relaxed">
@@ -245,13 +261,514 @@
               </div>
 
               <!-- FAQ 2 -->
-              <div class="bg-gray-50 p-6 rounded-lg">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-ties" class="text-xl font-semibold text-gray-900 mb-4">
                   What happens if there is a tie between two or more choices from the people I'm following?
                 </h3>
                 <p class="text-gray-700 leading-relaxed">
                   On your profile page, where you identify members you are following, the order in which they are listed is used to break any ties. So for instance, if the decision is whether to paint the community room red or blue, and you're following only two people: José and Elizabeth, and José voted red, and Elizabeth voted blue, then the choice of whomever is listed earlier among the people you're following breaks the tie.
                 </p>
+              </div>
+
+              <!-- FAQ 3 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-vote-counting" class="text-xl font-semibold text-gray-900 mb-4">
+                  How are votes counted?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    CrowdVote uses a sophisticated real-time vote calculation system that continuously monitors for changes and updates results automatically. This ensures complete transparency and eliminates surprises on voting day.
+                  </p>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Continuous Monitoring System</h4>
+                  <p>
+                    A background monitoring service constantly checks for any changes that could affect vote outcomes, including:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>New votes cast by community members</li>
+                    <li>Changes to existing votes or vote tags</li>
+                    <li>Updates to delegation relationships (who follows whom)</li>
+                    <li>Modifications to delegation tags (topic-specific following)</li>
+                  </ul>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Automatic Recalculation Process</h4>
+                  <p>
+                    When the system detects any change, it immediately triggers a comprehensive recalculation process:
+                  </p>
+                  <ol class="list-decimal list-inside ml-4 space-y-2">
+                    <li><strong>Community Iteration:</strong> The system examines all communities with active decisions</li>
+                    <li><strong>Decision Processing:</strong> For each community, it reviews all currently open decisions</li>
+                    <li><strong>Member Analysis:</strong> For each decision, it processes every community member</li>
+                    <li><strong>Recursive Vote Calculation:</strong> For members who haven't voted directly, the system recursively calculates their inherited votes through their delegation chains</li>
+                    <li><strong>Final Tallying:</strong> All votes (direct and calculated) are tallied using the STAR voting method</li>
+                  </ol>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Real-Time Community Sentiment</h4>
+                  <p class="font-medium text-blue-800">
+                    This creates a revolutionary feature: <em>real-time community sentiment tracking</em>.
+                  </p>
+                  <p>
+                    Unlike traditional voting where results are hidden until polls close, CrowdVote allows everyone to see how their community feels about each issue as opinions develop. This means:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>No surprises:</strong> Community members can see the direction votes are heading</li>
+                    <li><strong>Informed discussions:</strong> Real data enables better community conversations</li>
+                    <li><strong>Dynamic engagement:</strong> Members can see the impact of their participation immediately</li>
+                    <li><strong>No need for pollsters:</strong> The community sentiment is always visible and accurate</li>
+                  </ul>
+                  
+                  <p class="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <strong>Key Benefit:</strong> By eliminating the mystery around vote outcomes, CrowdVote transforms voting from a guessing game into a transparent, data-driven community process where everyone can track the collective will in real time.
+                  </p>
+                </div>
+              </div>
+              
+              <!-- FAQ 4 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-security" class="text-xl font-semibold text-gray-900 mb-4">
+                  How secure is CrowdVote?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    CrowdVote employs multiple layers of security, combining standard web application security practices with revolutionary transparency features that make fraud virtually impossible.
+                  </p>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Technical Security Measures</h4>
+                  <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>SSL/TLS Encryption:</strong> All data transmission is secured with industry-standard SSL certificates</li>
+                    <li><strong>Railway Cloud Security:</strong> Hosted on Railway's secure cloud infrastructure with enterprise-grade protection</li>
+                    <li><strong>Django Security Framework:</strong> Built on Django's robust security foundation including CSRF protection, SQL injection prevention, and XSS protection</li>
+                    <li><strong>Secure Authentication:</strong> Magic link authentication eliminates password vulnerabilities</li>
+                    <li><strong>Database Security:</strong> PostgreSQL database with encrypted connections and secure access controls</li>
+                    <li><strong>Regular Updates:</strong> Automatic security updates and dependency monitoring</li>
+                  </ul>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Transparency-Based Security</h4>
+                  <p class="font-medium text-blue-800">
+                    CrowdVote's most powerful security feature is complete transparency, making fraud practically impossible.
+                  </p>
+                  
+                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 my-4">
+                    <h5 class="font-semibold text-blue-900 mb-2">Real-Time Verification</h5>
+                    <ul class="list-disc list-inside text-blue-800 space-y-1">
+                      <li>Every community member can see their own vote reflected in real-time</li>
+                      <li>Vote tallies update instantly as the community participates</li>
+                      <li>Delegation chains are visible, showing exactly how votes flow through the network</li>
+                      <li>Any discrepancies would be immediately noticed by affected members</li>
+                    </ul>
+                  </div>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Audit Trail & Verification</h4>
+                  <p>
+                    For ultimate transparency and security verification:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>Downloadable Snapshots:</strong> Decision reports include options to download complete data snapshots</li>
+                    <li><strong>Independent Verification:</strong> Anyone can grab copies of the vote data to verify results independently</li>
+                    <li><strong>Complete Audit Trails:</strong> Every vote, delegation change, and calculation is logged and traceable</li>
+                    <li><strong>Open Source Transparency:</strong> The calculation algorithms are open source and verifiable</li>
+                  </ul>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Why Fraud is Nearly Impossible</h4>
+                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                    <p class="text-green-800">
+                      <strong>Traditional voting systems</strong> rely on secrecy and trust in institutions. <strong>CrowdVote</strong> relies on transparency and real-time verification by the community itself.
+                    </p>
+                  </div>
+                  
+                  <p class="mt-4">
+                    Since every member can verify their own participation and see results update in real-time, any attempt to manipulate votes would be immediately detected by the affected parties. This creates a self-auditing system where the community itself is the best security mechanism.
+                  </p>
+                  
+                  <div class="mt-4 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                    <p class="text-yellow-800">
+                      <strong>Security Tip:</strong> We encourage community members to download data snapshots regularly during important decisions for their own records and peace of mind.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- FAQ 5 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-publish-decisions" class="text-xl font-semibold text-gray-900 mb-4">
+                  Who gets to publish decisions?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    <strong>Community Managers</strong> have the authority to publish decisions for voting. This ensures that decisions are properly formatted, clearly presented, and appropriate for community consideration.
+                  </p>
+                  
+                  <p>
+                    However, many managers welcome suggestions from community members about topics that should be put to a vote. The collaborative approach often leads to better decisions that truly reflect community interests.
+                  </p>
+                  
+                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-4">
+                    <h4 class="font-semibold text-blue-900 mb-2">How to Suggest a Decision</h4>
+                    <p class="text-blue-800">
+                      If you have an idea for a community decision, reach out to your community managers. Most are happy to work with members to craft well-structured decisions that benefit everyone.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- FAQ 6 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-influence-score" class="text-xl font-semibold text-gray-900 mb-4">
+                  What does the influence score mean?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    Just like followers on social media or stars on GitHub projects, CrowdVote displays an <strong>influence score</strong> next to each member's avatar showing their total reach within the community.
+                  </p>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">How Influence is Calculated</h4>
+                  <p>
+                    Your influence score represents the total number of people whose votes you can potentially influence through delegation chains:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>Direct followers:</strong> People who follow you directly</li>
+                    <li><strong>Nested followers:</strong> People who follow someone who follows you (and so on)</li>
+                    <li><strong>Tag-specific influence:</strong> Your influence on particular topics like "budget" or "environment"</li>
+                  </ul>
+                  
+                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 my-4">
+                    <h5 class="font-semibold text-blue-900 mb-2">Example: Cascade Influence</h5>
+                    <p class="text-blue-800">
+                      If Alice follows you, and Bob follows Alice, and Carol follows Bob, then your influence score includes Alice, Bob, and Carol – even though you only have one direct follower (Alice). Your voice reaches all three through the delegation network.
+                    </p>
+                  </div>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Detailed Influence Breakdown</h4>
+                  <p>
+                    On each member's profile page, you can see comprehensive influence analytics:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li><strong>Direct vs. Total followers:</strong> See immediate followers vs. complete network reach</li>
+                    <li><strong>Influence by topic:</strong> Your reach on specific tags like "environmental" or "fiscal"</li>
+                    <li><strong>Network visualization:</strong> Visual representation of your delegation network</li>
+                    <li><strong>Trending influence:</strong> How your influence is growing or changing over time</li>
+                  </ul>
+                  
+                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 mt-4">
+                    <h5 class="font-semibold text-green-900 mb-2">Building Influence</h5>
+                    <p class="text-green-800">
+                      High influence scores are earned through thoughtful participation, expertise demonstration, and building trust within your community. It's a meritocracy based on the value you provide to fellow members.
+                    </p>
+                  </div>
+                  
+                  <p class="mt-4 text-sm text-gray-600 italic">
+                    This creates a natural incentive for members to participate constructively and build expertise in areas they care about.
+                  </p>
+                </div>
+              </div>
+              
+              <!-- FAQ 7 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-representatives-role" class="text-xl font-semibold text-gray-900 mb-4">
+                  But don't elected representatives do more than just vote?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    <strong>Absolutely!</strong> CrowdVote doesn't necessarily eliminate representatives or change most of what they do. Elections, campaigns, legislative drafting, constituent services, and advocacy all continue exactly as before.
+                  </p>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">What Representatives Continue To Do</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Draft Legislation:</strong> Research, write, and propose bills and policies</li>
+                    <li><strong>Advocate for Districts:</strong> Champion local interests and priorities</li>
+                    <li><strong>Constituent Services:</strong> Help individuals navigate government bureaucracy</li>
+                    <li><strong>Committee Work:</strong> Investigate issues, hold hearings, and oversee agencies</li>
+                    <li><strong>Coalition Building:</strong> Work across party lines to build support for initiatives</li>
+                    <li><strong>Public Communication:</strong> Educate constituents about complex issues</li>
+                  </ul>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">What Changes: Accountability and Transparency</h4>
+                  <p>
+                    The key difference is that representatives now work <em>knowing their constituents will cast the actual votes</em>. This transforms the incentive structure:
+                  </p>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>No Back-Room Deals:</strong> Representatives can't promise votes they don't control</li>
+                    <li><strong>Constituent-Focused Legislation:</strong> They'll only invest time in bills their constituents will actually support</li>
+                    <li><strong>True Accountability:</strong> Campaign promises must align with voting records that constituents directly control</li>
+                    <li><strong>Enhanced Transparency:</strong> The entire process becomes more open and verifiable</li>
+                  </ul>
+
+                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-6">
+                    <h5 class="font-semibold text-blue-900 mb-2">The Supreme Court Analogy</h5>
+                    <p class="text-blue-800">
+                      Consider the Supreme Court: Justices continue to review petitions, hear oral arguments, write opinions, and shape legal precedent through their reasoning. These remain enormously impactful lifetime appointments with tremendous influence over American law.
+                    </p>
+                    <p class="text-blue-800 mt-2">
+                      <strong>The only difference would be that when it comes time for the final vote</strong> – the moment that determines whether a case is decided 5-4 or 6-3 – <em>that vote is too important and impactful to trust to anyone but the People.</em>
+                    </p>
+                  </div>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Enhanced Democratic Governance</h4>
+                  <p>
+                    Rather than diminishing the role of elected officials, CrowdVote enhances democratic governance by:
+                  </p>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Preserving Expertise:</strong> Professional legislators continue their specialized work</li>
+                    <li><strong>Increasing Responsiveness:</strong> Representatives stay closely aligned with constituent preferences</li>
+                    <li><strong>Eliminating Corruption:</strong> Special interests can't "purchase" votes that representatives don't control</li>
+                    <li><strong>Enabling Real Democracy:</strong> The people retain ultimate decision-making power</li>
+                  </ul>
+
+                  <p class="mt-4 font-medium">
+                    <strong>Bottom line:</strong> Representatives keep doing everything that makes them valuable to democracy – it's just that the final vote, the moment that actually decides outcomes, belongs to the people they represent.
+                  </p>
+                </div>
+              </div>
+
+              <!-- FAQ 8 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-why-switch" class="text-xl font-semibold text-gray-900 mb-4">
+                  Why should my community switch to CrowdVote?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    CrowdVote transforms community decision-making by creating a more engaged, responsive, and representative democratic process. Here are the key benefits your community will experience:
+                  </p>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🏘️ Community Engagement Benefits</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Gets Neighbors Talking Again:</strong> CrowdVote naturally encourages community members to discuss issues, share expertise, and build relationships as they decide whom to follow on different topics</li>
+                    <li><strong>Increases Participation:</strong> Members who might not vote directly can still participate by delegating to trusted neighbors, dramatically increasing community engagement</li>
+                    <li><strong>Builds Trust Networks:</strong> The system rewards expertise and thoughtful decision-making, helping communities identify and elevate their most knowledgeable members</li>
+                    <li><strong>Reduces Apathy:</strong> When people can see their vote matters and can change their mind anytime, democratic participation becomes more meaningful</li>
+                  </ul>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🗳️ Electoral Advantages</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Unbeatable Campaign Promise:</strong> Candidates who pledge to CrowdVote their decisions create an irresistible value proposition – voters get the best of both worlds</li>
+                    <li><strong>Reduced Electoral Risk:</strong> Why vote for someone's opponent when you can follow that opponent on CrowdVote but retain the ability to change your mind without waiting for the next election?</li>
+                    <li><strong>True Accountability:</strong> Representatives who CrowdVote their decisions can't break campaign promises or make back-room deals</li>
+                    <li><strong>Eliminates "Lesser of Two Evils":</strong> Voters can support candidates while maintaining direct control over actual decisions</li>
+                  </ul>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🌍 Reflects How Influence Actually Works</h4>
+                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                    <p class="text-green-800">
+                      <strong>CrowdVote mirrors real life:</strong> We're constantly influenced by people who are influenced by other people. You might buy a book because Oprah recommended it. You might see a movie your friend suggested after they read a review. You trust your mechanic's advice because they've built expertise over years.
+                    </p>
+                    <p class="text-green-800 mt-2">
+                      <strong>We all live in one great free market of influence</strong> – CrowdVote simply extends this natural system to democratic representation, letting the best ideas and most trusted voices rise organically.
+                    </p>
+                  </div>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">⚡ Practical Advantages</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Real-Time Democracy:</strong> Make decisions when they need to be made, not when elections happen to be scheduled</li>
+                    <li><strong>Issue-Specific Expertise:</strong> Follow different people for different topics – your neighbor for budget issues, the local environmentalist for green initiatives</li>
+                    <li><strong>Complete Transparency:</strong> Every vote is auditable, every delegation is visible, no hidden influence or corruption possible</li>
+                    <li><strong>Flexible Participation:</strong> Vote directly when you care, delegate when you trust others, change your mind anytime</li>
+                    <li><strong>Eliminates Voter Regret:</strong> Made a mistake? Change your delegation or vote directly – no need to wait years for the next election</li>
+                  </ul>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🚀 Future-Proof Governance</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Scalable Democracy:</strong> Works for small condo associations and large municipalities alike</li>
+                    <li><strong>Digital Native:</strong> Meets communities where they are in the 21st century</li>
+                    <li><strong>Corruption Resistant:</strong> Transparent, auditable, and impossible to manipulate behind closed doors</li>
+                    <li><strong>Attracts Young Talent:</strong> Tech-savvy community members see governance as accessible and engaging</li>
+                  </ul>
+
+                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-6">
+                    <h5 class="font-semibold text-blue-900 mb-2">The Network Effect</h5>
+                    <p class="text-blue-800">
+                      <strong>Just like social media transformed communication</strong>, CrowdVote transforms representation. Early adopting communities become centers of democratic innovation, attracting engaged residents and forward-thinking leaders who want to be part of the future of governance.
+                    </p>
+                  </div>
+
+                  <p class="mt-6 font-medium text-lg">
+                    <strong>Bottom line:</strong> CrowdVote doesn't just improve how your community makes decisions – it rebuilds the social fabric that makes communities thrive. Democracy becomes a daily practice, not a once-every-few-years ritual.
+                  </p>
+                </div>
+              </div>
+
+              <!-- FAQ 9 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-finding-people" class="text-xl font-semibold text-gray-900 mb-4">
+                  I'm new to the community. How do I find people to follow?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    Great question! CrowdVote provides several tools to help new members discover trustworthy people to follow based on shared values and expertise.
+                  </p>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🔍 Followee Finder Tool</h4>
+                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                    <p class="text-blue-800">
+                      <strong>Use the Followee Finder on your profile page!</strong> This intelligent matching system shows you how previous community decisions were decided and asks how you would have voted.
+                    </p>
+                    <p class="text-blue-800 mt-2">
+                      Based on your responses, CrowdVote will suggest other members who voted similarly to you on those issues. This helps you find people whose judgment aligns with your values and priorities.
+                    </p>
+                  </div>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">📊 Community Directory & Influence Rankings</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Browse by Influence Score:</strong> Sort the community directory by influence count to see who other members trust most</li>
+                    <li><strong>Topic-Specific Leaders:</strong> Look for members with high influence on specific topics that matter to you (budget, environment, maintenance, etc.)</li>
+                    <li><strong>Recent Activity:</strong> See who's been actively voting and tagging decisions to identify engaged community members</li>
+                  </ul>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🏘️ Organic Discovery Methods</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Attend Community Meetings:</strong> Get to know members in person and understand their expertise areas</li>
+                    <li><strong>Read Decision Comments:</strong> See who provides thoughtful analysis on community issues</li>
+                    <li><strong>Ask Neighbors:</strong> Talk to friends and neighbors about who they follow and why</li>
+                    <li><strong>Start Small:</strong> Begin by following 1-2 people you know well, then gradually expand your network</li>
+                  </ul>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🎯 Smart Following Strategy</h4>
+                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                    <h5 class="font-semibold text-green-900 mb-2">Pro Tips for New Members:</h5>
+                    <ul class="list-disc list-inside space-y-1 text-green-800">
+                      <li><strong>Follow different people for different topics</strong> – your neighbor for maintenance issues, the local teacher for education matters</li>
+                      <li><strong>Quality over quantity</strong> – better to follow 3-5 people you really trust than 20 random members</li>
+                      <li><strong>You can always change</strong> – following someone isn't permanent; adjust as you learn more about the community</li>
+                      <li><strong>Mix direct and inherited followers</strong> – follow some people directly, and let others be discovered through your network</li>
+                    </ul>
+                  </div>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">⚡ Getting Started Quickly</h4>
+                  <ol class="list-decimal list-inside space-y-2 ml-4">
+                    <li><strong>Complete the Followee Finder</strong> for initial recommendations</li>
+                    <li><strong>Follow 2-3 high-influence members</strong> who align with your values</li>
+                    <li><strong>Vote directly on a few decisions</strong> to establish your own preferences</li>
+                    <li><strong>Observe and adjust</strong> – see how your follows vote and refine your network</li>
+                    <li><strong>Engage with the community</strong> – the more you participate, the better you'll understand who to trust</li>
+                  </ol>
+
+                  <p class="mt-6 font-medium">
+                    <strong>Remember:</strong> You're building a trust network, not just collecting followers. Take time to understand who shares your values and has expertise in areas you care about. The beauty of CrowdVote is that you can always vote directly when you have strong opinions, and delegate when you trust others' judgment.
+                  </p>
+                </div>
+              </div>
+
+              <!-- FAQ 10 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-how-to-get" class="text-xl font-semibold text-gray-900 mb-4">
+                  How can I get CrowdVote for my community?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    CrowdVote is <strong>completely free and open source</strong> under the GNU Affero General Public License v3.0 (AGPL-3.0). This means you can download, modify, and use it however you'd like while keeping it open for everyone.
+                  </p>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🚀 Three Ways to Get CrowdVote</h4>
+
+                  <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                      <h5 class="font-semibold text-gray-900 mb-2">1. 📥 Self-Host (Free)</h5>
+                      <p>Download the source code from GitHub and deploy it yourself using Docker. Perfect for tech-savvy communities who want complete control.</p>
+                      <p class="mt-2 text-sm">
+                        <a href="https://github.com/jasonblum/crowdvote" class="text-blue-600 hover:text-blue-800 font-medium">→ View on GitHub</a>
+                      </p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                      <h5 class="font-semibold text-gray-900 mb-2">2. ☁️ Managed Hosting (Coming Soon)</h5>
+                      <p>We'll handle all the technical details - setup, updates, backups, and security. Just focus on your community decisions.</p>
+                      <p class="mt-2 text-sm text-gray-600">Plans starting at $29/month for communities up to 500 members.</p>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border-2 border-purple-200">
+                      <h5 class="font-semibold text-purple-900 mb-2">3. 🎉 Launch Partner Program (FREE for 1 Year!)</h5>
+                      <p class="text-purple-800">
+                        <strong>If you're reading this, it means I've just launched CrowdVote and I'm eager to host it for a community for free for the first year!</strong>
+                      </p>
+                      <p class="text-purple-800 mt-2">
+                        The only condition: community managers should actively communicate bugs, feature requests, and feedback to help make CrowdVote better for everyone.
+                      </p>
+                      <p class="mt-3">
+                        <strong>Let's talk!</strong> <a href="mailto:support@crowdvote.com" class="text-purple-600 hover:text-purple-800 font-medium underline">support@crowdvote.com</a>
+                      </p>
+                    </div>
+                  </div>
+
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🤝 What You Get</h4>
+                  <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li><strong>Complete Democratic Platform:</strong> STAR voting, delegative democracy, community management</li>
+                    <li><strong>Professional Setup:</strong> Custom domain, SSL certificates, email integration</li>
+                    <li><strong>Ongoing Support:</strong> Technical assistance, feature updates, and community guidance</li>
+                    <li><strong>Data Ownership:</strong> Your community's data stays yours - export anytime</li>
+                    <li><strong>Open Source Benefits:</strong> No vendor lock-in, transparent algorithms, community-driven development</li>
+                  </ul>
+
+                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 mt-6">
+                    <h5 class="font-semibold text-green-900 mb-2">Ready to Transform Your Community?</h5>
+                    <p class="text-green-800">
+                      Whether you're a condo association tired of low turnout, a town council wanting more engagement, or any group that makes decisions together - CrowdVote can help you build stronger, more democratic communities.
+                    </p>
+                    <p class="text-green-800 mt-2">
+                      <strong>Reach out today:</strong> <a href="mailto:support@crowdvote.com" class="text-green-600 hover:text-green-800 font-medium underline">support@crowdvote.com</a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FAQ 11 -->
+              <div class="bg-gray-50 p-6 rounded-lg pt-8">
+                <h3 id="faq-mob-rule" class="text-xl font-semibold text-gray-900 mb-4">
+                  Isn't this just mob rule?
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-4">
+                  <p>
+                    This is a thoughtful concern that highlights key differences between CrowdVote and traditional "mob rule" scenarios. CrowdVote actually includes several built-in safeguards that distinguish it from impulsive crowd decision-making.
+                  </p>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">How CrowdVote Prevents Mob Rule</h4>
+                  
+                  <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400 mb-4">
+                    <h5 class="font-semibold text-red-900 mb-2">Traditional Mob Rule Problems:</h5>
+                    <ul class="list-disc list-inside text-red-800 space-y-1">
+                      <li>Impulsive, emotional decisions made in the heat of the moment</li>
+                      <li>Loudest voices dominate rational discussion</li>
+                      <li>No time for reflection or consideration of consequences</li>
+                      <li>Minority perspectives get completely silenced</li>
+                    </ul>
+                  </div>
+                  
+                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 mb-4">
+                    <h5 class="font-semibold text-green-900 mb-2">CrowdVote's Safeguards:</h5>
+                    <ul class="list-disc list-inside text-green-800 space-y-1">
+                      <li><strong>Structured deliberation:</strong> Decisions have set timeframes allowing for thoughtful consideration</li>
+                      <li><strong>Expertise elevation:</strong> Delegation allows knowledgeable voices to carry more weight</li>
+                      <li><strong>Nuanced scoring:</strong> STAR voting captures degrees of preference, not just yes/no</li>
+                      <li><strong>Transparent process:</strong> Real-time results prevent surprise outcomes</li>
+                      <li><strong>Minority protection:</strong> Delegation networks can amplify underrepresented perspectives</li>
+                    </ul>
+                  </div>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">The Expertise Factor</h4>
+                  <p>
+                    Unlike pure majority rule, CrowdVote's delegation system naturally elevates expertise and thoughtful analysis. When people delegate to those they trust on specific topics, it creates a meritocracy where influence is earned through demonstrated knowledge and sound judgment, not just popularity.
+                  </p>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Community Standards and Management</h4>
+                  <p>
+                    Community managers retain important gatekeeping functions:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>Deciding which issues are appropriate for community voting</li>
+                    <li>Ensuring decisions are clearly presented and well-structured</li>
+                    <li>Setting reasonable timeframes for consideration</li>
+                    <li>Maintaining community standards and preventing abuse</li>
+                  </ul>
+                  
+                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-4">
+                    <h5 class="font-semibold text-blue-900 mb-2">The Key Difference</h5>
+                    <p class="text-blue-800">
+                      <strong>Mob rule</strong> happens when crowds make impulsive decisions without structure or safeguards. <strong>CrowdVote</strong> creates structured, deliberative democracy where expertise matters, minorities have voice through delegation, and transparency prevents manipulation.
+                    </p>
+                  </div>
+                  
+                  <p class="mt-4">
+                    Rather than replacing thoughtful governance with crowd impulses, CrowdVote enhances democratic decision-making by combining the wisdom of crowds with the guidance of expertise and the protection of structured processes.
+                  </p>
+                </div>
               </div>
             </div>
             

@@ -176,22 +176,18 @@ USE_TZ = True
 
 # Email Configuration
 if DEBUG:
-    # Development: Show emails in console
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    EMAIL_HOST = 'localhost'
-    EMAIL_PORT = 1025
-    DEFAULT_FROM_EMAIL = 'noreply@crowdvote.local'
+    # Development: Use SendPulse for testing
+    EMAIL_BACKEND = 'accounts.sendpulse_backend.SendPulseEmailBackend'
+    DEFAULT_FROM_EMAIL = 'noreply@crowdvote.com'
 else:
-    # Production: Use Mailgun (recommended) or other SMTP service
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    
-    # SendGrid settings (free 100 emails/day - perfect for demo phase)
-    EMAIL_HOST = env('EMAIL_HOST', default='smtp.sendgrid.net')
-    EMAIL_PORT = env('EMAIL_PORT', default=587)
-    EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
-    EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='apikey')  # This is exactly the string 'apikey'
-    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')  # Your SendGrid API key
-    DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@yourdomain.com')
+    # Production: Use SendPulse API
+    EMAIL_BACKEND = 'accounts.sendpulse_backend.SendPulseEmailBackend'
+    DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@crowdvote.com')
+
+# SendPulse API Configuration
+SENDPULSE_API_ID = env('SENDPULSE_API_ID', default='3de6104f5d90ad065edd6c95f3a9f47d')
+SENDPULSE_API_SECRET = env('SENDPULSE_API_SECRET', default='433d2202a83be0eb43b03b591638f8db')
+SENDPULSE_FROM_NAME = env('SENDPULSE_FROM_NAME', default='CrowdVote')
     
     # Future: Mailgun settings (when ready to scale)
     # EMAIL_HOST = 'smtp.mailgun.org'

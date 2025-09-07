@@ -3,148 +3,435 @@
 {% block title %}Complete Your Profile - CrowdVote{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
-    <div class="max-w-2xl mx-auto px-6">
-        <!-- Progress Indicator -->
-        <div class="text-center mb-8">
-            <div class="flex items-center justify-center space-x-4 mb-4">
-                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">✓</div>
-                <div class="w-16 h-1 bg-green-500"></div>
-                <div class="w-8 h-8 bg-crowdvote-blue rounded-full flex items-center justify-center text-white font-semibold">2</div>
-                <div class="w-16 h-1 bg-gray-300"></div>
-                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-semibold">3</div>
-            </div>
-            <p class="text-gray-600">Email Verified → <strong>Profile Setup</strong> → Community Selection</p>
-        </div>
-
-        <!-- Profile Setup Form -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">
-                    Welcome to CrowdVote! 🎉
-                </h1>
-                <p class="text-gray-600">
-                    Let's set up your profile so you can start participating in democracy
-                </p>
-            </div>
-
-            <form method="post" class="space-y-6">
-                {% csrf_token %}
-                
-                <!-- Name Fields -->
-                <div class="grid md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
-                            First Name *
-                        </label>
-                        <input type="text" 
-                               id="first_name" 
-                               name="first_name" 
-                               value="{{ user.first_name }}"
-                               required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crowdvote-blue focus:border-transparent transition-all duration-200">
+<!-- Application Shell with Modern Layout -->
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="lg:flex">
+        <!-- Sidebar Navigation -->
+        <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
+            <div class="p-6">
+                <!-- Logo/Header -->
+                <div class="flex items-center space-x-3 mb-8">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">C</span>
                     </div>
                     <div>
-                        <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
-                            Last Name
-                        </label>
-                        <input type="text" 
-                               id="last_name" 
-                               name="last_name" 
-                               value="{{ user.last_name }}"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crowdvote-blue focus:border-transparent transition-all duration-200">
+                        <h1 class="text-xl font-bold text-gray-900 dark:text-white">CrowdVote</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Profile Setup</p>
                     </div>
                 </div>
 
-                <!-- Username Section -->
-                <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-                        Choose Your Username *
-                    </label>
-                    <p class="text-sm text-gray-500 mb-3">
-                        This is how other community members will see you. You can use the suggested one or create your own.
-                    </p>
+                <!-- Progress Steps -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">Email Verified</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Account created successfully</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-semibold text-sm">2</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-blue-600 dark:text-blue-400">Profile Setup</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Choose your username and details</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-gray-600 dark:text-gray-400 font-semibold text-sm">3</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Community Selection</p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500">Join your first community</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 lg:pl-0">
+            <!-- Header -->
+            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome to CrowdVote! 🎉</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Let's set up your profile so you can start participating in democracy</p>
+                    </div>
                     
-                    <div class="space-y-3">
-                        <!-- Username Input with Live Validation -->
-                        <div class="flex space-x-2">
-                            <input type="text" 
-                                   id="username" 
-                                   name="username" 
-                                   value="{{ suggested_username }}"
-                                   required
-                                   hx-post="{% url 'accounts:check_username' %}"
-                                   hx-trigger="keyup changed delay:500ms"
-                                   hx-target="#username-feedback"
-                                   class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-crowdvote-blue focus:border-transparent transition-all duration-200">
-                            
-                            <button type="button"
-                                    hx-post="{% url 'accounts:generate_username' %}"
-                                    hx-target="#username-input"
-                                    hx-swap="outerHTML"
-                                    class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all duration-200 whitespace-nowrap">
-                                🎲 New One
-                            </button>
+                    <!-- Header Controls -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Theme Toggle -->
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">Theme</span>
+                            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                <button type="button" onclick="setTheme('light')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn bg-white text-gray-900 shadow-sm">
+                                    Light
+                                </button>
+                                <button type="button" onclick="setTheme('dark')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                    Dark
+                                </button>
+                                <button type="button" onclick="setTheme('system')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                    Auto
+                                </button>
+                            </div>
                         </div>
                         
-                        <!-- Real-time Username Feedback -->
-                        <div id="username-feedback" class="text-sm">
-                            <span class="text-blue-600">✨ How about "{{ suggested_username }}"?</span>
+                        <!-- TODO: Add when user is logged in:
+                        <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2">
+                                <img class="w-8 h-8 rounded-full" src="{{ user.avatar_url }}" alt="{{ user.username }}">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">{{ user.username }}</span>
+                            </div>
+                            <div class="relative">
+                                <button class="flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg">
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">View Profile</a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Logout</a>
+                                </div>
+                            </div>
                         </div>
+                        -->
+                        
+                        <!-- Mobile menu button -->
+                        <button type="button" class="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <span class="sr-only">Open menu</span>
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Username Guidelines -->
-                <div class="bg-blue-50 rounded-lg p-4">
-                    <h4 class="font-medium text-crowdvote-blue mb-2">Username Guidelines:</h4>
-                    <ul class="text-sm text-gray-700 space-y-1">
-                        <li>• 3-30 characters long</li>
-                        <li>• Letters and numbers only</li>
-                        <li>• Make it memorable - this is how activists build their reputation!</li>
-                    </ul>
+            <!-- Form Content -->
+            <div class="max-w-4xl mx-auto py-8 px-6">
+                <div class="space-y-8">
+                    <!-- Personal Information Card -->
+                    <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Personal Information</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Tell us a bit about yourself to personalize your experience.</p>
+                        </div>
+                        
+                        <form method="post" class="px-6 py-6">
+                            {% csrf_token %}
+                            
+                            <!-- Name Fields -->
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        First Name *
+                                    </label>
+                                    <input type="text" 
+                                           id="first_name" 
+                                           name="first_name" 
+                                           value="{{ user.first_name }}"
+                                           required
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                                </div>
+                                <div>
+                                    <label for="last_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Last Name
+                                    </label>
+                                    <input type="text" 
+                                           id="last_name" 
+                                           name="last_name" 
+                                           value="{{ user.last_name }}"
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                                </div>
+                            </div>
+                    </div>
+
+                    <!-- Username Configuration Card -->
+                    <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Choose Your Username</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">This is how other community members will see you. Choose wisely - this builds your reputation!</p>
+                        </div>
+                        
+                        <div class="px-6 py-6 space-y-6">
+
+                            <!-- Username Input with Live Validation -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Username *
+                                    </label>
+                                    <div class="flex space-x-3">
+                                        <input type="text" 
+                                               id="username" 
+                                               name="username" 
+                                               value="{{ suggested_username }}"
+                                               required
+                                               hx-post="{% url 'accounts:check_username' %}"
+                                               hx-trigger="keyup changed delay:500ms"
+                                               hx-target="#username-feedback"
+                                               oninput="validateUsername(this)"
+                                               class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                               data-validation-target="#username-validation"
+                                               autocomplete="username">
+                                        
+                                        <button type="button"
+                                                hx-post="{% url 'accounts:generate_username' %}"
+                                                hx-swap="none"
+                                                class="px-4 py-2 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded-md transition-all duration-200 text-sm font-medium">
+                                            🎲 Generate
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Client-side Validation Messages -->
+                                    <div id="username-validation" class="text-sm hidden mt-2"></div>
+                                    
+                                    <!-- Server-side Username Availability Feedback -->
+                                    <div id="username-feedback" class="text-sm mt-2">
+                                        <span class="text-blue-600 dark:text-blue-400">✨ How about "{{ suggested_username }}"?</span>
+                                    </div>
+                                </div>
+
+                                <!-- Username Guidelines -->
+                                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
+                                    <h4 class="font-medium text-blue-900 dark:text-blue-400 text-sm mb-2">Username Guidelines:</h4>
+                                    <ul class="text-xs text-blue-800 dark:text-blue-300 space-y-1">
+                                        <li>• 3-30 characters long</li>
+                                        <li>• Letters, numbers, and underscores only</li>
+                                        <li>• Can start with letters or numbers (not underscores)</li>
+                                        <li>• Make it memorable - this builds your reputation!</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Democracy Preview Card -->
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 shadow-sm ring-1 ring-purple-200 dark:ring-purple-800 rounded-lg">
+                        <div class="px-6 py-5 border-b border-purple-200 dark:border-purple-800">
+                            <h3 class="text-lg font-medium text-purple-900 dark:text-purple-400">🗳️ Ready to Shape Democracy?</h3>
+                        </div>
+                        
+                        <div class="px-6 py-6">
+                            <p class="text-purple-800 dark:text-purple-300 text-sm">
+                                As <strong id="demo-username" class="text-purple-900 dark:text-purple-200">{{ suggested_username }}</strong>, you'll be able to vote directly on community decisions 
+                                or delegate your voting power to trusted experts on specific topics. Build influence through expertise, 
+                                not campaign contributions.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Action Card -->
+                    <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                        <div class="px-6 py-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Complete Your Profile</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Start participating in your community's decisions</p>
+                                </div>
+                                <button type="submit" 
+                                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900">
+                                    Complete Setup →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                        </form>
+                    </div>
+
+                    <!-- Skip Option -->
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Want to explore first? 
+                            <a href="{% url 'accounts:community_discovery' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
+                                Browse communities without completing profile
+                            </a>
+                        </p>
+                    </div>
                 </div>
-
-                <!-- Democracy Motivation -->
-                <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6">
-                    <h3 class="font-semibold text-gray-800 mb-2">🗳️ Ready to Shape Democracy?</h3>
-                    <p class="text-gray-700 text-sm">
-                        As <strong>{{ suggested_username }}</strong>, you'll be able to vote directly on community decisions 
-                        or delegate your voting power to trusted experts on specific topics. Build influence through expertise, 
-                        not campaign contributions.
-                    </p>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" 
-                        class="w-full bg-crowdvote-blue hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
-                    Complete Profile & Continue 🚀
-                </button>
-            </form>
-        </div>
-
-        <!-- Skip Option -->
-        <div class="text-center mt-6">
-            <p class="text-gray-500 text-sm">
-                Want to explore first? 
-                <a href="{% url 'accounts:community_discovery' %}" class="text-crowdvote-blue hover:underline">
-                    Browse communities without completing profile
-                </a>
-            </p>
-        </div>
+            </div>
+        </main>
     </div>
 </div>
 
-<!-- HTMX Username Replacement Script -->
+
+<!-- Theme System and Username Validation Scripts -->
 <script>
+    // Theme Management System
+    function setTheme(theme) {
+        localStorage.setItem('theme', theme);
+        applyTheme(theme);
+        updateThemeButtons(theme);
+    }
+    
+    function applyTheme(theme) {
+        const root = document.documentElement;
+        
+        if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+    }
+    
+    function updateThemeButtons(activeTheme) {
+        const buttons = {
+            light: document.querySelector('.light-theme-btn'),
+            dark: document.querySelector('.dark-theme-btn'),
+            system: document.querySelector('.system-theme-btn')
+        };
+        
+        Object.keys(buttons).forEach(theme => {
+            const btn = buttons[theme];
+            if (theme === activeTheme) {
+                btn.className = btn.className.replace(/text-gray-\d+/g, 'text-gray-900 dark:text-white').replace(/hover:text-gray-\d+/g, '') + ' bg-white dark:bg-gray-600 shadow-sm';
+            } else {
+                btn.className = btn.className.replace(/bg-white|bg-gray-600|shadow-sm/g, '').replace(/text-gray-900|dark:text-white/g, 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white');
+            }
+        });
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+        updateThemeButtons(savedTheme);
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme === 'system') {
+                applyTheme('system');
+            }
+        });
+    });
+
+    // Reusable Input Validation System (following Tailwind CSS Input Groups patterns)
+    function validateInput(input, validationRules) {
+        const value = input.value.trim();
+        const validationTarget = document.querySelector(input.dataset.validationTarget);
+        
+        // Reset to neutral state
+        input.className = input.className
+            .replace(/border-(red|green)-[0-9]+/g, 'border-gray-300 dark:border-gray-600')
+            .replace(/focus:border-(red|green)-[0-9]+/g, 'focus:border-transparent')
+            .replace(/ring-(red|green)-[0-9]+/g, 'ring-blue-500');
+        
+        if (validationTarget) {
+            validationTarget.classList.add('hidden');
+        }
+        
+        // Run validation rules
+        for (const rule of validationRules) {
+            if (!rule.test(value)) {
+                // Apply error state (following Tailwind CSS Input Groups error pattern)
+                input.className = input.className
+                    .replace('border-gray-300 dark:border-gray-600', 'border-red-300 dark:border-red-600')
+                    .replace('focus:border-transparent', 'focus:border-red-500')
+                    .replace('ring-blue-500', 'ring-red-500');
+                
+                if (validationTarget) {
+                    validationTarget.innerHTML = `<span class="text-red-600 flex items-center"><svg class="w-4 h-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>${rule.message}</span>`;
+                    validationTarget.classList.remove('hidden');
+                }
+                return false;
+            }
+        }
+        
+        // If we get here, validation passed
+        if (value.length > 0) {
+            // Apply success state (following Tailwind CSS Input Groups success pattern)
+            input.className = input.className
+                .replace('border-gray-300 dark:border-gray-600', 'border-green-300 dark:border-green-600')
+                .replace('focus:border-transparent', 'focus:border-green-500')
+                .replace('ring-blue-500', 'ring-green-500');
+        }
+        
+        return true;
+    }
+    
+    // Username-specific validation (following Twitter/X standards)
+    function validateUsername(input) {
+        const usernameRules = [
+            {
+                test: (value) => value.length >= 3,
+                message: 'Username must be at least 3 characters long'
+            },
+            {
+                test: (value) => value.length <= 30,
+                message: 'Username must be 30 characters or less'
+            },
+            {
+                test: (value) => /^[a-zA-Z0-9][a-zA-Z0-9_]*$/.test(value),
+                message: 'Username can only contain letters, numbers, and underscores. Must start with a letter or number.'
+            },
+            {
+                test: (value) => !value.endsWith('_'),
+                message: 'Username cannot end with an underscore'
+            },
+            {
+                test: (value) => !/_{2,}/.test(value),
+                message: 'Username cannot contain consecutive underscores'
+            }
+        ];
+        
+        const isValid = validateInput(input, usernameRules);
+        
+        // Disable/enable form submission based on validation
+        const submitButton = document.querySelector('button[type="submit"]');
+        if (submitButton) {
+            if (isValid && input.value.trim().length > 0) {
+                submitButton.disabled = false;
+                submitButton.className = submitButton.className.replace('opacity-50 cursor-not-allowed', '');
+            } else {
+                submitButton.disabled = true;
+                if (!submitButton.className.includes('opacity-50')) {
+                    submitButton.className += ' opacity-50 cursor-not-allowed';
+                }
+            }
+        }
+        
+        return isValid;
+    }
+    
     // Handle username generation response
     document.body.addEventListener('htmx:afterRequest', function(event) {
         if (event.detail.xhr.responseURL.includes('generate-username')) {
             const response = JSON.parse(event.detail.xhr.responseText);
             if (response.username) {
-                document.getElementById('username').value = response.username;
-                document.getElementById('username-feedback').innerHTML = 
-                    `<span class="${response.class}">${response.message}</span>`;
+                const usernameInput = document.getElementById('username');
+                usernameInput.value = response.username;
+                
+                // Update the demo username in the motivational text
+                document.getElementById('demo-username').textContent = response.username;
+                
+                // Run client-side validation first
+                validateUsername(usernameInput);
+                
+                // Then trigger server-side availability check after a brief delay
+                setTimeout(() => {
+                    htmx.trigger(usernameInput, 'keyup');
+                }, 100);
             }
+        }
+    });
+    
+    // Initialize validation on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameInput = document.getElementById('username');
+        if (usernameInput) {
+            validateUsername(usernameInput);
         }
     });
 </script>
