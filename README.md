@@ -2,7 +2,7 @@
 
 **The Democracy App: A platform for Free-Market Representation**
 
-[![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/django-5.0+-green.svg)](https://www.djangoproject.com/)
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template)
@@ -60,7 +60,7 @@ Now, CrowdVote won't be able to enforce being used in any particular way. If you
 
 …I really appreciate any feedback or words of encouragement at jason@CrowdVote.com, @CrowdVote or Facebook/CrowdVote! Beyond just being Open Sourced, I'd love to see this built such that any non-technical community leader could just deploy their own instance to the cloud with a simple click of a button. For now, I'm slowly building this thing between work and family, but figured I oughta get the idea out there and protected for everyone under:
 
-CrowdVote and all ideas expressed above by Jason Blum are licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.
+CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU Affero General Public License v3.0.
 
 ## Key Features
 
@@ -246,7 +246,7 @@ If this sounds like your community, please reach out to jason@CrowdVote.com
 
 ## License
 
-This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 

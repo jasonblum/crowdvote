@@ -4,7 +4,9 @@
 {% block title %}CrowdVote - A Platform for Free Market Representation{% endblock %}
 
 {% block content %}
-<div class="relative min-h-screen bg-cover bg-center bg-no-repeat" style="background-image: url('{% static 'crowd.jpg' %}');">
+<div class="relative h-screen overflow-hidden">
+  <!-- Ken Burns Background -->
+  <div class="absolute inset-0 ken-burns-bg" style="background-image: url('{% static 'crowd.jpg' %}'); background-size: 100% 100%; background-position: center center; background-repeat: no-repeat;"></div>
   <!-- Dark overlay for better text readability -->
   <div class="absolute inset-0 bg-black bg-opacity-50"></div>
   
@@ -12,7 +14,7 @@
   <header class="absolute inset-x-0 top-0 z-50">
     <nav aria-label="Global" class="flex items-center justify-end p-6 lg:px-8">
       <div class="flex">
-        <a href="{% url 'docs' %}" class="text-sm/6 font-semibold text-white hover:text-gray-300 transition-colors">
+        <a href="{% url 'docs' %}" class="text-2xl/6 font-semibold text-white hover:text-gray-300 transition-colors">
           Docs <span aria-hidden="true">→</span>
         </a>
       </div>
@@ -20,20 +22,24 @@
   </header>
 
   <!-- Hero Content -->
-  <div class="relative isolate px-6 pt-14 lg:px-8">
-    <div class="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+  <div class="relative isolate px-6 pt-20 lg:px-8 min-h-screen flex items-center">
+    <div class="mx-auto max-w-2xl w-full">
       <div class="text-center">
-        <!-- CrowdVote Logo -->
-        <div class="mb-4">
-          <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-20 sm:h-24 lg:h-28 mx-auto" style="mix-blend-mode: multiply;" />
-        </div>
-        <p class="mt-8 text-lg font-medium text-pretty text-gray-200 sm:text-xl/8">
-          A platform for Free Market Representation<br/>
-          (...because <i>Real Democracy</i> happens between elections!)
-        </p>
-        
-        <!-- Email Signup Form -->
-        <div class="mt-10 mx-auto max-w-md">
+        <!-- White Background Container -->
+        <div class="bg-white/85 backdrop-blur-sm rounded-2xl shadow-2xl px-8 py-10 sm:px-12 sm:py-12 mx-auto max-w-lg">
+          <!-- CrowdVote Logo -->
+          <div class="mb-2">
+            <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black text-gray-800 text-center leading-none" style="font-family: 'Avenir Next Rounded', 'Helvetica Neue', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif; font-weight: 900; text-shadow: 0 0 1px rgba(0,0,0,0.1);">CrowdVote</h1>
+          </div>
+          <p class="mt-2 text-lg font-medium text-pretty text-gray-800 sm:text-xl/8">
+            A platform for Free Market Representation
+          </p>
+          <p class="mt-2 text-xs font-medium text-pretty text-gray-700 sm:text-sm/5">
+            (...because <i>Real Democracy</i> happens between elections!)
+          </p>
+          
+          <!-- Email Signup Form -->
+          <div class="mt-8 mx-auto max-w-md">
           <!-- Messages Display -->
           {% if messages %}
               <div class="mb-6 space-y-3">
@@ -61,7 +67,7 @@
                           <div class="bg-blue-50 bg-opacity-95 border border-blue-200 rounded-lg p-4 text-blue-800">
                               <div class="flex">
                                   <span class="text-blue-500 mr-3">ℹ️</span>
-                                  <p class="font-medium">{{ message }}</p>
+                                  <p class="font-small">{{ message }}</p>
                               </div>
                           </div>
                       {% endif %}
@@ -84,12 +90,258 @@
               </button>
           </form>
           
-          <p class="text-sm text-gray-200 mt-4">
+          <p class="text-xs text-gray-600 mt-4 whitespace-nowrap">
               No passwords required. We'll send you a secure link to get started.
           </p>
+        </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Animated Speech Bubbles -->
+  <div id="speech-bubbles" class="fixed inset-0 pointer-events-none z-10">
+    <!-- Bubbles will be dynamically inserted here -->
+  </div>
 </div>
+
+<style>
+/* Ken Burns Effect for Background */
+.ken-burns-bg {
+  animation: kenBurns 120s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes kenBurns {
+  0% {
+    transform: scale(1.05) translate(0%, 0%);
+  }
+  20% {
+    transform: scale(1.08) translate(-2%, -3%);
+  }
+  40% {
+    transform: scale(1.06) translate(3%, 2%);
+  }
+  60% {
+    transform: scale(1.1) translate(-1%, 3%);
+  }
+  80% {
+    transform: scale(1.04) translate(2%, -2%);
+  }
+  100% {
+    transform: scale(1.08) translate(-3%, -4%);
+  }
+}
+
+.speech-bubble {
+  position: absolute;
+  background: #f0fdf4;
+  border-radius: 15px;
+  padding: 10px 14px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 200px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.5s ease;
+  z-index: 10;
+  line-height: 1.3;
+}
+
+/* Bubble tail styles for different directions */
+.speech-bubble.tail-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #f0fdf4;
+}
+
+.speech-bubble.tail-bottom-left::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 20%;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #f0fdf4;
+}
+
+.speech-bubble.tail-bottom-right::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  right: 20%;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #f0fdf4;
+}
+
+.speech-bubble.tail-top::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #f0fdf4;
+}
+
+.speech-bubble.tail-top-left::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 20%;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #f0fdf4;
+}
+
+.speech-bubble.tail-top-right::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 20%;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #f0fdf4;
+}
+
+.speech-bubble.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .speech-bubble {
+    font-size: 16px;
+    padding: 8px 12px;
+    max-width: 160px;
+  }
+}
+</style>
+
+<script>
+// Get slogans from Django context
+const slogans = [
+  {% for slogan in slogans %}
+    "{{ slogan|escapejs }}"{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+
+const tailClasses = [
+  'tail-bottom',
+  'tail-bottom-left', 
+  'tail-bottom-right',
+  'tail-top',
+  'tail-top-left',
+  'tail-top-right'
+];
+
+function createSpeechBubble() {
+  const container = document.getElementById('speech-bubbles');
+  const bubble = document.createElement('div');
+  
+  // Random tail direction
+  const randomTail = tailClasses[Math.floor(Math.random() * tailClasses.length)];
+  bubble.className = `speech-bubble ${randomTail}`;
+  
+  // Random slogan
+  const randomSlogan = slogans[Math.floor(Math.random() * slogans.length)];
+  bubble.innerHTML = randomSlogan;
+  
+  // Safe positioning - avoid center area and edges
+  const safeMargin = 20;
+  const centerAvoidWidth = 600; // Avoid center area with content
+  const centerAvoidHeight = 400;
+  
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  
+  let x, y;
+  
+  // Choose a safe area (left or right side, avoiding center)
+  if (Math.random() > 0.5) {
+    // Left side
+    x = safeMargin + Math.random() * Math.max(50, (viewportWidth - centerAvoidWidth) / 2 - safeMargin);
+  } else {
+    // Right side
+    x = (viewportWidth + centerAvoidWidth) / 2 + Math.random() * Math.max(50, (viewportWidth - centerAvoidWidth) / 2 - safeMargin);
+  }
+  
+  // Vertical positioning - avoid center area
+  if (Math.random() > 0.5) {
+    // Top area
+    y = safeMargin + Math.random() * Math.max(50, (viewportHeight - centerAvoidHeight) / 2 - safeMargin);
+  } else {
+    // Bottom area
+    y = (viewportHeight + centerAvoidHeight) / 2 + Math.random() * Math.max(50, (viewportHeight - centerAvoidHeight) / 2 - safeMargin);
+  }
+  
+  // Ensure bubble stays within viewport bounds
+  x = Math.max(safeMargin, Math.min(x, viewportWidth - 220)); // 220 = max bubble width + margin
+  y = Math.max(safeMargin, Math.min(y, viewportHeight - 80));  // 80 = bubble height + margin
+  
+  bubble.style.left = x + 'px';
+  bubble.style.top = y + 'px';
+  
+  container.appendChild(bubble);
+  
+  // Animate in
+  setTimeout(() => {
+    bubble.classList.add('show');
+  }, 100);
+  
+  // Remove after showing - randomize display time
+  const displayTime = 2500 + Math.random() * 2000; // 2.5-4.5 seconds
+  setTimeout(() => {
+    bubble.classList.remove('show');
+    setTimeout(() => {
+      if (bubble.parentNode) {
+        bubble.parentNode.removeChild(bubble);
+      }
+    }, 500);
+  }, displayTime);
+}
+
+// Start the animation cycle
+function startSpeechBubbles() {
+  // Create first bubble after a short delay
+  setTimeout(createSpeechBubble, 1500 + Math.random() * 1000);
+  
+  // Schedule random bubbles with overlapping
+  function scheduleNextBubble() {
+    const nextDelay = 2000 + Math.random() * 4000; // 2-6 seconds between bubbles
+    setTimeout(() => {
+      createSpeechBubble();
+      scheduleNextBubble(); // Schedule the next one
+    }, nextDelay);
+  }
+  
+  scheduleNextBubble();
+}
+
+// Start when page loads
+document.addEventListener('DOMContentLoaded', startSpeechBubbles);
+</script>
+
 {% endblock %}
