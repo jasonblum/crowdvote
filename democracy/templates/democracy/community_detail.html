@@ -194,15 +194,12 @@
             <div class="space-y-3">
                 {% for membership in memberships %}
                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-crowdvote-blue rounded-full flex items-center justify-center text-white font-semibold mr-4">
-                                {{ membership.member.first_name|first|default:membership.member.username|first }}
-                            </div>
+                        <div class="flex items-center space-x-3">
                             <div>
                                 <div class="font-medium text-gray-900">
                                     {% username_link membership.member community "hover:text-blue-600 transition-colors" %}
                                 </div>
-                                <div class="text-sm text-gray-600">@{{ membership.member.username }}</div>
+                                <div class="text-sm text-gray-600 ml-8">@{{ membership.member.username }}</div>
                             </div>
                         </div>
                         

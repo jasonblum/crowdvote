@@ -98,6 +98,30 @@ class CustomUser(AbstractUser):
             return self.first_name
         else:
             return self.username
+    
+    def get_avatar_html(self, size=32):
+        """
+        Generate Jdenticon avatar HTML for this user.
+        
+        Uses the user's ID as the seed value for consistent avatar generation.
+        The avatar will be the same every time for the same user.
+        
+        Args:
+            size (int): Size in pixels for the square avatar (default: 32)
+            
+        Returns:
+            str: HTML for SVG avatar element with Jdenticon data attributes
+        """
+        return f'<svg data-jdenticon-value="{self.id}" width="{size}" height="{size}" class="rounded-full bg-gray-100 dark:bg-gray-700"></svg>'
+    
+    def get_avatar_value(self):
+        """
+        Get the value used for Jdenticon avatar generation.
+        
+        Returns:
+            str: Consistent value for avatar generation (user ID)
+        """
+        return str(self.id)
 
     def get_tag_usage_frequency(self):
         """

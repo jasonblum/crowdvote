@@ -7,10 +7,16 @@ This component handles:
 - Consistent styling across the application
 {% endcomment %}
 
-{% if profile_url %}
-    <a href="{{ profile_url }}" class="{{ css_class }}" title="View {{ display_name }}'s profile">
-        {{ display_name }}
-    </a>
-{% else %}
-    <span class="text-gray-700 dark:text-gray-300" title="{{ user.username }}">{{ display_name }}</span>
-{% endif %}
+<div class="flex items-center space-x-2">
+    <!-- Jdenticon Avatar -->
+    {{ user.get_avatar_html:24|safe }}
+    
+    <!-- Username Link -->
+    {% if profile_url %}
+        <a href="{{ profile_url }}" class="{{ css_class }}" title="View {{ display_name }}'s profile">
+            {{ display_name }}
+        </a>
+    {% else %}
+        <span class="text-gray-700 dark:text-gray-300" title="{{ user.username }}">{{ display_name }}</span>
+    {% endif %}
+</div>

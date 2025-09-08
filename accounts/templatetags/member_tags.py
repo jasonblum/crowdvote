@@ -71,3 +71,18 @@ def username_text_link(username, community_id, user_id):
     except:
         # If URL generation fails, just return the username
         return username
+
+
+@register.simple_tag
+def user_avatar(user, size=32):
+    """
+    Generate Jdenticon avatar for a user.
+    
+    Args:
+        user: User object
+        size: Size in pixels (default: 32)
+        
+    Returns:
+        Safe HTML for SVG avatar
+    """
+    return mark_safe(user.get_avatar_html(size))

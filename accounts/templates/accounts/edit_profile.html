@@ -26,6 +26,40 @@
         <form method="post" class="space-y-8">
             {% csrf_token %}
             
+            <!-- Avatar Preview -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Your Avatar</h3>
+                    <p class="text-sm text-gray-500 mt-1">Your unique avatar is automatically generated and appears next to your name throughout CrowdVote</p>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex space-x-4">
+                            <div class="text-center">
+                                {% load member_tags %}
+                                {% user_avatar user 64 %}
+                                <p class="text-xs text-gray-500 mt-2">Large (64px)</p>
+                            </div>
+                            <div class="text-center">
+                                {% user_avatar user 32 %}
+                                <p class="text-xs text-gray-500 mt-2">Medium (32px)</p>
+                            </div>
+                            <div class="text-center">
+                                {% user_avatar user 24 %}
+                                <p class="text-xs text-gray-500 mt-2">Small (24px)</p>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-600">
+                                <strong>How it works:</strong> Your avatar is automatically generated using your unique user ID, 
+                                so it's always the same and helps other members recognize you visually. 
+                                It appears next to your username throughout CrowdVote.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Basic Information -->
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                 <div class="px-6 py-5 border-b border-gray-200">
