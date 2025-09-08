@@ -727,10 +727,35 @@ def decision_results(request, community_id, decision_id):
     from .models import DecisionSnapshot
     latest_snapshot = DecisionSnapshot.objects.filter(decision=decision).first()
     
-    # If no snapshot exists, create a basic one with current data
+    # If no snapshot exists, create a comprehensive one with delegation tree data
     if not latest_snapshot:
+        # Generate delegation tree data using StageBallots service
+        from .services import StageBallots
+        stage_ballots_service = StageBallots()
+        
+        # Process ballots to get delegation tree data
+        delegation_trees = {}
+        
+        # Reset delegation tree data for this decision
+        stage_ballots_service.delegation_tree_data = {
+            'nodes': [],
+            'edges': [],
+            'inheritance_chains': []
+        }
+        
+        # Process all community members to build delegation tree
+        for membership in community.memberships.all():
+            stage_ballots_service.get_or_calculate_ballot(
+                decision=decision, voter=membership.member
+            )
+        
+        # Get the delegation tree data for this decision
+        delegation_tree_data = stage_ballots_service.delegation_tree_data.copy()
+        
         # Calculate basic stats
         total_ballots = decision.ballots.count()
+        manual_ballots = decision.ballots.filter(is_calculated=False).count()
+        calculated_ballots = decision.ballots.filter(is_calculated=True).count()
         voting_members = community.get_voting_members().count()
         participation_rate = (total_ballots / voting_members * 100) if voting_members > 0 else 0
         
@@ -745,20 +770,21 @@ def decision_results(request, community_id, decision_id):
         from collections import Counter
         tag_frequency = Counter(tags_used)
         
-        # Create basic snapshot data
+        # Create comprehensive snapshot data with delegation tree
         snapshot_data = {
             "metadata": {
                 "calculation_timestamp": timezone.now().isoformat(),
                 "system_version": "1.0.0",
                 "decision_status": "active" if decision.dt_close and decision.dt_close > timezone.now() else "closed"
             },
+            "delegation_tree": delegation_tree_data,
             "tag_analysis": {
                 "tag_frequency": dict(tag_frequency.most_common(10)),
                 "total_unique_tags": len(tag_frequency)
             },
             "vote_tally": {
-                "direct_votes": total_ballots,
-                "calculated_votes": 0  # Will be calculated in Phase 2
+                "direct_votes": manual_ballots,
+                "calculated_votes": calculated_ballots
             }
         }
         
@@ -767,8 +793,8 @@ def decision_results(request, community_id, decision_id):
             decision=decision,
             snapshot_data=snapshot_data,
             total_eligible_voters=voting_members,
-            total_votes_cast=total_ballots,
-            total_calculated_votes=0,
+            total_votes_cast=manual_ballots,
+            total_calculated_votes=calculated_ballots,
             tags_used=list(tag_frequency.keys()),
             is_final=(decision.dt_close and decision.dt_close <= timezone.now())
         )
@@ -800,6 +826,13 @@ def decision_results(request, community_id, decision_id):
         else:
             choice_stats[choice.id] = {'total_votes': 0, 'average_stars': 0}
     
+    # Extract delegation tree data from snapshot
+    delegation_tree_data = latest_snapshot.snapshot_data.get('delegation_tree', {
+        'nodes': [],
+        'edges': [],
+        'inheritance_chains': []
+    })
+    
     context = {
         'community': community,
         'user_membership': user_membership,
@@ -810,6 +843,7 @@ def decision_results(request, community_id, decision_id):
         'choices': choices,
         'choice_stats': choice_stats,
         'can_manage': user_membership.is_community_manager,
+        'delegation_tree_data': delegation_tree_data,
     }
     
     return render(request, 'democracy/decision_results.html', context)

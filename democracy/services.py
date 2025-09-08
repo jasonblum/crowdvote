@@ -11,6 +11,15 @@ from shared.utilities import get_object_or_None, normal_round
 
 
 class StageBallots(Service):
+    def __init__(self):
+        """Initialize the service with delegation tree tracking."""
+        super().__init__()
+        self.delegation_tree_data = {
+            'nodes': [],
+            'edges': [],
+            'inheritance_chains': []
+        }
+    
     def score(self, ballots):
         """
         Calculate average star scores for each choice (the S in STAR).
@@ -174,7 +183,7 @@ class StageBallots(Service):
             }
         }
 
-    def get_or_calculate_ballot(self, decision, voter, follow_path=[]):
+    def get_or_calculate_ballot(self, decision, voter, follow_path=[], delegation_depth=0):
         """
         This is where the magic happens: this recursive function gets a voter's ballot,
         or calculates one on their behalf IF they are following other users on zero or more tags (issues) and so
@@ -182,7 +191,15 @@ class StageBallots(Service):
 
         Note the follow_path prevents potential circular followings -- with each recursive call, 
         we add the voter to the follow_path, and if the voter is in the follow_path, we stop the recursion.
+        
+        Enhanced to capture delegation tree data for visualization.
         """
+        # Initialize logging attributes if they don't exist
+        if not hasattr(decision, 'ballot_tree_log_indent'):
+            decision.ballot_tree_log_indent = 0
+        if not hasattr(decision, 'ballot_tree_log'):
+            decision.ballot_tree_log = []
+            
         decision.ballot_tree_log_indent += 1
         decision.ballot_tree_log.append(
             {
@@ -195,6 +212,25 @@ class StageBallots(Service):
         ballot, created = Ballot.objects.get_or_create(
             decision=decision, voter=voter
         )
+
+        # Capture node data for delegation tree
+        node_data = {
+            'voter_id': str(voter.id),
+            'username': voter.username,
+            'is_anonymous': getattr(ballot, 'is_anonymous', False),
+            'vote_type': 'calculated' if ballot.is_calculated else 'manual',
+            'votes': {},
+            'tags': ballot.tags.split(',') if ballot.tags else [],
+            'inherited_tags': [],
+            'delegation_depth': delegation_depth
+        }
+        
+        # Add or update node in delegation tree data
+        existing_node = next((n for n in self.delegation_tree_data['nodes'] if n['voter_id'] == str(voter.id)), None)
+        if existing_node:
+            existing_node.update(node_data)
+        else:
+            self.delegation_tree_data['nodes'].append(node_data)
 
         # If ballot had to be created or was already calculated, continue calculating
         # b/c If they manually cast their own ballot, calculated will be set to False
@@ -230,9 +266,24 @@ class StageBallots(Service):
                         }
                     )
 
+                    # Capture edge data for delegation tree
+                    edge_data = {
+                        'follower': str(ballot.voter.id),
+                        'followee': str(following.followee.id),
+                        'tags': following.tags.split(',') if following.tags else [],
+                        'order': following.order,
+                        'active_for_decision': False  # Will be updated if inheritance occurs
+                    }
+                    
+                    # Add edge if not already present
+                    existing_edge = next((e for e in self.delegation_tree_data['edges'] 
+                                        if e['follower'] == edge_data['follower'] and e['followee'] == edge_data['followee']), None)
+                    if not existing_edge:
+                        self.delegation_tree_data['edges'].append(edge_data)
+
                     # Get or calculate the followee's ballot first
                     followee_ballot = self.get_or_calculate_ballot(
-                        decision, following.followee, follow_path
+                        decision, following.followee, follow_path, delegation_depth + 1
                     )
                     
                     # Check if we should inherit from this ballot based on tag matching
@@ -247,6 +298,13 @@ class StageBallots(Service):
                                 "log": f"✓ Tag match found: {matching_tags} - inheriting from {following.followee}",
                             }
                         )
+                        
+                        # Mark edge as active for this decision
+                        if existing_edge:
+                            existing_edge['active_for_decision'] = True
+                        else:
+                            edge_data['active_for_decision'] = True
+                        
                         ballots_to_compete.append({
                             'ballot': followee_ballot,
                             'following': following,
@@ -269,6 +327,7 @@ class StageBallots(Service):
             # Calculate votes with enhanced logging and tag inheritance
             for choice in ballot.decision.choices.all():
                 stars_with_sources = []
+                calculation_path = []
 
                 for ballot_data in ballots_to_compete:
                     source_ballot = ballot_data['ballot']
@@ -277,11 +336,23 @@ class StageBallots(Service):
                         source_ballot.votes.filter(choice=choice)
                     )
                     if choice_to_inherit:
-                        stars_with_sources.append({
+                        source_data = {
                             'stars': choice_to_inherit.stars,
                             'source': following.followee,
                             'order': following.order
+                        }
+                        stars_with_sources.append(source_data)
+                        
+                        # Build calculation path for inheritance chain
+                        calculation_path.append({
+                            'voter': following.followee.username,
+                            'voter_id': str(following.followee.id),
+                            'stars': choice_to_inherit.stars,
+                            'weight': 0,  # Will be calculated below
+                            'tags': ballot_data['inherited_tags'],
+                            'is_anonymous': getattr(source_ballot, 'is_anonymous', False)
                         })
+                        
                         # Collect inherited tags
                         inherited_tags.update(ballot_data['inherited_tags'])
 
@@ -290,6 +361,39 @@ class StageBallots(Service):
                     star_score = self.calculate_star_score_with_tiebreaking(
                         stars_with_sources, choice, decision
                     )
+                    
+                    # Calculate weights for inheritance chain
+                    total_sources = len(calculation_path)
+                    for path_item in calculation_path:
+                        path_item['weight'] = 1.0 / total_sources
+                    
+                    # Store inheritance chain data
+                    inheritance_chain = {
+                        'final_voter': voter.username,
+                        'final_voter_id': str(voter.id),
+                        'choice': str(choice.id),
+                        'choice_title': choice.title,
+                        'final_stars': star_score,
+                        'calculation_path': calculation_path
+                    }
+                    self.delegation_tree_data['inheritance_chains'].append(inheritance_chain)
+                    
+                    # Update node vote data
+                    current_node = next((n for n in self.delegation_tree_data['nodes'] if n['voter_id'] == str(voter.id)), None)
+                    if current_node:
+                        current_node['votes'][str(choice.id)] = {
+                            'stars': star_score,
+                            'sources': [
+                                {
+                                    'from_voter': path['voter'],
+                                    'from_voter_id': path['voter_id'],
+                                    'stars': path['stars'],
+                                    'tags': path['tags'],
+                                    'order': source['order'],
+                                    'is_anonymous': path['is_anonymous']
+                                } for path, source in zip(calculation_path, stars_with_sources)
+                            ]
+                        }
                     
                     decision.ballot_tree_log.append(
                         {
@@ -308,9 +412,28 @@ class StageBallots(Service):
                         "log": f"Inherited tags for {ballot.voter}: {ballot.tags}",
                     }
                 )
+                
+                # Update node with inherited tags
+                current_node = next((n for n in self.delegation_tree_data['nodes'] if n['voter_id'] == str(voter.id)), None)
+                if current_node:
+                    current_node['inherited_tags'] = list(inherited_tags)
+                    current_node['tags'] = ballot.tags.split(',') if ballot.tags else []
             
             ballot.is_calculated = True
             ballot.save()
+        else:
+            # Handle manual votes - capture vote data for delegation tree
+            current_node = next((n for n in self.delegation_tree_data['nodes'] if n['voter_id'] == str(voter.id)), None)
+            if current_node and ballot.votes.exists():
+                current_node['vote_type'] = 'manual'
+                current_node['tags'] = ballot.tags.split(',') if ballot.tags else []
+                
+                # Capture manual vote data
+                for vote in ballot.votes.all():
+                    current_node['votes'][str(vote.choice.id)] = {
+                        'stars': vote.stars,
+                        'sources': []  # Manual votes have no sources
+                    }
 
         decision.ballot_tree_log_indent -= 1
         return ballot
@@ -381,9 +504,19 @@ class StageBallots(Service):
     def process(self):
         """
         Gets any decisions not yet closed and builds a ballot tree to attach to the decision.
+        Enhanced to return delegation tree data for visualization.
         """
+        delegation_trees = {}
+        
         for community in Community.objects.all():
             for decision in community.decisions.filter(dt_close__gt=timezone.now()):
+
+                # Reset delegation tree data for this decision
+                self.delegation_tree_data = {
+                    'nodes': [],
+                    'edges': [],
+                    'inheritance_chains': []
+                }
 
                 # Stick a log on to the decision, to print out at the end
                 decision.ballot_tree_log = []
@@ -430,8 +563,11 @@ class StageBallots(Service):
 
                 decision.ballot_tree = ballot_tree
                 decision.save()
+                
+                # Store delegation tree data for this decision
+                delegation_trees[str(decision.id)] = self.delegation_tree_data.copy()
 
-                return ballot_tree
+        return delegation_trees
 
 
 class Tally(Service):

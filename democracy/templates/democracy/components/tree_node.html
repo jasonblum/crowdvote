@@ -1,0 +1,130 @@
+<!-- Individual Tree Node Template -->
+<div class="tree-node {{ node.vote_type }} depth-{{ depth }}" data-depth="{{ depth }}" data-voter-id="{{ node.voter_id }}">
+    <!-- Voter Information Header -->
+    <div class="voter-info">
+        {% if node.vote_type == 'calculated' and node.votes %}
+            <span class="expand-toggle interactive-elements" onclick="toggleNode(this)">▼</span>
+        {% endif %}
+        
+        <!-- Vote Type Badge -->
+        <span class="vote-type-badge {{ node.vote_type }}">
+            {% if node.vote_type == 'manual' %}
+                🗳️ Manual
+            {% else %}
+                📊 Calculated
+            {% endif %}
+        </span>
+        
+        <!-- Username (clickable if not anonymous) -->
+        {% if node.is_anonymous %}
+            <span class="username anonymous">Anonymous Voter #{{ node.voter_id|slice:":8" }}</span>
+        {% else %}
+            <a href="{% url 'accounts:member_profile' community.id node.voter_id %}" class="username" target="_blank">
+                {{ node.username }}
+            </a>
+        {% endif %}
+        
+        <!-- Delegation Depth Indicator -->
+        {% if depth > 0 %}
+            <span class="text-xs text-gray-500 dark:text-gray-400">(Level {{ depth }})</span>
+        {% endif %}
+    </div>
+    
+    <!-- Vote Details -->
+    {% if node.votes %}
+        <div class="choice-votes">
+            {% for choice_id, vote_data in node.votes.items %}
+                {% for choice in choices %}
+                    {% if choice.id|stringformat:"s" == choice_id %}
+                        <div class="choice-vote">
+                            <span class="choice-title">{{ choice.title }}</span>
+                            <div class="vote-details">
+                                <!-- Fractional Stars Display -->
+                                <div class="stars-display">
+                                    <div class="fractional-stars" id="stars-{{ node.voter_id }}-{{ choice_id }}" data-stars="{{ vote_data.stars }}"></div>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">({{ vote_data.stars }})</span>
+                                </div>
+                                
+                                <!-- Inheritance Indicator -->
+                                {% if vote_data.sources %}
+                                    <span class="text-xs text-purple-600 dark:text-purple-400">← inherited from {{ vote_data.sources|length }} source{{ vote_data.sources|length|pluralize }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Inheritance Sources (for calculated votes) -->
+                        {% if vote_data.sources and node.vote_type == 'calculated' %}
+                            <div class="inheritance-sources collapsible-content">
+                                <div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Inherited from:</div>
+                                {% for source in vote_data.sources %}
+                                    <div class="source-item">
+                                        <div class="flex items-center gap-2">
+                                            {% if source.is_anonymous %}
+                                                <span class="text-gray-500">Anonymous #{{ source.from_voter_id|slice:":8" }}</span>
+                                            {% else %}
+                                                <a href="{% url 'accounts:member_profile' community.id source.from_voter_id %}" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank">
+                                                    {{ source.from_voter }}
+                                                </a>
+                                            {% endif %}
+                                            
+                                            <!-- Source Tags -->
+                                            {% if source.tags %}
+                                                <div class="flex gap-1">
+                                                    {% for tag in source.tags %}
+                                                        <span class="tag-badge inherited">{{ tag }}</span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="flex items-center gap-2">
+                                            <!-- Source Stars -->
+                                            <div class="fractional-stars" id="source-stars-{{ source.from_voter_id }}-{{ choice_id }}" data-stars="{{ source.stars }}"></div>
+                                            <span class="text-xs">({{ source.stars }}⭐)</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Tags Display -->
+    {% if node.tags or node.inherited_tags %}
+        <div class="tag-badges">
+            {% if node.tags %}
+                {% for tag in node.tags %}
+                    {% if tag %}
+                        <span class="tag-badge">{{ tag }}</span>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            
+            {% if node.inherited_tags %}
+                {% for tag in node.inherited_tags %}
+                    {% if tag %}
+                        <span class="tag-badge inherited">{{ tag }} (inherited)</span>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    <!-- Nested Delegation Levels -->
+    {% if node.vote_type == 'calculated' and depth < 5 %}
+        <div class="collapsible-content">
+            {% for edge in delegation_tree_data.edges %}
+                {% if edge.follower == node.voter_id and edge.active_for_decision %}
+                    {% for child_node in delegation_tree_data.nodes %}
+                        {% if child_node.voter_id == edge.followee %}
+                            {% include 'democracy/components/tree_node.html' with node=child_node depth=depth|add:1 %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

@@ -178,23 +178,16 @@
                         <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">🌳 Delegation Tree</h2>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Visual representation of who's following whom</p>
+                                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">🌳 Delegation Tree Visualization</h2>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">See how votes flow through trust networks and delegation chains</p>
                                 </div>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    Coming in Phase 2
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    ✅ Phase 1 Complete
                                 </span>
                             </div>
                         </div>
                         <div class="px-6 py-6">
-                            <div class="text-center py-12">
-                                <div class="text-6xl mb-4">🌳</div>
-                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Delegation Tree Visualization</h3>
-                                <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                                    This section will show an interactive tree diagram of delegation relationships, 
-                                    showing how votes flow through the community's trust network.
-                                </p>
-                            </div>
+                            {% include 'democracy/components/delegation_tree.html' %}
                         </div>
                     </section>
                     

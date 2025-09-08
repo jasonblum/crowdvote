@@ -1,0 +1,460 @@
+{% load static %}
+
+<!-- Delegation Tree Component -->
+<div class="delegation-tree" id="delegation-tree">
+    <!-- Tree Controls -->
+    <div class="flex items-center justify-between mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center space-x-4">
+            <h4 class="text-sm font-medium text-gray-900 dark:text-white">Tree Controls:</h4>
+            <button type="button" onclick="expandAllNodes()" class="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 border border-blue-300 dark:border-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900">
+                Expand All
+            </button>
+            <button type="button" onclick="collapseAllNodes()" class="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-500 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                Collapse All
+            </button>
+            <button type="button" onclick="togglePrintMode()" class="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-500 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                Print Mode
+            </button>
+        </div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">
+            {{ delegation_tree_data.nodes|length }} voters • {{ delegation_tree_data.edges|length }} relationships
+        </div>
+    </div>
+
+    <!-- Tree Visualization -->
+    <div class="tree-container font-mono text-sm leading-relaxed">
+        {% for node in delegation_tree_data.nodes %}
+            {% if node.delegation_depth == 0 %}
+                {% include 'democracy/components/tree_node.html' with node=node depth=0 %}
+            {% endif %}
+        {% empty %}
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                <p class="text-lg font-medium">No delegation data available</p>
+                <p class="text-sm mt-2">This decision may not have any calculated votes or the delegation tree hasn't been generated yet.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Delegation Tree Styles -->
+<style>
+.delegation-tree {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+    line-height: 1.6;
+}
+
+.tree-container {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.dark .tree-container {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+.tree-node {
+    margin-left: 20px;
+    border-left: 2px solid #e5e7eb;
+    padding-left: 15px;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.dark .tree-node {
+    border-left-color: #4b5563;
+}
+
+.tree-node.manual {
+    border-left-color: #10b981; /* Green for manual votes */
+}
+
+.tree-node.calculated {
+    border-left-color: #8b5cf6; /* Purple for calculated votes */
+}
+
+.tree-node.depth-0 {
+    margin-left: 0;
+    border-left: none;
+    padding-left: 0;
+}
+
+.tree-node::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    width: 8px;
+    height: 2px;
+    background-color: inherit;
+}
+
+.voter-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.vote-type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.vote-type-badge.manual {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.dark .vote-type-badge.manual {
+    background-color: #064e3b;
+    color: #6ee7b7;
+}
+
+.vote-type-badge.calculated {
+    background-color: #ede9fe;
+    color: #5b21b6;
+}
+
+.dark .vote-type-badge.calculated {
+    background-color: #4c1d95;
+    color: #c4b5fd;
+}
+
+.username {
+    font-weight: 600;
+    color: #1f2937;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.dark .username {
+    color: #f9fafb;
+}
+
+.username:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+.dark .username:hover {
+    color: #60a5fa;
+}
+
+.username.anonymous {
+    color: #6b7280;
+    cursor: default;
+}
+
+.dark .username.anonymous {
+    color: #9ca3af;
+}
+
+.username.anonymous:hover {
+    color: #6b7280;
+    text-decoration: none;
+}
+
+.fractional-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.star {
+    width: 1rem;
+    height: 1rem;
+    display: inline-block;
+    position: relative;
+}
+
+.star-full {
+    color: #fbbf24;
+}
+
+.star-empty {
+    color: #d1d5db;
+}
+
+.dark .star-empty {
+    color: #6b7280;
+}
+
+.star-partial {
+    position: relative;
+    color: #d1d5db;
+}
+
+.dark .star-partial {
+    color: #6b7280;
+}
+
+.star-partial::before {
+    content: '★';
+    position: absolute;
+    left: 0;
+    color: #fbbf24;
+    overflow: hidden;
+    width: var(--fill-percent, 50%);
+}
+
+.choice-votes {
+    margin-left: 1rem;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.choice-vote {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.dark .choice-vote {
+    border-bottom-color: #374151;
+}
+
+.choice-vote:last-child {
+    border-bottom: none;
+}
+
+.choice-title {
+    font-weight: 500;
+    color: #374151;
+}
+
+.dark .choice-title {
+    color: #d1d5db;
+}
+
+.vote-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stars-display {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tag-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+.tag-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.375rem;
+    background-color: #f3f4f6;
+    color: #374151;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.dark .tag-badge {
+    background-color: #374151;
+    color: #d1d5db;
+}
+
+.tag-badge.inherited {
+    background-color: #ddd6fe;
+    color: #5b21b6;
+}
+
+.dark .tag-badge.inherited {
+    background-color: #4c1d95;
+    color: #c4b5fd;
+}
+
+.inheritance-sources {
+    margin-left: 1.5rem;
+    margin-top: 0.5rem;
+    padding-left: 1rem;
+    border-left: 1px dashed #d1d5db;
+    font-size: 0.8125rem;
+}
+
+.dark .inheritance-sources {
+    border-left-color: #4b5563;
+}
+
+.source-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    color: #6b7280;
+}
+
+.dark .source-item {
+    color: #9ca3af;
+}
+
+.expand-toggle {
+    cursor: pointer;
+    user-select: none;
+    color: #6b7280;
+    font-weight: bold;
+    margin-right: 0.25rem;
+}
+
+.dark .expand-toggle {
+    color: #9ca3af;
+}
+
+.expand-toggle:hover {
+    color: #374151;
+}
+
+.dark .expand-toggle:hover {
+    color: #d1d5db;
+}
+
+.collapsible-content {
+    transition: all 0.2s ease-in-out;
+}
+
+.collapsible-content.collapsed {
+    display: none;
+}
+
+/* Print Styles */
+@media print {
+    .delegation-tree {
+        color: black !important;
+        background: white !important;
+        font-size: 12px;
+    }
+    
+    .tree-container {
+        border: 1px solid black !important;
+        background: white !important;
+    }
+    
+    .tree-node {
+        border-left-color: black !important;
+        page-break-inside: avoid;
+    }
+    
+    .interactive-elements,
+    .expand-toggle {
+        display: none !important;
+    }
+    
+    .collapsible-content {
+        display: block !important;
+    }
+    
+    .vote-type-badge,
+    .tag-badge {
+        border: 1px solid black !important;
+        background: white !important;
+        color: black !important;
+    }
+}
+
+.print-mode .interactive-elements,
+.print-mode .expand-toggle {
+    display: none !important;
+}
+
+.print-mode .collapsible-content {
+    display: block !important;
+}
+</style>
+
+<!-- Delegation Tree JavaScript -->
+<script>
+// Tree Control Functions
+function expandAllNodes() {
+    document.querySelectorAll('.collapsible-content.collapsed').forEach(content => {
+        content.classList.remove('collapsed');
+        const toggle = content.previousElementSibling?.querySelector('.expand-toggle');
+        if (toggle) {
+            toggle.textContent = '▼';
+        }
+    });
+}
+
+function collapseAllNodes() {
+    document.querySelectorAll('.collapsible-content:not(.collapsed)').forEach(content => {
+        if (content.closest('.tree-node')?.dataset.depth !== '0') {
+            content.classList.add('collapsed');
+            const toggle = content.previousElementSibling?.querySelector('.expand-toggle');
+            if (toggle) {
+                toggle.textContent = '▶';
+            }
+        }
+    });
+}
+
+function togglePrintMode() {
+    document.getElementById('delegation-tree').classList.toggle('print-mode');
+}
+
+function toggleNode(element) {
+    const content = element.parentElement.nextElementSibling;
+    if (content && content.classList.contains('collapsible-content')) {
+        content.classList.toggle('collapsed');
+        element.textContent = content.classList.contains('collapsed') ? '▶' : '▼';
+    }
+}
+
+// Fractional Stars Display
+function renderFractionalStars(stars, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const fullStars = Math.floor(stars);
+    const partialStar = stars - fullStars;
+    const emptyStars = 5 - Math.ceil(stars);
+    
+    let html = '';
+    
+    // Full stars
+    for (let i = 0; i < fullStars; i++) {
+        html += '<span class="star star-full">★</span>';
+    }
+    
+    // Partial star
+    if (partialStar > 0) {
+        const fillPercent = Math.round(partialStar * 100);
+        html += `<span class="star star-partial" style="--fill-percent: ${fillPercent}%">★</span>`;
+    }
+    
+    // Empty stars
+    for (let i = 0; i < emptyStars; i++) {
+        html += '<span class="star star-empty">☆</span>';
+    }
+    
+    container.innerHTML = html;
+}
+
+// Initialize fractional stars on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-stars]').forEach(element => {
+        const stars = parseFloat(element.dataset.stars);
+        renderFractionalStars(stars, element.id);
+    });
+});
+
+// Hover Popover System (will be enhanced in Phase 3)
+function showCalculationDetails(element, data) {
+    // Placeholder for hover popover functionality
+    console.log('Calculation details:', data);
+}
+</script>
