@@ -309,7 +309,7 @@ Each community must include these test users for delegation validation:
 - **User A**: Manual voter with tags `apple,orange,banana`
 - **User B**: Follows A directly (apple tag)
 - **User C**: Follows A directly (orange tag)  
-- **User D**: Follows C (orange tag) → creates chain D→C→A
+- **User D**: Follows C (orange tag) and F (all tags) → creates chain D→C,F→A
 - **User E**: Follows C (orange tag) → creates chain E→C→A
 - **User F**: Follows A directly (apple tag) AND follows D (banana tag) → creates dual inheritance F→A + F→D→C→A
 

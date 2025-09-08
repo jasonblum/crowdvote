@@ -55,7 +55,7 @@
                                 </span>
                                 <span class="username font-bold">
                                     {% if node.is_anonymous %}
-                                        <span class="text-gray-600">Anonymous ({{ node.voter_id|slice:":3" }}...)</span>
+                                        <span class="text-gray-600">Anonymous Voter {{ node.voter_id|slice:":8" }}</span>
                                     {% else %}
                                         <a href="{% url 'accounts:member_profile' node.username %}" class="text-green-700 dark:text-green-300 hover:underline">{{ node.username }}</a>
                                     {% endif %}
@@ -134,7 +134,7 @@
                                 </span>
                                 <span class="username font-bold">
                                     {% if node.is_anonymous %}
-                                        <span class="text-gray-600">Anonymous ({{ node.voter_id|slice:":3" }}...)</span>
+                                        <span class="text-gray-600">Anonymous Voter {{ node.voter_id|slice:":8" }}</span>
                                     {% else %}
                                         <a href="{% url 'accounts:member_profile' node.username %}" class="text-purple-700 dark:text-purple-300 hover:underline">{{ node.username }}</a>
                                     {% endif %}

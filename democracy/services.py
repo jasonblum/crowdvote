@@ -278,6 +278,7 @@ class StageBallots(Service):
                         decision, following.followee, follow_path, delegation_depth + 1
                     )
                     
+                    
                     # Check if we should inherit from this ballot based on tag matching
                     should_inherit, matching_tags = self.should_inherit_ballot(
                         following, followee_ballot

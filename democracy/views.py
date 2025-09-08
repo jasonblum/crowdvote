@@ -13,10 +13,168 @@ from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
+from collections import defaultdict
 
 from .models import Community, Decision, Membership, Ballot, Choice, Vote
+from accounts.models import Following
 
 User = get_user_model()
+
+
+def build_influence_tree(community):
+    """
+    Build an ASCII influence tree showing hierarchical delegation chains.
+    
+    Returns a dictionary with:
+    - 'tree_text': ASCII representation of the hierarchical delegation tree
+    - 'has_relationships': Boolean indicating if there are any relationships to show
+    - 'stats': Dictionary with counts of relationships
+    """
+    # Get all following relationships for community members
+    community_members = community.members.all()
+    
+    # Get all following relationships where both users are in the community
+    followings = Following.objects.filter(
+        follower__in=community_members,
+        followee__in=community_members
+    ).select_related('follower', 'followee').order_by('followee__username', 'order')
+    
+    if not followings.exists():
+        return {
+            'tree_text': "No delegation relationships found in this community.",
+            'has_relationships': False,
+            'stats': {'total_relationships': 0, 'unique_followers': 0, 'unique_followees': 0}
+        }
+    
+    # Build following map: user -> list of people they follow
+    following_map = defaultdict(list)
+    followers_map = defaultdict(list)  # user -> list of people following them
+    all_followers = set()
+    all_followees = set()
+    
+    for following in followings:
+        tags_display = following.tags if following.tags else "all topics"
+        following_map[following.follower].append({
+            'followee': following.followee,
+            'tags': tags_display,
+            'order': following.order
+        })
+        followers_map[following.followee].append({
+            'follower': following.follower,
+            'tags': tags_display,
+            'order': following.order
+        })
+        all_followers.add(following.follower)
+        all_followees.add(following.followee)
+    
+    # Find root nodes (people who are followed but don't follow anyone, or are most influential)
+    root_candidates = []
+    for user in all_followees:
+        if user not in all_followers:  # Pure influencers (don't follow anyone)
+            root_candidates.append(user)
+    
+    # If no pure influencers, use the most followed people as roots
+    if not root_candidates:
+        # Sort by number of followers descending
+        root_candidates = sorted(all_followees, 
+                               key=lambda u: len(followers_map[u]), 
+                               reverse=True)[:3]  # Top 3 most followed
+    
+    def build_tree_recursive(user, visited, depth=0, max_depth=6):
+        """Recursively build tree structure for a user"""
+        if depth > max_depth or user in visited:
+            return []
+        
+        visited.add(user)
+        lines = []
+        
+        # Get people following this user, sorted by priority
+        followers = followers_map.get(user, [])
+        followers.sort(key=lambda x: x['order'])
+        
+        for i, follower_info in enumerate(followers):
+            follower = follower_info['follower']
+            tags = follower_info['tags']
+            order = follower_info['order']
+            is_last = i == len(followers) - 1
+            
+            # Create indentation based on depth
+            indent = "│   " * depth
+            connector = "└─" if is_last else "├─"
+            
+            # Add the follower
+            lines.append(f"{indent}{connector} {follower.username}")
+            lines.append(f"{indent}{'    ' if is_last else '│   '}📋 {tags} (priority: {order})")
+            
+            # Recursively add their followers
+            sub_visited = visited.copy()
+            sub_lines = build_tree_recursive(follower, sub_visited, depth + 1, max_depth)
+            for sub_line in sub_lines:
+                if is_last:
+                    lines.append(f"    {sub_line}")
+                else:
+                    lines.append(f"│   {sub_line}")
+        
+        visited.remove(user)
+        return lines
+    
+    # Build ASCII tree
+    tree_lines = []
+    tree_lines.append("🌳 Hierarchical Delegation Tree")
+    tree_lines.append("=" * 50)
+    tree_lines.append("")
+    tree_lines.append("🏛️ INFLUENCERS (Root Nodes)")
+    tree_lines.append("━" * 30)
+    tree_lines.append("")
+    
+    # Build tree for each root
+    all_shown_users = set()
+    for root in sorted(root_candidates, key=lambda u: u.username):
+        visited = set()
+        tree_lines.append(f"👤 {root.username}")
+        
+        # Get the tree for this root
+        sub_lines = build_tree_recursive(root, visited, 0)
+        tree_lines.extend(sub_lines)
+        tree_lines.append("")
+        
+        # Track users we've shown
+        all_shown_users.add(root)
+        all_shown_users.update(visited)
+    
+    # Show remaining delegation chains that weren't captured above
+    remaining_users = (all_followers | all_followees) - all_shown_users
+    if remaining_users:
+        tree_lines.append("🔗 OTHER DELEGATION CHAINS")
+        tree_lines.append("━" * 30)
+        tree_lines.append("")
+        
+        for user in sorted(remaining_users, key=lambda u: u.username):
+            if user in all_followees and user not in all_shown_users:
+                visited = set()
+                tree_lines.append(f"👤 {user.username}")
+                sub_lines = build_tree_recursive(user, visited, 0, max_depth=3)
+                tree_lines.extend(sub_lines)
+                tree_lines.append("")
+                all_shown_users.update(visited)
+    
+    # Add statistics
+    tree_lines.append("📊 Network Statistics:")
+    tree_lines.append(f"   • Total delegation relationships: {len(followings)}")
+    tree_lines.append(f"   • People being followed: {len(all_followees)}")
+    tree_lines.append(f"   • People following others: {len(all_followers)}")
+    tree_lines.append(f"   • Maximum observed depth: {len(root_candidates)} root nodes")
+    tree_lines.append(f"   • Network density: {len(followings)}/{len(community_members)} members involved")
+    
+    return {
+        'tree_text': '\n'.join(tree_lines),
+        'has_relationships': True,
+        'stats': {
+            'total_relationships': len(followings),
+            'unique_followers': len(all_followers),
+            'unique_followees': len(all_followees)
+        }
+    }
 
 
 def community_detail(request, community_id):
@@ -98,6 +256,9 @@ def community_detail(request, community_id):
     manager_count = community.get_managers().count()
     lobbyist_count = total_members - voting_members
     
+    # Generate influence tree for community
+    influence_tree = build_influence_tree(community)
+    
     context = {
         'community': community,
         'user_membership': user_membership,
@@ -106,6 +267,7 @@ def community_detail(request, community_id):
         'recent_decisions': recent_decisions,
         'role_filter': role_filter,
         'search_query': search_query,
+        'influence_tree': influence_tree,
         'stats': {
             'total_members': total_members,
             'voting_members': voting_members,
@@ -743,8 +905,8 @@ def decision_results(request, community_id, decision_id):
             'inheritance_chains': []
         }
         
-        # Process all community members to build delegation tree
-        for membership in community.memberships.all():
+        # Process only voting members to build delegation tree (exclude lobbyists)
+        for membership in community.memberships.filter(is_voting_community_member=True):
             stage_ballots_service.get_or_calculate_ballot(
                 decision=decision, voter=membership.member
             )
@@ -752,12 +914,16 @@ def decision_results(request, community_id, decision_id):
         # Get the delegation tree data for this decision
         delegation_tree_data = stage_ballots_service.delegation_tree_data.copy()
         
-        # Calculate basic stats
-        total_ballots = decision.ballots.count()
-        manual_ballots = decision.ballots.filter(is_calculated=False).count()
-        calculated_ballots = decision.ballots.filter(is_calculated=True).count()
+        # Calculate basic stats with debugging - ONLY count ballots from voting members
+        voting_member_ids = list(community.get_voting_members().values_list('id', flat=True))
+        total_ballots = decision.ballots.filter(voter_id__in=voting_member_ids).count()
+        manual_ballots = decision.ballots.filter(voter_id__in=voting_member_ids, is_calculated=False).count()
+        calculated_ballots = decision.ballots.filter(voter_id__in=voting_member_ids, is_calculated=True).count()
         voting_members = community.get_voting_members().count()
         participation_rate = (total_ballots / voting_members * 100) if voting_members > 0 else 0
+        
+        # Clean debug logging
+        print(f"✅ Participation Rate Fixed: {total_ballots}/{voting_members} = {participation_rate:.1f}%")
         
         # Get tags used
         tags_used = []

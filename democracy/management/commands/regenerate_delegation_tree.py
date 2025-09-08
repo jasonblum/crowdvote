@@ -55,11 +55,12 @@ class Command(BaseCommand):
                 'inheritance_chains': []
             }
             
-            # Process all community members to build delegation tree
+            # Process only voting members to build delegation tree (exclude lobbyists)
             community = decision.community
-            self.stdout.write(f'  Processing {community.memberships.count()} members...')
+            voting_memberships = community.memberships.filter(is_voting_community_member=True)
+            self.stdout.write(f'  Processing {voting_memberships.count()} voting members...')
             
-            for membership in community.memberships.all():
+            for membership in voting_memberships:
                 stage_ballots_service.get_or_calculate_ballot(
                     decision=decision, voter=membership.member
                 )

@@ -270,6 +270,34 @@ def apply_to_community(request, community_id):
                 message='You already have a pending application',
                 status='pending'
             )
+        elif existing_app.status == 'approved':
+            # Check if membership actually exists
+            from democracy.models import Membership
+            membership = Membership.objects.filter(
+                community=community,
+                member=request.user
+            ).first()
+            
+            if membership:
+                return return_response(
+                    success=False,
+                    message='You are already a member of this community',
+                    status='approved'
+                )
+            else:
+                # Approved application but no membership - create it now (fix data inconsistency)
+                membership = Membership.objects.create(
+                    community=community,
+                    member=request.user,
+                    is_voting_community_member=True,
+                    is_community_manager=False,
+                    is_anonymous_by_default=False,
+                )
+                return return_response(
+                    success=True,
+                    message=f'Welcome to {community.name}! Your membership has been activated.',
+                    status='approved'
+                )
         elif existing_app.status == 'rejected':
             # Allow reapplication after rejection
             existing_app.status = 'pending'
@@ -315,9 +343,13 @@ def apply_to_community(request, community_id):
             )
         
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Community application error: {str(e)}", exc_info=True)
+        print(f"DEBUG: Community application error: {str(e)}")  # Also print to console
         return return_response(
             success=False,
-            message='An error occurred while submitting your application',
+            message=f'An error occurred while submitting your application: {str(e)}',
             status='error'
         )
 

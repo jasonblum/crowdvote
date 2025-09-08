@@ -3,6 +3,47 @@
 {% block title %}{{ community.name }} - CrowdVote{% endblock %}
 
 {% block content %}
+<!-- Navigation Breadcrumb -->
+<div class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-6">
+        <div class="flex items-center justify-between h-16">
+            <nav class="flex items-center space-x-4 text-sm">
+                <a href="{% url 'home' %}" class="text-gray-500 hover:text-gray-700 transition-colors">🏠 Home</a>
+                <span class="text-gray-300">›</span>
+                <a href="{% url 'accounts:community_discovery' %}" class="text-gray-500 hover:text-gray-700 transition-colors">🌐 Communities</a>
+                <span class="text-gray-300">›</span>
+                <span class="text-gray-900 font-medium">{{ community.name }}</span>
+            </nav>
+            
+            <div class="flex items-center space-x-3">
+                {% if user_membership %}
+                    <a href="{% url 'democracy:decision_list' community.id %}" 
+                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
+                        🗳️ View Decisions
+                        {% if recent_decisions %}
+                            <span class="bg-blue-500 text-xs px-2 py-1 rounded-full">{{ recent_decisions|length }}</span>
+                        {% endif %}
+                    </a>
+                    {% if user_membership.is_community_manager %}
+                        <a href="{% url 'democracy:decision_create' community.id %}" 
+                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                            ➕ Create Decision
+                        </a>
+                        <a href="{% url 'democracy:community_manage' community.id %}" 
+                           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                            ⚙️ Manage
+                        </a>
+                    {% endif %}
+                {% endif %}
+                <a href="{% url 'accounts:dashboard' %}" 
+                   class="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    📊 Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
     <div class="max-w-6xl mx-auto px-6">
         
@@ -203,6 +244,26 @@
                 {% endfor %}
             </div>
         </div>
+
+        <!-- Influence Tree Panel -->
+        {% if influence_tree.has_relationships %}
+        <div class="bg-white rounded-2xl shadow-xl p-8 mt-8 border border-blue-200">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">🌳 Delegation Network</h2>
+                <div class="text-sm text-gray-600">
+                    {{ influence_tree.stats.total_relationships }} relationship{{ influence_tree.stats.total_relationships|pluralize }}
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <pre class="text-sm font-mono leading-relaxed text-gray-800 whitespace-pre-wrap overflow-x-auto">{{ influence_tree.tree_text }}</pre>
+            </div>
+            
+            <div class="mt-4 text-xs text-gray-500">
+                <p><strong>How to read this tree:</strong> This shows hierarchical delegation chains. If H→F→C→A, then when H doesn't vote, they inherit from F, who inherits from C, who inherits from A. The deeper the nesting, the longer the delegation chain.</p>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Recent Decisions (if any) -->
         {% if recent_decisions %}

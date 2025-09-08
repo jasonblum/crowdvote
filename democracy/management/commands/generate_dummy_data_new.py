@@ -25,7 +25,7 @@ class Command(BaseCommand):
             self.clear_existing_data()
         
         self.stdout.write(
-            self.style.SUCCESS('Generating realistic delegation data (30 users per community)...')
+            self.style.SUCCESS('Generating REALISTIC community with proper voting patterns...')
         )
 
         # Create communities
@@ -41,27 +41,28 @@ class Command(BaseCommand):
         test_users = self.create_test_delegation_users(communities)
         all_users.extend(test_users)
         
+        # Create test decisions FIRST
+        decisions = self.create_test_decisions(communities)
+        
+        # Create manual votes (seed votes for delegation) - CRITICAL STEP
+        self.create_realistic_manual_votes(decisions, all_users)
+        
         # Create realistic multi-level delegation chains
         self.create_multilevel_delegation_chains(all_users)
         
-        # Create specific test delegation pattern
+        # Create specific test delegation pattern with circular reference prevention
         self.create_test_delegation_relationships(all_users)
-        
-        # Create test decisions
-        decisions = self.create_test_decisions(communities)
-        
-        # Create manual votes (only from designated manual voters)
-        self.create_manual_votes(decisions, all_users)
         
         self.stdout.write(
             self.style.SUCCESS(
                 f'Successfully generated realistic delegation data!\n'
-                f'- 2 communities with 30 users each\n'
+                f'- 2 communities with 30+ users each\n'
                 f'- 10 manual voters per community\n'
-                f'- 15 calculated voters with multi-level chains\n'
+                f'- 15+ calculated voters with multi-level chains\n'
                 f'- 5 non-voters per community\n'
-                f'- Diverse tags: budget, environment, safety, etc.\n'
-                f'- At least one 4-level delegation chain\n'
+                f'- 8 test users (A-H) with specific delegation patterns\n'
+                f'- Deep delegation trees up to 4+ levels\n'
+                f'- Diverse tags: governance, budget, environment, safety, etc.\n'
             )
         )
 
@@ -248,20 +249,22 @@ class Command(BaseCommand):
         return users
 
     def create_test_delegation_users(self, communities):
-        """Create specific test users A, B, C, D, E, F for delegation testing."""
+        """Create specific test users A, B, C, D, E, F, G, H for delegation testing."""
         test_users = []
         
         for community in communities:
             community_suffix = '_minion' if 'Minion' in community.name else '_springfield'
             
-            # Create test users A through F
+            # Create test users A through H
             test_user_data = [
                 ('A' + community_suffix, 'A', 'Test', True),  # Manual voter with tags
                 ('B' + community_suffix, 'B', 'Test', False), # Calculated voter
-                ('C' + community_suffix, 'C', 'Test', False), # Calculated voter
+                ('C' + community_suffix, 'C', 'Test', False), # Calculated voter  
                 ('D' + community_suffix, 'D', 'Test', False), # Calculated voter
                 ('E' + community_suffix, 'E', 'Test', False), # Calculated voter
-                ('F' + community_suffix, 'F', 'Test', False), # Calculated voter (follows A directly + via D)
+                ('F' + community_suffix, 'F', 'Test', False), # Calculated voter
+                ('G' + community_suffix, 'G', 'Test', False), # Calculated voter
+                ('H' + community_suffix, 'H', 'Test', False), # Calculated voter (follows everyone)
             ]
             
             for username, first_name, last_name, is_manual in test_user_data:
@@ -291,7 +294,7 @@ class Command(BaseCommand):
         return test_users
 
     def create_test_delegation_relationships(self, all_users):
-        """Create the specific test delegation pattern: A←B, A←C←D, A←C←E, A←F, D←F"""
+        """Create the specific test delegation pattern as requested by user."""
         for community_name in ['Minion Collective', 'Springfield Town Council']:
             suffix = '_minion' if 'Minion' in community_name else '_springfield'
             
@@ -303,52 +306,95 @@ class Command(BaseCommand):
                 D = User.objects.get(username=f'D{suffix}')
                 E = User.objects.get(username=f'E{suffix}')
                 F = User.objects.get(username=f'F{suffix}')
+                G = User.objects.get(username=f'G{suffix}')
+                H = User.objects.get(username=f'H{suffix}')
                 
-                # Create delegation relationships
-                # B follows A
+                # Create delegation relationships as specified:
+                # B and C follow A. B follows A only on "governance". A always uses "governance" tag.
                 Following.objects.get_or_create(
                     follower=B, followee=A,
-                    defaults={'tags': 'apple', 'order': 1}
+                    defaults={'tags': 'governance', 'order': 1}
                 )
                 
-                # C follows A  
                 Following.objects.get_or_create(
                     follower=C, followee=A,
-                    defaults={'tags': 'orange', 'order': 1}
+                    defaults={'tags': 'governance', 'order': 1}
                 )
                 
-                # D follows C
-                Following.objects.get_or_create(
-                    follower=D, followee=C,
-                    defaults={'tags': 'orange', 'order': 1}
-                )
-                
-                # E follows C
+                # E and F are following C. E follows C on governance, F follows C on all tags.
                 Following.objects.get_or_create(
                     follower=E, followee=C,
-                    defaults={'tags': 'orange', 'order': 1}
+                    defaults={'tags': 'governance', 'order': 1}
                 )
                 
-                # F follows A directly
                 Following.objects.get_or_create(
-                    follower=F, followee=A,
-                    defaults={'tags': 'apple', 'order': 1}
+                    follower=F, followee=C,
+                    defaults={'tags': '', 'order': 1}  # Empty tags means "all tags"
                 )
                 
-                # F follows D (which creates path F→D→C→A)
+                # G is following A and D
                 Following.objects.get_or_create(
-                    follower=F, followee=D,
-                    defaults={'tags': 'banana', 'order': 2}
+                    follower=G, followee=A,
+                    defaults={'tags': 'governance', 'order': 1}
                 )
                 
-                self.stdout.write(f'Created test delegation pattern in {community_name}:')
-                self.stdout.write(f'  A (manual voter with apple,orange,banana tags)')
-                self.stdout.write(f'  B → A (apple)')
-                self.stdout.write(f'  C → A (orange)')
-                self.stdout.write(f'  D → C → A (orange chain)')
-                self.stdout.write(f'  E → C → A (orange chain)')
-                self.stdout.write(f'  F → A (apple) + F → D → C → A (banana→orange chain)')
-                self.stdout.write(f'  TEST: F should inherit A only once, not twice!')
+                Following.objects.get_or_create(
+                    follower=G, followee=D,
+                    defaults={'tags': '', 'order': 2}  # All tags
+                )
+                
+                # H is following all of them on all tags
+                Following.objects.get_or_create(
+                    follower=H, followee=A,
+                    defaults={'tags': '', 'order': 1}
+                )
+                
+                Following.objects.get_or_create(
+                    follower=H, followee=B,
+                    defaults={'tags': '', 'order': 2}
+                )
+                
+                Following.objects.get_or_create(
+                    follower=H, followee=C,
+                    defaults={'tags': '', 'order': 3}
+                )
+                
+                Following.objects.get_or_create(
+                    follower=H, followee=D,
+                    defaults={'tags': '', 'order': 4}
+                )
+                
+                Following.objects.get_or_create(
+                    follower=H, followee=E,
+                    defaults={'tags': '', 'order': 5}
+                )
+                
+                Following.objects.get_or_create(
+                    follower=H, followee=F,
+                    defaults={'tags': '', 'order': 6}
+                )
+                
+                Following.objects.get_or_create(
+                    follower=H, followee=G,
+                    defaults={'tags': '', 'order': 7}
+                )
+                
+                # ADD CIRCULAR REFERENCE TEST: D follows B (creates potential D→B→A loop)
+                Following.objects.get_or_create(
+                    follower=D, followee=B,
+                    defaults={'tags': 'budget', 'order': 1}
+                )
+                
+                self.stdout.write(f'✅ Created REALISTIC test delegation pattern in {community_name}:')
+                self.stdout.write(f'  🎯 A (MANUAL VOTER - seed vote, uses "governance" tag)')
+                self.stdout.write(f'  📊 B → A (governance only)')
+                self.stdout.write(f'  📊 C → A (governance)')
+                self.stdout.write(f'  🔗 E → C → A (2-level chain)')
+                self.stdout.write(f'  🔗 F → C → A (2-level chain, all tags)')
+                self.stdout.write(f'  🔗🔗 G → A + D (dual inheritance)')
+                self.stdout.write(f'  🌳 H → everyone (deep inheritance tree)')
+                self.stdout.write(f'  ⚠️ D → B → A (circular prevention test)')
+                self.stdout.write(f'  💫 Multi-path deduplication: H→F→C→A + H→C→A = single A vote')
                 
             except User.DoesNotExist as e:
                 self.stdout.write(f'Could not find test users for {community_name}: {e}')
@@ -357,7 +403,7 @@ class Command(BaseCommand):
         """Create realistic multi-level delegation chains with diverse tags."""
         # Diverse tag options
         tag_options = [
-            'budget', 'environment', 'maintenance', 'safety', 'governance', 
+            'governance', 'budget', 'environment', 'maintenance', 'safety', 
             'events', 'operations', 'policy', 'finance', 'community',
             'transportation', 'recreation', 'education', 'health'
         ]
@@ -525,52 +571,72 @@ class Command(BaseCommand):
         
         return decision
 
-    def create_manual_votes(self, decisions, all_users):
-        """Create manual votes only from designated manual voters with diverse tags."""
+    def create_realistic_manual_votes(self, decisions, all_users):
+        """Create realistic manual votes - the foundation for delegation."""
         tag_options = [
-            'budget', 'environment', 'maintenance', 'safety', 'governance', 
+            'governance', 'budget', 'environment', 'maintenance', 'safety', 
             'events', 'operations', 'policy', 'finance', 'community'
         ]
         
-        manual_voter_usernames = [
-            'kevin_minion', 'stuart_minion', 'bob_minion', 'gru_leader', 'jerry_minion',
-            'dave_minion', 'phil_minion', 'tim_minion', 'mark_minion', 'steve_minion',
-            'homer_simpson', 'marge_simpson', 'lisa_simpson', 'ned_flanders', 'chief_wiggum',
-            'apu_nahasapeemapetilon', 'moe_szyslak', 'mayor_quimby', 'kent_brockman', 'reverend_lovejoy',
-            'A_minion', 'A_springfield'  # Test users A with special tags
-        ]
-        
-        manual_voters = [u for u in all_users if u.username in manual_voter_usernames]
-        
         for decision in decisions:
             choices = list(decision.choices.all())
+            community_members = decision.community.get_voting_members()
             
-            # Each manual voter casts a vote with diverse tags
-            for voter in manual_voters:
-                # Only vote in their own community
-                if voter.memberships.filter(community=decision.community).exists():
-                    # Special tags for test user A
-                    if voter.username.startswith('A_'):
-                        tags = ['apple', 'orange', 'banana']
-                    else:
-                        tags = random.sample(tag_options, random.randint(1, 3))
-                    
-                    ballot, created = Ballot.objects.get_or_create(
-                        decision=decision,
-                        voter=voter,
-                        defaults={
-                            'is_calculated': False,
-                            'is_anonymous': random.choice([True, False]),
-                            'tags': ','.join(tags)
-                        }
-                    )
-                    
-                    if created:
-                        # Create star ratings for each choice
-                        for choice in choices:
-                            stars = random.randint(0, 5)
-                            Vote.objects.get_or_create(
-                                choice=choice,
-                                ballot=ballot,
-                                defaults={'stars': stars}
-                            )
+            # REALISTIC SCENARIO: Only ~40% of voting members actually vote manually
+            # The rest will either not vote or inherit through delegation
+            
+            # Guaranteed manual voters (community leaders)
+            guaranteed_voters = ['kevin_minion', 'stuart_minion', 'bob_minion', 'gru_leader',
+                                'homer_simpson', 'marge_simpson', 'lisa_simpson', 'ned_flanders']
+            
+            # Test user A always votes manually (the source for delegation chains)  
+            test_A_users = ['A_minion', 'A_springfield']
+            
+            # Select ~40% of remaining members to vote manually
+            other_members = [m for m in community_members 
+                           if m.username not in guaranteed_voters + test_A_users]
+            manual_voters_count = max(3, int(len(other_members) * 0.4))  # At least 3 additional
+            random_manual_voters = random.sample(other_members, 
+                                                min(manual_voters_count, len(other_members)))
+            
+            # Combine all manual voters
+            all_manual_voters = []
+            all_manual_voters.extend([m for m in community_members if m.username in guaranteed_voters])
+            all_manual_voters.extend([m for m in community_members if m.username in test_A_users])
+            all_manual_voters.extend(random_manual_voters)
+            
+            for voter in all_manual_voters:
+                # Test user A always uses 'governance' tag for delegation testing
+                if voter.username.startswith('A_'):
+                    tags = ['governance']
+                    self.stdout.write(f'  ✓ Test user {voter.username} voting manually with governance tag')
+                else:
+                    tags = random.sample(tag_options, random.randint(1, 3))
+                
+                ballot, created = Ballot.objects.get_or_create(
+                    decision=decision,
+                    voter=voter,
+                    defaults={
+                        'is_calculated': False,
+                        'is_anonymous': random.choice([True, False]),
+                        'tags': ','.join(tags)
+                    }
+                )
+                
+                if created:
+                    # Create realistic star ratings
+                    for choice in choices:
+                        stars = random.randint(1, 5)  # 1-5 stars (avoid 0 for more realistic data)
+                        Vote.objects.get_or_create(
+                            choice=choice,
+                            ballot=ballot,
+                            defaults={'stars': stars}
+                        )
+            
+            manual_count = len(all_manual_voters)
+            total_eligible = community_members.count()
+            
+            self.stdout.write(
+                f'  Created {manual_count} manual votes out of {total_eligible} eligible voters '
+                f'in {decision.community.name} ({manual_count/total_eligible*100:.1f}% direct participation)'
+            )
