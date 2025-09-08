@@ -23,16 +23,203 @@
 
     <!-- Tree Visualization -->
     <div class="tree-container font-mono text-sm leading-relaxed">
-        {% for node in delegation_tree_data.nodes %}
-            {% if node.delegation_depth == 0 %}
-                {% include 'democracy/components/tree_node.html' with node=node depth=0 %}
-            {% endif %}
-        {% empty %}
-            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                <p class="text-lg font-medium">No delegation data available</p>
-                <p class="text-sm mt-2">This decision may not have any calculated votes or the delegation tree hasn't been generated yet.</p>
+        <!-- Tree Statistics -->
+        <div class="tree-stats mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded border text-xs">
+            <strong>Delegation Tree:</strong><br>
+            Total voters: {{ delegation_tree_data.nodes|length }}<br>
+            Following relationships: {{ delegation_tree_data.edges|length }}<br>
+            Inheritance chains: {{ delegation_tree_data.inheritance_chains|length }}
+        </div>
+        
+        <!-- Hierarchical Tree Structure -->
+        <div class="delegation-hierarchy">
+            {% comment %}
+            Build the actual tree structure by finding root nodes (manual voters) 
+            and then showing calculated voters as branches under them
+            {% endcomment %}
+            
+            <!-- Manual Voters (Root Nodes) -->
+            <div class="root-nodes">
+                <h5 class="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                    🌳 Manual Voters (Tree Roots)
+                    <span class="ml-2 text-xs text-gray-500">— These voters cast their own ballots</span>
+                </h5>
+                
+                {% for node in delegation_tree_data.nodes %}
+                    {% if node.vote_type == 'manual' %}
+                        <div class="manual-voter-node mb-4 p-3 border-l-4 border-green-500 bg-green-50 dark:bg-green-900 rounded" id="voter-{{ node.voter_id }}">
+                            <!-- Manual Voter Header -->
+                            <div class="voter-header flex items-center gap-2 mb-2">
+                                <span class="vote-type-badge bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200 px-2 py-1 rounded text-xs">
+                                    🗳️ Manual Vote
+                                </span>
+                                <span class="username font-bold">
+                                    {% if node.is_anonymous %}
+                                        <span class="text-gray-600">Anonymous ({{ node.voter_id|slice:":3" }}...)</span>
+                                    {% else %}
+                                        <a href="{% url 'accounts:member_profile' node.username %}" class="text-green-700 dark:text-green-300 hover:underline">{{ node.username }}</a>
+                                    {% endif %}
+                                </span>
+                                {% if node.tags %}
+                                    <div class="tags-inline flex gap-1">
+                                        {% for tag in node.tags %}
+                                            <span class="tag-badge bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-200 px-2 py-1 rounded text-xs">{{ tag }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Manual Vote Details -->
+                            {% if node.votes %}
+                                <div class="votes-display mb-2 ml-4">
+                                    {% for choice_id, vote_data in node.votes.items %}
+                                        <div class="vote-line flex items-center gap-3 mb-1">
+                                            <span class="choice-name text-sm font-medium">{{ vote_data.choice_name }}:</span>
+                                            <div class="stars-visual" data-stars="{{ vote_data.stars }}">
+                                                {% with stars_int=vote_data.stars|floatformat:0 stars_remainder=vote_data.stars|floatformat:2 %}
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= stars_int|add:0 %}
+                                                            <span class="star text-yellow-500 text-base">★</span>
+                                                        {% else %}
+                                                            <span class="star text-gray-300 text-base">☆</span>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endwith %}
+                                            </div>
+                                            <span class="stars-numeric text-xs text-gray-600 dark:text-gray-400">({{ vote_data.stars }})</span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Show who follows this manual voter -->
+                            {% with followers='' %}
+                                {% for edge in delegation_tree_data.edges %}
+                                    {% if edge.followee == node.voter_id and edge.active_for_decision %}
+                                        {% if followers %}
+                                            {% with followers=followers|add:", " %}{% endwith %}
+                                        {% endif %}
+                                        {% for follower_node in delegation_tree_data.nodes %}
+                                            {% if follower_node.voter_id == edge.follower %}
+                                                {% with followers=followers|add:follower_node.username %}{% endwith %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if followers %}
+                                    <div class="followers-indicator text-xs text-green-600 dark:text-green-400 ml-4">
+                                        ↗️ Influences: {{ followers }}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
-        {% endfor %}
+            
+            <!-- Calculated Voters (Delegation Branches) -->
+            <div class="calculated-nodes mt-6">
+                <h5 class="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                    🔗 Calculated Voters (Delegation Network)
+                    <span class="ml-2 text-xs text-gray-500">— These voters inherit through delegation</span>
+                </h5>
+                
+                {% for node in delegation_tree_data.nodes %}
+                    {% if node.vote_type == 'calculated' %}
+                        <div class="calculated-voter-node mb-3 p-3 border-l-4 border-purple-500 bg-purple-50 dark:bg-purple-900 rounded" id="voter-{{ node.voter_id }}">
+                            <!-- Calculated Voter Header -->
+                            <div class="voter-header flex items-center gap-2 mb-2">
+                                <span class="vote-type-badge bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs">
+                                    📊 Calculated
+                                </span>
+                                <span class="username font-bold">
+                                    {% if node.is_anonymous %}
+                                        <span class="text-gray-600">Anonymous ({{ node.voter_id|slice:":3" }}...)</span>
+                                    {% else %}
+                                        <a href="{% url 'accounts:member_profile' node.username %}" class="text-purple-700 dark:text-purple-300 hover:underline">{{ node.username }}</a>
+                                    {% endif %}
+                                </span>
+                                {% if node.inherited_tags %}
+                                    <div class="inherited-tags-inline flex gap-1">
+                                        {% for tag in node.inherited_tags %}
+                                            <span class="tag-badge bg-purple-200 text-purple-800 dark:bg-purple-700 dark:text-purple-200 px-2 py-1 rounded text-xs">{{ tag }} (inherited)</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Calculated Vote Results -->
+                            {% if node.votes %}
+                                <div class="votes-display mb-2 ml-4">
+                                    {% for choice_id, vote_data in node.votes.items %}
+                                        <div class="vote-line flex items-center gap-3 mb-1">
+                                            <span class="choice-name text-sm font-medium">{{ vote_data.choice_name }}:</span>
+                                            <div class="stars-visual" data-stars="{{ vote_data.stars }}">
+                                                {% with stars_int=vote_data.stars|floatformat:0 %}
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= stars_int|add:0 %}
+                                                            <span class="star text-yellow-500 text-base">★</span>
+                                                        {% else %}
+                                                            <span class="star text-gray-300 text-base">☆</span>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endwith %}
+                                            </div>
+                                            <span class="stars-numeric text-xs text-gray-600 dark:text-gray-400">({{ vote_data.stars|floatformat:2 }})</span>
+                                            {% if vote_data.sources %}
+                                                <span class="sources-info text-xs text-purple-600 dark:text-purple-400">← from {{ vote_data.sources|length }} source{{ vote_data.sources|length|pluralize }}</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Delegation Sources Tree -->
+                            {% if node.votes %}
+                                {% for choice_id, vote_data in node.votes.items %}
+                                    {% if vote_data.sources %}
+                                        <div class="delegation-sources ml-6 mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border">
+                                            <div class="sources-header text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                📈 Inherited from ({{ vote_data.choice_name }}):
+                                            </div>
+                                            {% for source in vote_data.sources %}
+                                                <div class="source-line flex items-center gap-2 ml-3 mb-1 text-xs">
+                                                    <span class="bullet">↳</span>
+                                                    {% if source.is_anonymous %}
+                                                        <span class="source-name text-gray-600">Anonymous ({{ source.from_voter_id|slice:":3" }}...)</span>
+                                                    {% else %}
+                                                        <a href="#voter-{{ source.from_voter_id }}" class="source-name text-blue-600 dark:text-blue-400 hover:underline">{{ source.from_voter }}</a>
+                                                    {% endif %}
+                                                    <span class="source-stars font-mono">{{ source.stars }}⭐</span>
+                                                    {% if source.tags %}
+                                                        <div class="source-tags flex gap-1">
+                                                            {% for tag in source.tags %}
+                                                                <span class="tag-mini bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 px-1 py-0 rounded text-xs">{{ tag }}</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Debug Section (Collapsible) -->
+        <details class="debug-section mt-6">
+            <summary class="text-xs text-gray-500 cursor-pointer bg-gray-100 dark:bg-gray-800 p-2 rounded">🐛 Debug Data (click to expand)</summary>
+            <div class="debug-content mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded border text-xs">
+                <strong>Sample node data:</strong>
+                <pre>{{ delegation_tree_data.nodes.0|default:"None"|pprint }}</pre>
+                <strong>Sample edge data:</strong>
+                <pre>{{ delegation_tree_data.edges.0|default:"None"|pprint }}</pre>
+            </div>
+        </details>
     </div>
 </div>
 
@@ -381,6 +568,12 @@
 <script>
 // Tree Control Functions
 function expandAllNodes() {
+    // For debugging template, expand all <details> elements
+    document.querySelectorAll('#delegation-tree details').forEach(details => {
+        details.open = true;
+    });
+    
+    // Future: expand delegation tree nodes
     document.querySelectorAll('.collapsible-content.collapsed').forEach(content => {
         content.classList.remove('collapsed');
         const toggle = content.previousElementSibling?.querySelector('.expand-toggle');
@@ -388,9 +581,17 @@ function expandAllNodes() {
             toggle.textContent = '▼';
         }
     });
+    
+    console.log('Expanded all nodes');
 }
 
 function collapseAllNodes() {
+    // For debugging template, collapse all <details> elements
+    document.querySelectorAll('#delegation-tree details').forEach(details => {
+        details.open = false;
+    });
+    
+    // Future: collapse delegation tree nodes
     document.querySelectorAll('.collapsible-content:not(.collapsed)').forEach(content => {
         if (content.closest('.tree-node')?.dataset.depth !== '0') {
             content.classList.add('collapsed');
@@ -400,10 +601,17 @@ function collapseAllNodes() {
             }
         }
     });
+    
+    console.log('Collapsed all nodes');
 }
 
 function togglePrintMode() {
-    document.getElementById('delegation-tree').classList.toggle('print-mode');
+    const tree = document.getElementById('delegation-tree');
+    tree.classList.toggle('print-mode');
+    
+    // Also add a visual indicator when in print mode
+    const modeIndicator = tree.classList.contains('print-mode') ? ' (Print Mode)' : '';
+    console.log('Print mode toggled' + modeIndicator);
 }
 
 function toggleNode(element) {
@@ -448,9 +656,40 @@ function renderFractionalStars(stars, containerId) {
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-stars]').forEach(element => {
         const stars = parseFloat(element.dataset.stars);
-        renderFractionalStars(stars, element.id);
+        if (!isNaN(stars)) {
+            renderFractionalStarsInline(stars, element);
+        }
     });
 });
+
+// Enhanced fractional stars function that works with inline elements
+function renderFractionalStarsInline(stars, container) {
+    if (!container) return;
+    
+    const fullStars = Math.floor(stars);
+    const partialStar = stars - fullStars;
+    const emptyStars = 5 - Math.ceil(stars);
+    
+    let html = '';
+    
+    // Full stars
+    for (let i = 0; i < fullStars; i++) {
+        html += '<span class="star text-yellow-500 text-sm">★</span>';
+    }
+    
+    // Partial star
+    if (partialStar > 0) {
+        const fillPercent = Math.round(partialStar * 100);
+        html += `<span class="star star-partial text-sm" style="--fill-percent: ${fillPercent}%">★</span>`;
+    }
+    
+    // Empty stars
+    for (let i = 0; i < emptyStars; i++) {
+        html += '<span class="star text-gray-300 text-sm">☆</span>';
+    }
+    
+    container.innerHTML = html;
+}
 
 // Hover Popover System (will be enhanced in Phase 3)
 function showCalculationDetails(element, data) {

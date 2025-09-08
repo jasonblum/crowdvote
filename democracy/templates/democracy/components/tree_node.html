@@ -1,9 +1,23 @@
-<!-- Individual Tree Node Template -->
-<div class="tree-node {{ node.vote_type }} depth-{{ depth }}" data-depth="{{ depth }}" data-voter-id="{{ node.voter_id }}">
+{% load static %}
+
+{% comment %}
+Renders a single node in the delegation tree.
+
+Args:
+    node (dict): The current node data (voter_id, username, vote_type, votes, tags, inherited_tags, delegation_depth, is_anonymous)
+    depth (int): Current depth level (0 for root nodes)
+{% endcomment %}
+
+<div class="tree-node {{ node.vote_type }}" data-depth="{{ depth }}" data-voter-id="{{ node.voter_id }}">
     <!-- Voter Information Header -->
     <div class="voter-info">
-        {% if node.vote_type == 'calculated' and node.votes %}
-            <span class="expand-toggle interactive-elements" onclick="toggleNode(this)">▼</span>
+        {% if delegation_tree_data.edges|length > 0 and depth < 3 %}
+            {% for edge in delegation_tree_data.edges %}
+                {% if edge.follower == node.voter_id and edge.active_for_decision %}
+                    <span class="expand-toggle interactive-elements" onclick="toggleNode(this)">▼</span>
+                    {% break %}
+                {% endif %}
+            {% endfor %}
         {% endif %}
         
         <!-- Vote Type Badge -->
@@ -17,9 +31,9 @@
         
         <!-- Username (clickable if not anonymous) -->
         {% if node.is_anonymous %}
-            <span class="username anonymous">Anonymous Voter #{{ node.voter_id|slice:":8" }}</span>
+            <span class="username anonymous">Anonymous Voter ({{ node.voter_id|slice:":8" }}...)</span>
         {% else %}
-            <a href="{% url 'accounts:member_profile' community.id node.voter_id %}" class="username" target="_blank">
+            <a href="{% url 'accounts:member_profile' node.username %}" class="username" target="_blank">
                 {{ node.username }}
             </a>
         {% endif %}
@@ -42,7 +56,7 @@
                                 <!-- Fractional Stars Display -->
                                 <div class="stars-display">
                                     <div class="fractional-stars" id="stars-{{ node.voter_id }}-{{ choice_id }}" data-stars="{{ vote_data.stars }}"></div>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400">({{ vote_data.stars }})</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">({{ vote_data.stars|floatformat:2 }})</span>
                                 </div>
                                 
                                 <!-- Inheritance Indicator -->
@@ -60,9 +74,9 @@
                                     <div class="source-item">
                                         <div class="flex items-center gap-2">
                                             {% if source.is_anonymous %}
-                                                <span class="text-gray-500">Anonymous #{{ source.from_voter_id|slice:":8" }}</span>
+                                                <span class="text-gray-500">Anonymous ({{ source.from_voter_id|slice:":8" }}...)</span>
                                             {% else %}
-                                                <a href="{% url 'accounts:member_profile' community.id source.from_voter_id %}" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank">
+                                                <a href="{% url 'accounts:member_profile' source.from_voter %}" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank">
                                                     {{ source.from_voter }}
                                                 </a>
                                             {% endif %}
@@ -114,7 +128,7 @@
     {% endif %}
     
     <!-- Nested Delegation Levels -->
-    {% if node.vote_type == 'calculated' and depth < 5 %}
+    {% if depth < 3 %}
         <div class="collapsible-content">
             {% for edge in delegation_tree_data.edges %}
                 {% if edge.follower == node.voter_id and edge.active_for_decision %}

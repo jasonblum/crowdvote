@@ -1,19 +1,16 @@
-from collections import defaultdict
-from weakref import ref
+from collections import defaultdict, OrderedDict
 
 from django.utils import timezone
-
 from service_objects.services import Service
 
 from .models import Ballot, Community
-
 from shared.utilities import get_object_or_None, normal_round
 
 
 class StageBallots(Service):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Initialize the service with delegation tree tracking."""
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.delegation_tree_data = {
             'nodes': [],
             'edges': [],
@@ -30,9 +27,6 @@ class StageBallots(Service):
         Returns:
             OrderedDict: Choices ordered by score (highest first) with their average scores
         """
-        from collections import defaultdict, OrderedDict
-        from django.db.models import Avg
-        
         if not ballots:
             return OrderedDict()
         
@@ -85,8 +79,6 @@ class StageBallots(Service):
         Returns:
             dict: Runoff results with winner, vote counts, and detailed statistics
         """
-        from collections import OrderedDict
-        
         scores = self.score(ballots)
         
         if len(scores) < 2:
@@ -357,7 +349,7 @@ class StageBallots(Service):
                         inherited_tags.update(ballot_data['inherited_tags'])
 
                 if stars_with_sources:
-                    # Calculate average with tie-breaking by order
+                    # Calculate average with tie-breaking by order (keep as float for fractional stars)
                     star_score = self.calculate_star_score_with_tiebreaking(
                         stars_with_sources, choice, decision
                     )
@@ -383,6 +375,7 @@ class StageBallots(Service):
                     if current_node:
                         current_node['votes'][str(choice.id)] = {
                             'stars': star_score,
+                            'choice_name': choice.title,
                             'sources': [
                                 {
                                     'from_voter': path['voter'],
@@ -398,10 +391,11 @@ class StageBallots(Service):
                     decision.ballot_tree_log.append(
                         {
                             "indent": decision.ballot_tree_log_indent + 1,
-                            "log": f"Creating vote for {ballot.voter} on {choice}: {star_score * '☆'} (avg from {len(stars_with_sources)} sources)",
+                            "log": f"Creating vote for {ballot.voter} on {choice}: {star_score:.2f} stars (avg from {len(stars_with_sources)} sources)",
                         }
                     )
-                    ballot.votes.create(choice=choice, stars=star_score)
+                    # Store rounded integer for actual vote, but keep fractional in delegation tree
+                    ballot.votes.create(choice=choice, stars=normal_round(star_score))
 
             # Set inherited tags on the ballot
             if inherited_tags:
@@ -432,6 +426,7 @@ class StageBallots(Service):
                 for vote in ballot.votes.all():
                     current_node['votes'][str(vote.choice.id)] = {
                         'stars': vote.stars,
+                        'choice_name': vote.choice.title,
                         'sources': []  # Manual votes have no sources
                     }
 
@@ -475,15 +470,15 @@ class StageBallots(Service):
             decision: Decision object for logging
             
         Returns:
-            int: Final star rating (0-5)
+            float: Final star rating (0.0-5.0) with decimal precision
         """
         if not stars_with_sources:
-            return 0
+            return 0.0
         
-        # Simple average for now
+        # Calculate average (keep fractional for delegation tree visualization)
         total_stars = sum(item['stars'] for item in stars_with_sources)
         average = total_stars / len(stars_with_sources)
-        star_score = normal_round(average)
+        star_score = round(average, 2)  # Keep 2 decimal places for visualization
         
         # Log the calculation details
         sources_str = ", ".join([
@@ -613,7 +608,7 @@ class Tally(Service):
                 
                 decision.tally_log.append({
                     "indent": decision.tally_log_indent,
-                    "log": f"PARTICIPATION SUMMARY:",
+                    "log": "PARTICIPATION SUMMARY:",
                 })
                 decision.tally_log.append({
                     "indent": decision.tally_log_indent + 1,

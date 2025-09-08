@@ -277,6 +277,10 @@ docker-compose exec web python manage.py makemigrations # Create migrations
 docker-compose exec web python manage.py migrate       # Apply migrations
 docker-compose exec web python manage.py createsuperuser # Create admin user
 
+# Generate realistic test data with delegation trees
+docker-compose exec web python manage.py generate_dummy_data_new --clear-data # Generate test communities and users
+docker-compose exec web python manage.py run_crowdvote_demo # Calculate votes and test delegation
+
 # Testing
 docker-compose exec web pytest -v
 docker-compose exec web pytest --cov
@@ -291,6 +295,39 @@ docker-compose exec web python manage.py collectstatic --noinput
 # Stop development environment
 docker-compose down
 ```
+
+### Dummy Data for Development Testing
+
+**IMPORTANT**: Always use these specific test communities and users for delegation tree development and debugging:
+
+#### **Required Test Communities**:
+1. **"Minion Collective"** - Based on Despicable Me minions (Kevin, Stuart, Bob, etc.)
+2. **"Springfield Town Council"** - Based on The Simpsons characters (Homer, Marge, Lisa, etc.)
+
+#### **Required Test Users (A-F pattern)**:
+Each community must include these test users for delegation validation:
+- **User A**: Manual voter with tags `apple,orange,banana`
+- **User B**: Follows A directly (apple tag)
+- **User C**: Follows A directly (orange tag)  
+- **User D**: Follows C (orange tag) → creates chain D→C→A
+- **User E**: Follows C (orange tag) → creates chain E→C→A
+- **User F**: Follows A directly (apple tag) AND follows D (banana tag) → creates dual inheritance F→A + F→D→C→A
+
+#### **Critical Test Case**:
+**User F should inherit from A only once, not twice** - this validates that the delegation system properly handles duplicate inheritance when someone follows both a person directly AND indirectly through a chain.
+
+#### **Commands to Generate Test Data**:
+```bash
+# Generate complete test environment
+docker-compose exec web python manage.py generate_dummy_data_new --clear-data
+docker-compose exec web python manage.py run_crowdvote_demo
+
+# Verify delegation tree visualization
+# Visit: http://localhost:8000/communities/{uuid}/decisions/{uuid}/results/
+# Look for users A_minion, F_minion in the delegation tree sections
+```
+
+This test setup ensures delegation tree visualization can be properly debugged and validated during development.
 
 ### Git Workflow
 - Create feature branches from `main`

@@ -17,8 +17,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--users-per-community',
             type=int,
-            default=100,
-            help='Number of users per community (default: 100)'
+            default=30,
+            help='Number of users per community (default: 30)'
         )
 
     def handle(self, *args, **options):

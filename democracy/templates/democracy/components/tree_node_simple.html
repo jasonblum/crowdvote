@@ -1,0 +1,98 @@
+<!-- Simplified Tree Node Template for Debugging -->
+<div class="tree-node {{ node.vote_type }}" 
+     data-depth="{{ node.delegation_depth|default:0 }}" 
+     data-voter-id="{{ node.voter_id }}"
+     style="margin-left: {{ node.delegation_depth|default:0|mul:20 }}px;">
+    
+    <!-- Node Header with Controls -->
+    <div class="node-header">
+        <!-- Expansion Toggle (if has children) -->
+        {% if node.children %}
+        <span class="expand-toggle" onclick="toggleNode(this)">▼</span>
+        {% else %}
+        <span class="expand-spacer">•</span>
+        {% endif %}
+        
+        <!-- Vote Type Badge -->
+        <span class="vote-type-badge {{ node.vote_type }}">
+            {% if node.vote_type == "manual" %}
+                🗳️ Manual
+            {% else %}
+                📊 Calculated
+            {% endif %}
+        </span>
+        
+        <!-- Username -->
+        {% if node.is_anonymous %}
+            <span class="username anonymous">Anonymous Voter ({{ node.voter_id|slice:":3" }}...)</span>
+        {% else %}
+            <span class="username">{{ node.username }}</span>
+        {% endif %}
+        
+        <!-- Depth Indicator -->
+        {% if node.delegation_depth > 0 %}
+        <span class="depth-indicator">(depth: {{ node.delegation_depth }})</span>
+        {% endif %}
+    </div>
+    
+    <!-- Vote Details -->
+    {% if node.votes %}
+    <div class="vote-details">
+        {% for choice_id, vote_data in node.votes.items %}
+        <div class="choice-vote">
+            <span class="choice-name">{{ vote_data.choice_name|default:"Choice" }}</span>
+            <div class="stars-container">
+                <span class="star-rating">{{ vote_data.stars }}</span>
+                <div class="fractional-stars" data-stars="{{ vote_data.stars }}">
+                    {% with stars=vote_data.stars %}
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= stars %}
+                                <span class="star star-full">★</span>
+                            {% elif forloop.counter|add:"-1" < stars %}
+                                <span class="star star-partial" style="--fill-percent: {{ stars|floatformat:2|cut:forloop.counter|default:0|mul:100 }}%">★</span>
+                            {% else %}
+                                <span class="star star-empty">☆</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+            
+            <!-- Show calculation sources for calculated votes -->
+            {% if node.vote_type == "calculated" and vote_data.sources %}
+            <div class="calculation-sources">
+                <span class="sources-label">From:</span>
+                {% for source in vote_data.sources %}
+                <span class="source-item">{{ source.from_voter }} ({{ source.stars }}★)</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Tags Display -->
+    {% if node.tags or node.inherited_tags %}
+    <div class="tag-display">
+        <!-- Original tags -->
+        {% for tag in node.tags %}
+        <span class="tag-badge original">{{ tag }}</span>
+        {% endfor %}
+        
+        <!-- Inherited tags -->
+        {% for tag in node.inherited_tags %}
+        <span class="tag-badge inherited">{{ tag }} (inherited)</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Children (recursive) -->
+    {% if node.children %}
+    <div class="children-container collapsible-content">
+        {% for child in node.children %}
+            {% include "democracy/components/tree_node_simple.html" with node=child %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
