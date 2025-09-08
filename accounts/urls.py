@@ -25,4 +25,6 @@ urlpatterns = [
     
     # Member profiles
     path('member/<str:username>/', views.member_profile, name='member_profile'),
+    path('communities/<uuid:community_id>/members/<int:member_id>/', views.member_profile_community, name='member_profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
 ]

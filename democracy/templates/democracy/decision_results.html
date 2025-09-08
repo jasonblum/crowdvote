@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load member_tags %}
 
 {% block title %}{{ decision.title }} - Results | {{ community.name }}{% endblock %}
 
@@ -29,7 +30,7 @@
                     </a>
                     <a href="#delegation-tree" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
                         🌳 Delegation Tree
-                        <span class="ml-auto text-xs text-gray-500">Phase 2</span>
+                        <span class="ml-auto text-xs text-green-600">✅ Live</span>
                     </a>
                     <a href="#vote-tally" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
                         🗳️ Vote Tally
@@ -187,7 +188,26 @@
                             </div>
                         </div>
                         <div class="px-6 py-6">
-                            {% include 'democracy/components/delegation_tree.html' %}
+                            {% if decision_delegation_tree.has_relationships %}
+                                <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                                    {{ decision_delegation_tree.stats.total_participants }} participant{{ decision_delegation_tree.stats.total_participants|pluralize }} • 
+                                    {{ decision_delegation_tree.stats.manual_voters }} manual • 
+                                    {{ decision_delegation_tree.stats.calculated_voters }} calculated • 
+                                    {{ decision_delegation_tree.stats.delegation_chains }} delegation{{ decision_delegation_tree.stats.delegation_chains|pluralize }}
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                                    <pre class="text-sm font-mono leading-relaxed text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-x-auto">{{ decision_delegation_tree.tree_text|safe }}</pre>
+                                </div>
+                                <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                                    <p><strong>How to read this tree:</strong> Shows delegation chains for voters who participated in this decision. Stars show vote values, and tags indicate the topics used for delegation. Anonymous voters show UUID instead of username.</p>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-12">
+                                    <div class="text-6xl mb-4">🌱</div>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Delegation Relationships</h3>
+                                    <p class="text-gray-600 dark:text-gray-400">All voters cast direct ballots for this decision - no delegation chains were used.</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </section>
                     
@@ -268,7 +288,7 @@
                                                         {% if ballot.is_anonymous %}
                                                             <span class="text-gray-500">Anonymous Voter</span>
                                                         {% else %}
-                                                            {{ ballot.voter.username }}
+                                                            {% username_link ballot.voter community "text-blue-600 hover:text-blue-800 underline" %}
                                                         {% endif %}
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

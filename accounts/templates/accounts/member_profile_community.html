@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.get_display_name }} - {{ community.name }} - CrowdVote{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
+    <div class="max-w-6xl mx-auto px-6">
+        
+        <!-- Navigation Breadcrumb -->
+        <div class="mb-8">
+            <nav class="flex items-center space-x-4 text-sm text-gray-600">
+                <a href="{% url 'home' %}" class="hover:text-gray-900 transition-colors">🏠 Home</a>
+                <span class="text-gray-300">›</span>
+                <a href="{% url 'accounts:community_discovery' %}" class="hover:text-gray-900 transition-colors">🌐 Communities</a>
+                <span class="text-gray-300">›</span>
+                <a href="{% url 'democracy:community_detail' community.id %}" class="hover:text-gray-900 transition-colors">{{ community.name }}</a>
+                <span class="text-gray-300">›</span>
+                <span class="text-gray-900 font-medium">{{ member.get_display_name }}</span>
+            </nav>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Main Profile Content -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Profile Header -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8 text-white">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-3xl font-bold">
+                                {{ member.get_display_name|first|upper }}
+                            </div>
+                            <div>
+                                <h1 class="text-3xl font-bold">{{ member.get_display_name }}</h1>
+                                <p class="text-blue-100">@{{ member.username }}</p>
+                                {% if can_view_location and member.location %}
+                                    <p class="text-blue-200 text-sm mt-1">📍 {{ member.location }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="mt-6 flex items-center space-x-3">
+                            {% if is_own_profile %}
+                                <a href="{% url 'accounts:edit_profile' %}" 
+                                   class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                                    ✏️ Edit Profile
+                                </a>
+                            {% endif %}
+                            {% if can_view_social_links %}
+                                {% if member.website_url %}
+                                    <a href="{{ member.website_url }}" target="_blank" rel="noopener"
+                                       class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                        🌐 Website
+                                    </a>
+                                {% endif %}
+                                {% if member.twitter_url %}
+                                    <a href="{{ member.twitter_url }}" target="_blank" rel="noopener"
+                                       class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                        🐦 Twitter
+                                    </a>
+                                {% endif %}
+                                {% if member.linkedin_url %}
+                                    <a href="{{ member.linkedin_url }}" target="_blank" rel="noopener"
+                                       class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                        💼 LinkedIn
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Community Role -->
+                    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-lg font-semibold text-gray-900">Community Role</h2>
+                                <p class="text-gray-600">{{ community.name }}</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                {% if membership.is_community_manager %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                                        👑 Manager
+                                    </span>
+                                {% endif %}
+                                {% if membership.is_voting_community_member %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                        🗳️ Voter
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                                        📢 Lobbyist
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Biography -->
+                    {% if can_view_bio and member.bio %}
+                        <div class="px-6 py-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">About {{ member.get_display_name }}</h3>
+                            <p class="text-gray-700 leading-relaxed">{{ member.bio|linebreaks }}</p>
+                        </div>
+                    {% elif can_view_bio %}
+                        <div class="px-6 py-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">About {{ member.get_display_name }}</h3>
+                            <p class="text-gray-500 italic">No biography provided yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Expertise Tags -->
+                {% if tag_usage %}
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">🏷️ Expertise Tags</h3>
+                        <p class="text-sm text-gray-600 mb-4">Tags {{ member.get_display_name }} has used when voting (not inherited):</p>
+                        <div class="flex flex-wrap gap-3">
+                            {% for tag, count in tag_usage %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors">
+                                    {{ tag }}
+                                    <span class="ml-2 bg-blue-200 text-blue-900 px-2 py-0.5 rounded-full text-xs">{{ count }}</span>
+                                </span>
+                            {% endfor %}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">
+                            Numbers show how often this member has used each tag. Higher numbers indicate areas of active participation.
+                        </p>
+                    </div>
+                {% else %}
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">🏷️ Expertise Tags</h3>
+                        <div class="text-center py-8">
+                            <div class="text-4xl mb-2">🌱</div>
+                            <p class="text-gray-500">{{ member.get_display_name }} hasn't used any tags in their votes yet.</p>
+                            <p class="text-sm text-gray-400 mt-1">Tags help identify areas of expertise and interests.</p>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Communities -->
+                {% if member_communities %}
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">🌐 Shared Communities</h3>
+                        <p class="text-sm text-gray-600 mb-4">Communities where both you and {{ member.get_display_name }} are members:</p>
+                        <div class="space-y-3">
+                            {% for community in member_communities %}
+                                <a href="{% url 'democracy:community_detail' community.id %}" 
+                                   class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold mr-3">
+                                        {{ community.name|first|upper }}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900">{{ community.name }}</h4>
+                                        <p class="text-sm text-gray-500">{{ community.description|truncatewords:10 }}</p>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                
+                <!-- Member Stats -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Member Stats</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Joined Community:</span>
+                            <span class="text-gray-900 font-medium">{{ membership.created|date:"M Y" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Account Created:</span>
+                            <span class="text-gray-900 font-medium">{{ member.date_joined|date:"M Y" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Expertise Areas:</span>
+                            <span class="text-gray-900 font-medium">{{ tag_usage|length }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delegation Network -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🔗 Delegation Network</h3>
+                    
+                    <!-- Following -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-medium text-gray-700 mb-3">Following</h4>
+                        {% if delegation_network.following %}
+                            <div class="space-y-2">
+                                {% for relationship in delegation_network.following %}
+                                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                        <a href="{% url 'accounts:member_profile' community.id relationship.user.id %}" 
+                                           class="text-blue-600 hover:text-blue-800 font-medium">
+                                            {{ relationship.user.get_display_name }}
+                                        </a>
+                                        <div class="text-xs text-gray-500">
+                                            {% for tag in relationship.tags %}
+                                                <span class="bg-gray-200 px-2 py-1 rounded">{{ tag }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 text-sm">Not following anyone yet.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Followers -->
+                    <div>
+                        <h4 class="text-md font-medium text-gray-700 mb-3">Followers</h4>
+                        {% if delegation_network.followers %}
+                            <div class="space-y-2">
+                                {% for relationship in delegation_network.followers %}
+                                    <div class="flex items-center justify-between p-2 bg-green-50 rounded">
+                                        <a href="{% url 'accounts:member_profile' community.id relationship.user.id %}" 
+                                           class="text-green-600 hover:text-green-800 font-medium">
+                                            {{ relationship.user.get_display_name }}
+                                        </a>
+                                        <div class="text-xs text-gray-500">
+                                            {% for tag in relationship.tags %}
+                                                <span class="bg-green-200 px-2 py-1 rounded">{{ tag }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 text-sm">No followers yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Privacy Notice -->
+                {% if not is_own_profile %}
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <div class="text-blue-600 mr-3">🔒</div>
+                            <div>
+                                <h4 class="text-sm font-medium text-blue-900">Privacy Respected</h4>
+                                <p class="text-xs text-blue-700 mt-1">
+                                    Only information this member has chosen to make public is shown. 
+                                    Username and tags are always visible to help with delegation decisions.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <!-- Back to Community -->
+        <div class="mt-8">
+            <a href="{% url 'democracy:community_detail' community.id %}" 
+               class="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+                <span>←</span>
+                <span>Back to {{ community.name }}</span>
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

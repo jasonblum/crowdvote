@@ -66,7 +66,7 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU
 
 ### Core Functionality
 - **STAR Voting**: Score Then Automatic Runoff voting system
-- **Delegative Democracy**: Delegate your vote to trusted members on specific topics
+- **Tansitively Delegative Democracy**: Delegate your vote to trusted members on any or specific topics, and those members can in turn delegate their votes to someone else and so on.
 - **Tag-Based Following**: Follow different people for different topics (e.g., follow Alice on "budget", Bob on "environment")
 - **Transitive Voting**: Inherit votes through chains of trust
 - **Vote Override**: Always maintain the ability to cast your own vote directly

@@ -1,0 +1,16 @@
+{% comment %}
+Username link component for displaying clickable member names throughout CrowdVote.
+
+This component handles:
+- Linking to member profile pages when community context is available
+- Graceful fallback to plain text when no profile URL is available
+- Consistent styling across the application
+{% endcomment %}
+
+{% if profile_url %}
+    <a href="{{ profile_url }}" class="{{ css_class }}" title="View {{ display_name }}'s profile">
+        {{ display_name }}
+    </a>
+{% else %}
+    <span class="text-gray-700 dark:text-gray-300" title="{{ user.username }}">{{ display_name }}</span>
+{% endif %}

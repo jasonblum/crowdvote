@@ -18,17 +18,15 @@ class CustomUser(AbstractUser):
     """
     Custom user model extending Django's AbstractUser.
     
-    This model extends Django's built-in AbstractUser to provide future flexibility
-    for adding CrowdVote-specific user fields without requiring complex migrations.
-    Starting with a custom user model is a Django best practice that prevents
-    migration headaches later.
+    This model extends Django's built-in AbstractUser to provide CrowdVote-specific
+    functionality including member profiles, social links, and delegation-related
+    preferences. Starting with a custom user model is a Django best practice that 
+    prevents migration headaches later.
     
-    Currently identical to AbstractUser but provides a foundation for future
-    enhancements such as:
-    - User preferences for voting and delegation
-    - Community-specific settings
-    - Privacy and anonymity controls
-    - Reputation or influence tracking
+    Profile fields enable rich member profiles for better delegation decisions:
+    - Bio and location for member context
+    - Social media links for verification and transparency
+    - Privacy controls for profile field visibility
     
     Inherits all standard Django user fields:
     - username, email, first_name, last_name
@@ -36,6 +34,47 @@ class CustomUser(AbstractUser):
     - date_joined, last_login
     - groups and user_permissions
     """
+    
+    # Profile fields for rich member profiles
+    bio = models.TextField(
+        max_length=1000,
+        blank=True,
+        help_text="Brief biography to help other members understand your background and expertise"
+    )
+    location = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Your city, state/province, country (e.g., 'San Francisco, CA, USA')"
+    )
+    website_url = models.URLField(
+        max_length=200,
+        blank=True,
+        help_text="Your personal website, blog, or professional page"
+    )
+    twitter_url = models.URLField(
+        max_length=200,
+        blank=True,
+        help_text="Your Twitter/X profile URL"
+    )
+    linkedin_url = models.URLField(
+        max_length=200,
+        blank=True,
+        help_text="Your LinkedIn profile URL"
+    )
+    
+    # Privacy controls for profile visibility
+    bio_public = models.BooleanField(
+        default=True,
+        help_text="Whether your biography is visible to other community members"
+    )
+    location_public = models.BooleanField(
+        default=True,
+        help_text="Whether your location is visible to other community members"
+    )
+    social_links_public = models.BooleanField(
+        default=True,
+        help_text="Whether your social media links are visible to other community members"
+    )
     
     class Meta:
         ordering = ["username"]
@@ -45,6 +84,77 @@ class CustomUser(AbstractUser):
     def __str__(self):
         """Return string representation of the user."""
         return self.username
+
+    def get_display_name(self):
+        """
+        Return the user's preferred display name.
+        
+        Returns:
+            str: Full name if available, otherwise username
+        """
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.first_name:
+            return self.first_name
+        else:
+            return self.username
+
+    def get_tag_usage_frequency(self):
+        """
+        Calculate frequency of tags used by this member in their manual votes.
+        
+        Returns:
+            list: List of tuples (tag, count) sorted by frequency (most used first)
+        """
+        from collections import Counter
+        from democracy.models import Ballot
+        
+        # Get all manual ballots by this member (not calculated/inherited)
+        manual_ballots = Ballot.objects.filter(
+            voter=self, 
+            is_calculated=False
+        ).exclude(tags='')
+        
+        # Count tag usage frequency
+        tag_counter = Counter()
+        for ballot in manual_ballots:
+            if ballot.tags:
+                tags = [tag.strip() for tag in ballot.tags.split(',')]
+                for tag in tags:
+                    if tag:  # Skip empty tags
+                        tag_counter[tag] += 1
+        
+        # Return sorted by frequency (most used first)
+        return tag_counter.most_common()
+
+    def get_delegation_network(self):
+        """
+        Get delegation network information for this user.
+        
+        Returns:
+            dict: Dictionary with 'following' and 'followers' lists
+        """
+        following = self.followings.select_related('followee').all()
+        followers = self.followers.select_related('follower').all()
+        
+        return {
+            'following': [
+                {
+                    'user': f.followee,
+                    'tags': f.tags.split(',') if f.tags else ['all topics'],
+                    'order': f.order
+                }
+                for f in following
+            ],
+            'followers': [
+                {
+                    'user': f.follower,
+                    'tags': f.tags.split(',') if f.tags else ['all topics'],
+                    'order': f.order
+                }
+                for f in followers
+            ]
+        }
 
     def get_full_name_or_username(self):
         """

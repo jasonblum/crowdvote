@@ -307,11 +307,11 @@ docker-compose down
 #### **Required Test Users (A-F pattern)**:
 Each community must include these test users for delegation validation:
 - **User A**: Manual voter with tags `apple,orange,banana`
-- **User B**: Follows A directly (apple tag)
-- **User C**: Follows A directly (orange tag)  
-- **User D**: Follows C (orange tag) and F (all tags) → creates chain D→C,F→A
-- **User E**: Follows C (orange tag) → creates chain E→C→A
-- **User F**: Follows A directly (apple tag) AND follows D (banana tag) → creates dual inheritance F→A + F→D→C→A
+- **User B**: Follows A directly (on the apple tag)
+- **User C**: Follows A directly (on the orange tag)  
+- **User D**: Follows C (on the orange tag) and F (on all tags) → creates chain D→C,F→A
+- **User E**: Follows C (on the orange tag) → creates chain E→C→A
+- **User F**: Follows A directly (on the apple tag) AND follows D (on the banana tag) → creates dual inheritance F→A + F→D→C→A
 
 #### **Critical Test Case**:
 **User F should inherit from A only once, not twice** - this validates that the delegation system properly handles duplicate inheritance when someone follows both a person directly AND indirectly through a chain.
