@@ -30,10 +30,117 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 min-h-screen" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <!-- Global Header -->
+    {% block header %}
+        <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <!-- Left side - Logo/Brand -->
+                    <div class="flex items-center">
+                        <a href="/" class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <span class="text-2xl font-bold text-gray-900 dark:text-white">CrowdVote</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Right side - Theme switcher and user menu -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Theme Toggle -->
+                        <div class="flex items-center space-x-2">
+                            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                <button type="button" onclick="setTheme('light')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn bg-white text-gray-900 shadow-sm">
+                                    Light
+                                </button>
+                                <button type="button" onclick="setTheme('dark')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                    Dark
+                                </button>
+                                <button type="button" onclick="setTheme('system')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                                    Auto
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- User Menu (when logged in) -->
+                        {% if user.is_authenticated %}
+                            <div class="relative">
+                                <button type="button" class="flex items-center space-x-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                        <span class="text-white font-medium text-sm">{{ user.username|first|upper }}</span>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-gray-300 font-medium">{{ user.username }}</span>
+                                </button>
+                                <!-- Dropdown menu would go here in future -->
+                            </div>
+                        {% else %}
+                            <!-- Login link for non-authenticated users -->
+                            <a href="/" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
+                                Sign In
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </header>
+    {% endblock %}
+    
+    <!-- Main Content -->
     <main>
         {% block content %}
         {% endblock %}
     </main>
+    
+    <!-- Global Theme Management Script -->
+    <script>
+        // Theme Management System
+        function setTheme(theme) {
+            localStorage.setItem('theme', theme);
+            applyTheme(theme);
+            updateThemeButtons(theme);
+        }
+        
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                root.classList.add('dark');
+            } else {
+                root.classList.remove('dark');
+            }
+        }
+        
+        function updateThemeButtons(activeTheme) {
+            const buttons = {
+                light: document.querySelector('.light-theme-btn'),
+                dark: document.querySelector('.dark-theme-btn'),
+                system: document.querySelector('.system-theme-btn')
+            };
+            
+            Object.keys(buttons).forEach(theme => {
+                const btn = buttons[theme];
+                if (btn && theme === activeTheme) {
+                    btn.className = btn.className.replace(/text-gray-\d+/g, 'text-gray-900 dark:text-white').replace(/hover:text-gray-\d+/g, '') + ' bg-white dark:bg-gray-600 shadow-sm';
+                } else if (btn) {
+                    btn.className = btn.className.replace(/bg-white|bg-gray-600|shadow-sm/g, '').replace(/text-gray-900|dark:text-white/g, 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white');
+                }
+            });
+        }
+        
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+            updateThemeButtons(savedTheme);
+            
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                const currentTheme = localStorage.getItem('theme');
+                if (currentTheme === 'system') {
+                    applyTheme('system');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Community, Membership, Decision, Choice, Ballot, Vote, Result
+from .models import Community, Membership, Decision, Choice, Ballot, Vote, Result, DecisionSnapshot
 
 
 class MembershipInline(admin.TabularInline):
@@ -98,3 +98,59 @@ class ResultAdmin(admin.ModelAdmin):
     search_fields = ['decision__title']
     raw_id_fields = ['decision']
     readonly_fields = ['stats']
+
+
+@admin.register(DecisionSnapshot)
+class DecisionSnapshotAdmin(admin.ModelAdmin):
+    """Admin interface for DecisionSnapshot model."""
+    list_display = [
+        'decision', 
+        'created_at', 
+        'is_final', 
+        'total_eligible_voters', 
+        'total_votes_cast', 
+        'total_calculated_votes',
+        'participation_rate_display',
+        'calculation_duration'
+    ]
+    list_filter = [
+        'is_final', 
+        'decision__community', 
+        'created_at',
+        'decision__dt_close'
+    ]
+    search_fields = ['decision__title', 'decision__community__name']
+    raw_id_fields = ['decision']
+    readonly_fields = [
+        'created_at',
+        'participation_rate_display',
+        'delegation_rate_display',
+        'snapshot_data_preview'
+    ]
+    date_hierarchy = 'created_at'
+    
+    def participation_rate_display(self, obj):
+        """Display participation rate as a formatted percentage."""
+        return f"{obj.participation_rate:.1f}%"
+    participation_rate_display.short_description = 'Participation Rate'
+    
+    def delegation_rate_display(self, obj):
+        """Display delegation rate as a formatted percentage."""
+        return f"{obj.delegation_rate:.1f}%"
+    delegation_rate_display.short_description = 'Delegation Rate'
+    
+    def snapshot_data_preview(self, obj):
+        """Display a preview of the snapshot data structure."""
+        if not obj.snapshot_data:
+            return "(No data)"
+        
+        preview_keys = []
+        for key in ['metadata', 'delegation_tree', 'vote_tally', 'star_results', 'tag_analysis']:
+            if key in obj.snapshot_data:
+                preview_keys.append(key)
+        
+        if preview_keys:
+            return f"Contains: {', '.join(preview_keys)}"
+        else:
+            return f"Keys: {', '.join(obj.snapshot_data.keys())}"
+    snapshot_data_preview.short_description = 'Snapshot Data Preview'

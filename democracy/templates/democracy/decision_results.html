@@ -1,0 +1,524 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ decision.title }} - Results | {{ community.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="lg:flex">
+        <!-- Sidebar Navigation -->
+        <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">📊</span>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-medium text-gray-900 dark:text-white">Decision Results</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ community.name }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation Menu -->
+            <div class="px-6 py-4">
+                <nav class="space-y-2">
+                    <a href="#header" class="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md">
+                        📋 Decision Details
+                    </a>
+                    <a href="#delegation-tree" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                        🌳 Delegation Tree
+                        <span class="ml-auto text-xs text-gray-500">Phase 2</span>
+                    </a>
+                    <a href="#vote-tally" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                        🗳️ Vote Tally
+                    </a>
+                    <a href="#final-results" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                        🏆 Final Results
+                    </a>
+                </nav>
+            </div>
+            
+            <!-- Back to Decision -->
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
+                   class="flex items-center justify-center w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    ← Back to Decision
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 lg:pl-0">
+            <!-- Page Header -->
+            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ decision.title }}</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            Results Analysis • {{ latest_snapshot.created_at|date:"M j, Y \a\t g:i A" }}
+                            {% if latest_snapshot.is_final %}
+                                <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    🔒 Final
+                                </span>
+                            {% else %}
+                                <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    🟢 Live
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Participation Rate</div>
+                        <div class="text-2xl font-bold text-green-600">{{ latest_snapshot.participation_rate|floatformat:1 }}%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Sections -->
+            <div class="max-w-7xl mx-auto py-8 px-6">
+                <div class="space-y-8">
+                    
+                    <!-- Section 1: Decision Header & Details -->
+                    <section id="header" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                            <h2 class="text-lg font-medium text-gray-900 dark:text-white">📋 Decision Details</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Complete information about this decision</p>
+                        </div>
+                        <div class="px-6 py-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <!-- Publisher -->
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Publisher</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">Community Manager</dd>
+                                </div>
+                                
+                                <!-- Published Date -->
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Published</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ decision.created|date:"M j, Y" }}</dd>
+                                </div>
+                                
+                                <!-- Voting Period -->
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Voting Period</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                                        {% if decision.dt_close %}
+                                            Until {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
+                                        {% else %}
+                                            No deadline set
+                                        {% endif %}
+                                    </dd>
+                                </div>
+                                
+                                <!-- Status -->
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
+                                    <dd class="mt-1">
+                                        {% if status == 'active' %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                🟢 Active
+                                            </span>
+                                        {% elif status == 'closed' %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                🔒 Closed
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                📝 Draft
+                                            </span>
+                                        {% endif %}
+                                    </dd>
+                                </div>
+                            </div>
+                            
+                            <!-- Description -->
+                            {% if decision.description %}
+                                <div class="mt-6">
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</dt>
+                                    <dd class="mt-2 text-sm text-gray-900 dark:text-white">{{ decision.description|linebreaks }}</dd>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Key Statistics -->
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ latest_snapshot.total_eligible_voters }}</div>
+                                    <div class="text-sm text-blue-600 dark:text-blue-400">Eligible Voters</div>
+                                </div>
+                                <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ latest_snapshot.total_votes_cast }}</div>
+                                    <div class="text-sm text-green-600 dark:text-green-400">Direct Votes</div>
+                                </div>
+                                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ latest_snapshot.total_calculated_votes }}</div>
+                                    <div class="text-sm text-purple-600 dark:text-purple-400">Calculated Votes</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tags Used -->
+                            {% if latest_snapshot.tags_used %}
+                                <div class="mt-6">
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Tags Used</dt>
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for tag in latest_snapshot.tags_used %}
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                                {{ tag }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </section>
+                    
+                    <!-- Section 2: Delegation Tree (Phase 2) -->
+                    <section id="delegation-tree" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">🌳 Delegation Tree</h2>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Visual representation of who's following whom</p>
+                                </div>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    Coming in Phase 2
+                                </span>
+                            </div>
+                        </div>
+                        <div class="px-6 py-6">
+                            <div class="text-center py-12">
+                                <div class="text-6xl mb-4">🌳</div>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Delegation Tree Visualization</h3>
+                                <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                                    This section will show an interactive tree diagram of delegation relationships, 
+                                    showing how votes flow through the community's trust network.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- Section 3: Vote Tally -->
+                    <section id="vote-tally" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">🗳️ Complete Vote Tally</h2>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">All votes cast, searchable and sortable</p>
+                                </div>
+                                <!-- Search Box -->
+                                <div class="flex items-center space-x-2">
+                                    <div class="relative">
+                                        <input type="text" 
+                                               id="voter-search" 
+                                               placeholder="Search voters..." 
+                                               class="w-64 px-3 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <button type="button" 
+                                            id="clear-search" 
+                                            class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-6 py-6">
+                            {% if ballots_with_votes %}
+                                <div class="overflow-hidden">
+                                    <table id="votes-table" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                        <thead class="bg-gray-50 dark:bg-gray-800">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" 
+                                                    onclick="sortTable(0)" 
+                                                    data-sort="asc">
+                                                    <div class="flex items-center space-x-1">
+                                                        <span>Voter</span>
+                                                        <svg class="w-4 h-4 sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                                        </svg>
+                                                    </div>
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" 
+                                                    onclick="sortTable(1)" 
+                                                    data-sort="asc">
+                                                    <div class="flex items-center space-x-1">
+                                                        <span>Vote Type</span>
+                                                        <svg class="w-4 h-4 sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                                        </svg>
+                                                    </div>
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none" 
+                                                    onclick="sortTable(2)" 
+                                                    data-sort="asc">
+                                                    <div class="flex items-center space-x-1">
+                                                        <span>Tags</span>
+                                                        <svg class="w-4 h-4 sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                                        </svg>
+                                                    </div>
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                    Choices Rated
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="votes-tbody" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                                            {% for ballot in ballots_with_votes %}
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                                        {% if ballot.is_anonymous %}
+                                                            <span class="text-gray-500">Anonymous Voter</span>
+                                                        {% else %}
+                                                            {{ ballot.voter.username }}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                        {% if ballot.is_calculated %}
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                                                                📊 Calculated
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                                                ✋ Manual
+                                                            </span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                        {% if ballot.tags %}
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                                                {{ ballot.tags }}
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="text-gray-400">No tags</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                                        {% if ballot.votes.exists %}
+                                                            <div class="space-y-1">
+                                                                {% for vote in ballot.votes.all %}
+                                                                    <div class="flex items-center justify-between">
+                                                                        <span class="text-gray-900 dark:text-white">{{ vote.choice.title }}</span>
+                                                                        <div class="flex items-center">
+                                                                            {% for i in "12345"|make_list %}
+                                                                                {% if forloop.counter <= vote.stars %}
+                                                                                    <span class="text-yellow-400">★</span>
+                                                                                {% else %}
+                                                                                    <span class="text-gray-300">☆</span>
+                                                                                {% endif %}
+                                                                            {% endfor %}
+                                                                            <span class="ml-2 text-sm text-gray-500">({{ vote.stars }})</span>
+                                                                        </div>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="text-center py-2">
+                                                                <span class="text-gray-400 italic">
+                                                                    {% if ballot.is_calculated %}
+                                                                        Not following anyone
+                                                                    {% else %}
+                                                                        No votes cast
+                                                                    {% endif %}
+                                                                </span>
+                                                            </div>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-12">
+                                    <div class="text-6xl mb-4">🗳️</div>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Votes Yet</h3>
+                                    <p class="text-gray-500 dark:text-gray-400">
+                                        Votes will appear here as community members participate in this decision.
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </section>
+                    
+                    <!-- Section 4: Final Results -->
+                    <section id="final-results" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                            <h2 class="text-lg font-medium text-gray-900 dark:text-white">🏆 STAR Voting Results</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Score phase averages and final runoff results</p>
+                        </div>
+                        <div class="px-6 py-6">
+                            <div class="space-y-6">
+                                {% for choice in choices %}
+                                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ choice.title }}</h3>
+                                                {% if choice.description %}
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ choice.description }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-right ml-4">
+                                                <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                                                    {{ choice.get_average_stars|default:0|floatformat:1 }}
+                                                </div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                    Average Score
+                                                </div>
+                                                <div class="text-xs text-gray-400 mt-1">
+                                                    {{ choice.get_vote_count|default:0 }} vote{{ choice.get_vote_count|default:0|pluralize }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Visual bar representation -->
+                                        <div class="mt-3">
+                                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                                {% widthratio choice.get_average_stars|default:0 5 100 as bar_width %}
+                                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ bar_width }}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Winner Declaration (if results are final) -->
+                            {% if latest_snapshot.is_final %}
+                                <div class="mt-8 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+                                    <div class="text-center">
+                                        <div class="text-4xl mb-2">🏆</div>
+                                        <h3 class="text-lg font-medium text-green-900 dark:text-green-100 mb-2">Decision Complete</h3>
+                                        <p class="text-green-700 dark:text-green-300">
+                                            Final results calculated on {{ latest_snapshot.created_at|date:"M j, Y \a\t g:i A" }}
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </section>
+                    
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Vote Tally Table Interactive Features -->
+<script>
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('voter-search');
+        const clearButton = document.getElementById('clear-search');
+        const tableBody = document.getElementById('votes-tbody');
+        
+        if (searchInput && tableBody) {
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                const rows = tableBody.getElementsByTagName('tr');
+                
+                Array.from(rows).forEach(row => {
+                    const voterCell = row.cells[0]; // First cell contains voter name
+                    if (voterCell) {
+                        const voterText = voterCell.textContent.toLowerCase();
+                        if (voterText.includes(searchTerm)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    }
+                });
+                
+                // Update clear button visibility
+                clearButton.style.display = searchTerm ? 'block' : 'block';
+            });
+            
+            // Clear search
+            clearButton.addEventListener('click', function() {
+                searchInput.value = '';
+                const rows = tableBody.getElementsByTagName('tr');
+                Array.from(rows).forEach(row => {
+                    row.style.display = '';
+                });
+            });
+        }
+    });
+    
+    // Table sorting functionality
+    function sortTable(columnIndex) {
+        const table = document.getElementById('votes-table');
+        const tbody = document.getElementById('votes-tbody');
+        const header = table.querySelector(`thead th:nth-child(${columnIndex + 1})`);
+        
+        if (!tbody || !header) return;
+        
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+        const currentSort = header.getAttribute('data-sort');
+        const isAscending = currentSort === 'asc';
+        
+        // Clear all sort indicators
+        const allHeaders = table.querySelectorAll('thead th[data-sort]');
+        allHeaders.forEach(h => {
+            h.setAttribute('data-sort', 'asc');
+            const icon = h.querySelector('.sort-icon');
+            if (icon) {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>';
+            }
+        });
+        
+        // Sort rows
+        rows.sort((a, b) => {
+            let aValue = '';
+            let bValue = '';
+            
+            if (columnIndex === 0) {
+                // Voter name
+                aValue = a.cells[0].textContent.trim().toLowerCase();
+                bValue = b.cells[0].textContent.trim().toLowerCase();
+            } else if (columnIndex === 1) {
+                // Vote type - prioritize Manual over Calculated
+                const aIsManual = a.cells[1].textContent.includes('Manual');
+                const bIsManual = b.cells[1].textContent.includes('Manual');
+                aValue = aIsManual ? '0' : '1';
+                bValue = bIsManual ? '0' : '1';
+            } else if (columnIndex === 2) {
+                // Tags
+                aValue = a.cells[2].textContent.trim().toLowerCase();
+                bValue = b.cells[2].textContent.trim().toLowerCase();
+                // Put "No tags" at the end
+                if (aValue.includes('no tags')) aValue = 'zzz';
+                if (bValue.includes('no tags')) bValue = 'zzz';
+            }
+            
+            if (isAscending) {
+                return aValue.localeCompare(bValue);
+            } else {
+                return bValue.localeCompare(aValue);
+            }
+        });
+        
+        // Update sort direction
+        header.setAttribute('data-sort', isAscending ? 'desc' : 'asc');
+        
+        // Update sort icon
+        const icon = header.querySelector('.sort-icon');
+        if (icon) {
+            if (isAscending) {
+                // Show descending arrow
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>';
+            } else {
+                // Show ascending arrow
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>';
+            }
+        }
+        
+        // Re-append sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+    }
+</script>
+{% endblock %}

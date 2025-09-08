@@ -252,7 +252,8 @@ class VoteForm(forms.Form):
         for field_name, value in self.cleaned_data.items():
             if field_name.startswith('choice_'):
                 choice_id = field_name.replace('choice_', '')
-                ratings[int(choice_id)] = value or 0
+                # Keep choice_id as string since we're using UUIDs
+                ratings[choice_id] = value or 0
         return ratings
 
 

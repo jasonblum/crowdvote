@@ -220,6 +220,78 @@
 
             <!-- Sidebar -->
             <div class="space-y-6">
+                <!-- Decision Results Panel -->
+                <div class="bg-green-50 border border-green-200 rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-green-900">📊 Decision Results</h3>
+                        {% if status == 'active' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                🟢 Live
+                            </span>
+                        {% elif status == 'closed' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                🔒 Final
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Countdown Timer or Status -->
+                    {% if status == 'active' and decision.dt_close %}
+                        <div class="mb-4 p-3 bg-white rounded-md border border-green-200">
+                            <div class="text-sm text-green-700 font-medium mb-1">Voting closes in:</div>
+                            <div id="countdown-timer" 
+                                 class="text-lg font-bold text-green-900" 
+                                 data-deadline="{{ decision.dt_close|date:'c' }}">
+                                Calculating...
+                            </div>
+                        </div>
+                    {% elif status == 'closed' %}
+                        <div class="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                            <div class="text-sm text-gray-600 font-medium">Voting closed:</div>
+                            <div class="text-lg font-bold text-gray-900">
+                                {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Quick Stats -->
+                    <div class="space-y-3 mb-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-green-700">Participation</span>
+                            <span class="font-semibold text-green-900">
+                                {{ stats.total_ballots }}/{{ stats.voting_members }} 
+                                ({{ stats.participation_rate }}%)
+                            </span>
+                        </div>
+                        
+                        <!-- Tags Used (if any) -->
+                        {% if decision.ballots.exists %}
+                            <div class="flex items-start justify-between">
+                                <span class="text-sm text-green-700">Popular Tags</span>
+                                <div class="text-right">
+                                    <div class="flex flex-wrap gap-1 justify-end">
+                                        <!-- Sample tags - will be populated dynamically in Phase 2 -->
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                            budget
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                            environment
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- View Full Results Link -->
+                    <div class="pt-3 border-t border-green-200">
+                        <a href="{% url 'democracy:decision_results' community.id decision.id %}" 
+                           class="inline-flex items-center justify-center w-full px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                            📋 View Complete Results & Analysis
+                        </a>
+                    </div>
+                </div>
+                
                 <!-- Voting Statistics -->
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Voting Statistics</h3>
@@ -319,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {% if user_ballot %}
             const existingVotes = {
                 {% for vote in user_ballot.votes.all %}
-                    {{ vote.choice.id }}: {{ vote.stars }},
+                    "{{ vote.choice.id }}": {{ vote.stars }},
                 {% endfor %}
             };
             
@@ -399,6 +471,51 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
     });
+    
+    // Countdown Timer for Active Decisions
+    const countdownElement = document.getElementById('countdown-timer');
+    if (countdownElement) {
+        const deadline = new Date(countdownElement.dataset.deadline);
+        
+        function updateCountdown() {
+            const now = new Date();
+            const timeLeft = deadline - now;
+            
+            if (timeLeft <= 0) {
+                countdownElement.textContent = 'Voting has ended';
+                countdownElement.className = countdownElement.className.replace('text-green-900', 'text-red-600');
+                return;
+            }
+            
+            // Calculate time components
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            // Format display - always include seconds for excitement!
+            let display = '';
+            if (days > 0) {
+                display = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            } else if (hours > 0) {
+                display = `${hours}h ${minutes}m ${seconds}s`;
+            } else if (minutes > 0) {
+                display = `${minutes}m ${seconds}s`;
+            } else {
+                display = `${seconds}s`;
+                // Add urgency styling for last minute
+                if (seconds <= 60) {
+                    countdownElement.className = countdownElement.className.replace('text-green-900', 'text-red-600');
+                }
+            }
+            
+            countdownElement.textContent = display;
+        }
+        
+        // Update immediately and then every second
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    }
 });
 </script>
 {% endblock %}

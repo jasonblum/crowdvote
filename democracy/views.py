@@ -12,8 +12,9 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.db.models import Q
+from django.utils import timezone
 
-from .models import Community, Decision, Membership
+from .models import Community, Decision, Membership, Ballot, Choice, Vote
 
 User = get_user_model()
 
@@ -290,34 +291,36 @@ def decision_list(request, community_id):
         # Regular members can't see draft decisions
         decisions = decisions.exclude(dt_close__isnull=True)
     
-    # Handle search and filtering
+    # Handle search and filtering - simplified approach
+    search = request.GET.get('search', '').strip()
+    status = request.GET.get('status', '').strip()
+    sort = request.GET.get('sort', '-dt_close').strip()
+    
+    # Create form for display
     form = DecisionSearchForm(request.GET)
-    if form.is_valid():
-        search = form.cleaned_data.get('search')
-        status = form.cleaned_data.get('status')
-        sort = form.cleaned_data.get('sort', '-dt_close')
-        
-        if search:
-            decisions = decisions.filter(
-                Q(title__icontains=search) | Q(description__icontains=search)
-            )
-        
-        if status:
-            now = timezone.now()
-            if status == 'active':
-                decisions = decisions.filter(dt_close__gt=now)
-            elif status == 'closed':
-                decisions = decisions.filter(dt_close__lte=now)
-            elif status == 'draft':
-                if user_membership.is_community_manager:
-                    decisions = decisions.filter(dt_close__isnull=True)
-                else:
-                    decisions = decisions.none()  # No drafts for non-managers
-        
-        # Apply sorting
+    
+    if search:
+        decisions = decisions.filter(
+            Q(title__icontains=search) | Q(description__icontains=search)
+        )
+    
+    if status:
+        now = timezone.now()
+        if status == 'active':
+            decisions = decisions.filter(dt_close__gt=now)
+        elif status == 'closed':
+            decisions = decisions.filter(dt_close__lte=now)
+        elif status == 'draft':
+            if user_membership.is_community_manager:
+                decisions = decisions.filter(dt_close__isnull=True)
+            else:
+                decisions = decisions.none()  # No drafts for non-managers
+    
+    # Apply sorting - ensure sort is valid and not empty
+    valid_sort_fields = ['-dt_close', 'dt_close', '-created', 'created', 'title', '-title']
+    if sort and sort in valid_sort_fields:
         decisions = decisions.order_by(sort)
     else:
-        # Default sorting
         decisions = decisions.order_by('-dt_close')
     
     # Annotate with vote counts
@@ -684,3 +687,129 @@ def vote_submit(request, community_id, decision_id):
                 messages.error(request, f"{field}: {error}")
         
         return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+
+
+@login_required
+def decision_results(request, community_id, decision_id):
+    """
+    Display comprehensive decision results with delegation tree and complete analysis.
+    
+    Shows the complete transparency view of a decision including:
+    - Decision metadata and participation statistics
+    - Delegation tree visualization (Phase 2)
+    - Complete vote tally with manual vs calculated indicators
+    - Final STAR voting results and analysis
+    
+    Args:
+        request: Django request object
+        community_id: UUID of the community
+        decision_id: UUID of the decision
+    """
+    community = get_object_or_404(Community, id=community_id)
+    decision = get_object_or_404(Decision, id=decision_id, community=community)
+    
+    # Check if user is a member
+    try:
+        user_membership = Membership.objects.get(
+            community=community,
+            member=request.user
+        )
+    except Membership.DoesNotExist:
+        messages.error(request, "You must be a member of this community to view decision results.")
+        return redirect('democracy:community_detail', community_id=community_id)
+    
+    # Check if decision is published (not draft)
+    if decision.dt_close is None and not user_membership.is_community_manager:
+        messages.error(request, "This decision is not yet published.")
+        return redirect('democracy:decision_list', community_id=community_id)
+    
+    # Get the latest snapshot (or create a basic one if none exists)
+    from .models import DecisionSnapshot
+    latest_snapshot = DecisionSnapshot.objects.filter(decision=decision).first()
+    
+    # If no snapshot exists, create a basic one with current data
+    if not latest_snapshot:
+        # Calculate basic stats
+        total_ballots = decision.ballots.count()
+        voting_members = community.get_voting_members().count()
+        participation_rate = (total_ballots / voting_members * 100) if voting_members > 0 else 0
+        
+        # Get tags used
+        tags_used = []
+        for ballot in decision.ballots.exclude(tags=''):
+            if ballot.tags:
+                ballot_tags = [tag.strip().lower() for tag in ballot.tags.split(',')]
+                tags_used.extend(ballot_tags)
+        
+        # Count tag frequency
+        from collections import Counter
+        tag_frequency = Counter(tags_used)
+        
+        # Create basic snapshot data
+        snapshot_data = {
+            "metadata": {
+                "calculation_timestamp": timezone.now().isoformat(),
+                "system_version": "1.0.0",
+                "decision_status": "active" if decision.dt_close and decision.dt_close > timezone.now() else "closed"
+            },
+            "tag_analysis": {
+                "tag_frequency": dict(tag_frequency.most_common(10)),
+                "total_unique_tags": len(tag_frequency)
+            },
+            "vote_tally": {
+                "direct_votes": total_ballots,
+                "calculated_votes": 0  # Will be calculated in Phase 2
+            }
+        }
+        
+        # Create snapshot
+        latest_snapshot = DecisionSnapshot.objects.create(
+            decision=decision,
+            snapshot_data=snapshot_data,
+            total_eligible_voters=voting_members,
+            total_votes_cast=total_ballots,
+            total_calculated_votes=0,
+            tags_used=list(tag_frequency.keys()),
+            is_final=(decision.dt_close and decision.dt_close <= timezone.now())
+        )
+    
+    # Determine decision status
+    now = timezone.now()
+    if decision.dt_close is None:
+        status = 'draft'
+    elif decision.dt_close > now:
+        status = 'active'
+    else:
+        status = 'closed'
+    
+    # Get all ballots for display (including those with 0 votes)
+    ballots_with_votes = decision.ballots.select_related('voter').prefetch_related('votes__choice').order_by('voter__username')
+    
+    # Get choices with basic stats
+    choices = decision.choices.all()
+    choice_stats = {}
+    for choice in choices:
+        votes = Vote.objects.filter(choice=choice)
+        total_votes = votes.count()
+        if total_votes > 0:
+            avg_stars = sum(vote.stars for vote in votes) / total_votes
+            choice_stats[choice.id] = {
+                'total_votes': total_votes,
+                'average_stars': round(avg_stars, 2)
+            }
+        else:
+            choice_stats[choice.id] = {'total_votes': 0, 'average_stars': 0}
+    
+    context = {
+        'community': community,
+        'user_membership': user_membership,
+        'decision': decision,
+        'status': status,
+        'latest_snapshot': latest_snapshot,
+        'ballots_with_votes': ballots_with_votes,
+        'choices': choices,
+        'choice_stats': choice_stats,
+        'can_manage': user_membership.is_community_manager,
+    }
+    
+    return render(request, 'democracy/decision_results.html', context)

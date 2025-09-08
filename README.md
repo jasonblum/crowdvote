@@ -138,6 +138,34 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU
    - **Main app**: http://localhost:8000
    - **Admin interface**: http://localhost:8000/admin
 
+### Development Commands
+
+Once your Docker environment is running, these commands are essential for development:
+
+```bash
+# Watch live application logs (essential for debugging!)
+docker-compose logs -f web
+
+# Watch logs from all services
+docker-compose logs -f
+
+# Run Django management commands
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py shell
+docker-compose exec web python manage.py createsuperuser
+
+# Check container status
+docker-compose ps
+
+# Stop all services
+docker-compose down
+
+# Restart services (only needed for settings changes or new dependencies)
+docker-compose restart web
+```
+
+**Pro tip**: Keep `docker-compose logs -f web` running in a separate terminal window while developing to see real-time HTTP requests, errors, and Django auto-reload messages.
+
 ### Alternative: Local Python Setup
 
 If you prefer to run without Docker:

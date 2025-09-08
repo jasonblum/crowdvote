@@ -822,3 +822,148 @@ class AnonymousVoteMapping(BaseModel):
         return self.user
 
 
+class DecisionSnapshot(BaseModel):
+    """
+    Represents a point-in-time snapshot of a decision's complete state and results.
+    
+    This model stores pre-calculated results to ensure consistency and performance.
+    When votes, tags, or following relationships change, a new snapshot is created
+    with updated calculations. This prevents inconsistencies during long-running
+    calculations and provides historical audit trails.
+    
+    Key Features:
+    - Point-in-time data consistency (immutable once created)
+    - Complete system state capture at calculation time
+    - Performance optimization through pre-calculation
+    - Historical audit trail of result changes
+    - Support for final vs intermediate snapshots
+    
+    Attributes:
+        decision (ForeignKey): The decision this snapshot represents
+        created_at (DateTimeField): When this snapshot was calculated
+        snapshot_data (JSONField): Complete system state and calculation results
+        calculation_duration (DurationField): How long the calculation took
+        total_eligible_voters (IntegerField): Number of voting community members
+        total_votes_cast (IntegerField): Number of direct votes submitted
+        total_calculated_votes (IntegerField): Number of votes calculated via delegation
+        tags_used (JSONField): All tags used in voting with frequency counts
+        is_final (BooleanField): True when decision is closed (final results)
+        
+    JSON Structure for snapshot_data:
+    {
+        "metadata": {
+            "calculation_timestamp": "2025-01-07T15:30:00Z",
+            "system_version": "1.0.0",
+            "decision_status": "active|closed|draft"
+        },
+        "delegation_tree": {
+            "nodes": [...],  # All voters and their relationships
+            "edges": [...],  # Following relationships with tags
+            "inheritance_chains": [...]  # Vote inheritance paths
+        },
+        "vote_tally": {
+            "direct_votes": [...],  # Manually cast votes
+            "calculated_votes": [...],  # Inherited votes
+            "anonymized_mapping": {...}  # GUID to vote mapping
+        },
+        "star_results": {
+            "score_phase": {...},  # Average scores per choice
+            "runoff_phase": {...},  # Top 2 choices runoff
+            "winner": "choice_id",
+            "margin": 0.15,
+            "statistics": {...}  # Additional metrics
+        },
+        "tag_analysis": {
+            "tag_frequency": {...},  # How often each tag was used
+            "delegation_by_tag": {...},  # Delegation patterns per tag
+            "influence_scores": {...}  # Member influence by tag
+        }
+    }
+    """
+    
+    decision = models.ForeignKey(
+        Decision,
+        on_delete=models.CASCADE,
+        related_name='snapshots',
+        help_text="The decision this snapshot represents"
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When this snapshot was calculated"
+    )
+    
+    snapshot_data = models.JSONField(
+        default=dict,
+        help_text="Complete system state and calculation results at snapshot time"
+    )
+    
+    calculation_duration = models.DurationField(
+        null=True,
+        blank=True,
+        help_text="How long the calculation took to complete"
+    )
+    
+    total_eligible_voters = models.IntegerField(
+        default=0,
+        help_text="Number of voting community members at snapshot time"
+    )
+    
+    total_votes_cast = models.IntegerField(
+        default=0,
+        help_text="Number of direct votes submitted by users"
+    )
+    
+    total_calculated_votes = models.IntegerField(
+        default=0,
+        help_text="Number of votes calculated via delegation chains"
+    )
+    
+    tags_used = models.JSONField(
+        default=list,
+        help_text="All tags used in voting with frequency counts"
+    )
+    
+    is_final = models.BooleanField(
+        default=False,
+        help_text="True when decision is closed and results are final"
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Decision Snapshot"
+        verbose_name_plural = "Decision Snapshots"
+        indexes = [
+            models.Index(fields=['decision', '-created_at']),
+            models.Index(fields=['decision', 'is_final']),
+        ]
+    
+    def __str__(self):
+        status = "Final" if self.is_final else "Interim"
+        return f"{status} snapshot for '{self.decision.title}' ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
+    
+    @property
+    def participation_rate(self):
+        """Calculate the participation rate as a percentage."""
+        if self.total_eligible_voters == 0:
+            return 0.0
+        total_participants = self.total_votes_cast + self.total_calculated_votes
+        return (total_participants / self.total_eligible_voters) * 100
+    
+    @property
+    def delegation_rate(self):
+        """Calculate what percentage of votes were calculated via delegation."""
+        total_votes = self.total_votes_cast + self.total_calculated_votes
+        if total_votes == 0:
+            return 0.0
+        return (self.total_calculated_votes / total_votes) * 100
+    
+    def get_latest_for_decision(self, decision):
+        """Get the most recent snapshot for a decision."""
+        return DecisionSnapshot.objects.filter(decision=decision).first()
+    
+    def get_final_for_decision(self, decision):
+        """Get the final snapshot for a decision (if it exists)."""
+        return DecisionSnapshot.objects.filter(decision=decision, is_final=True).first()
+
+
