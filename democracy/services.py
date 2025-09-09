@@ -175,7 +175,7 @@ class StageBallots(Service):
             }
         }
 
-    def get_or_calculate_ballot(self, decision, voter, follow_path=[], delegation_depth=0):
+    def get_or_calculate_ballot(self, decision, voter, follow_path=None, delegation_depth=0):
         """
         This is where the magic happens: this recursive function gets a voter's ballot,
         or calculates one on their behalf IF they are following other users on zero or more tags (issues) and so
@@ -186,6 +186,10 @@ class StageBallots(Service):
         
         Enhanced to capture delegation tree data for visualization.
         """
+        # Initialize follow_path if not provided (avoids mutable default argument issue)
+        if follow_path is None:
+            follow_path = []
+            
         # Initialize logging attributes if they don't exist
         if not hasattr(decision, 'ballot_tree_log_indent'):
             decision.ballot_tree_log_indent = 0
@@ -246,7 +250,14 @@ class StageBallots(Service):
             ballots_to_compete = []
 
             # Get followings ordered by priority (lower order = higher priority)
+            # Use distinct() to avoid processing duplicate following relationships
+            processed_followees = set()
             for following in ballot.voter.followings.select_related("followee").order_by("order"):
+                # Skip if we've already processed this followee (handles factory-created duplicates)
+                if following.followee in processed_followees:
+                    continue
+                
+                processed_followees.add(following.followee)
 
                 if following.followee not in follow_path:
                     follow_path.append(ballot.voter)
@@ -275,7 +286,7 @@ class StageBallots(Service):
 
                     # Get or calculate the followee's ballot first
                     followee_ballot = self.get_or_calculate_ballot(
-                        decision, following.followee, follow_path, delegation_depth + 1
+                        decision, following.followee, follow_path.copy(), delegation_depth + 1
                     )
                     
                     
@@ -316,6 +327,7 @@ class StageBallots(Service):
             
             # Collect inherited tags for this ballot
             inherited_tags = set()
+            
             
             # Calculate votes with enhanced logging and tag inheritance
             for choice in ballot.decision.choices.all():

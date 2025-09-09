@@ -91,7 +91,8 @@ class TestStageBallotsDelegation:
             decision=decision,
             voter=delegation_users['A'],
             is_calculated=False,
-            tags="orange"
+            tags="orange",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_a, choice=choice1, stars=4)
         VoteFactory(ballot=ballot_a, choice=choice2, stars=1)
@@ -139,12 +140,13 @@ class TestStageBallotsDelegation:
         decision = DecisionFactory(community=community, with_choices=False)
         choice1 = ChoiceFactory(decision=decision, title="Option A")
         
-        # User A votes manually
+        # User A votes manually - ensure no votes created by factory
         ballot_a = BallotFactory(
             decision=decision,
             voter=delegation_users['A'],
             is_calculated=False,
-            tags="apple,banana"
+            tags="apple,banana",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_a, choice=choice1, stars=5)
         
@@ -231,7 +233,8 @@ class TestStageBallotsDelegation:
             decision=decision,
             voter=user_leader,
             is_calculated=False,
-            tags="environment"
+            tags="environment",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_leader, choice=choice, stars=4)
         
@@ -281,7 +284,8 @@ class TestStageBallotsDelegation:
             decision=decision,
             voter=user_leader,
             is_calculated=False,
-            tags="governance,transparency"
+            tags="governance,transparency",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_leader, choice=choice, stars=3)
         
@@ -342,7 +346,8 @@ class TestStageBallotsDelegation:
             decision=decision,
             voter=lobbyist,
             is_calculated=False,
-            tags="expertise"
+            tags="expertise",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_lobbyist, choice=choice, stars=5)
         
@@ -385,7 +390,8 @@ class TestStageBallotsDelegation:
             decision=decision,
             voter=delegation_users['A'],
             is_calculated=False,
-            tags="apple"
+            tags="apple",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_a, choice=choice, stars=4)
         
@@ -503,7 +509,8 @@ class TestDelegationEdgeCases:
             decision=decision,
             voter=users[4],  # A
             is_calculated=False,
-            tags="governance"
+            tags="governance",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_a, choice=choice, stars=3)
         
