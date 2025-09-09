@@ -3,7 +3,10 @@
 
 {% block title %}CrowdVote Documentation{% endblock %}
 
-{% block sidebar_content %}
+{% block sidebar %}
+    <!-- Always show sidebar for docs page -->
+    <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
+        {% block sidebar_content %}
     <!-- Documentation Sidebar Navigation -->
     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center">
@@ -46,6 +49,7 @@
         <!-- FAQ Submenu -->
         <div class="ml-4 mt-3 space-y-1">
             <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">FAQ Topics</h3>
+            <a href="#faq-star-voting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is STAR voting?</a>
             <a href="#faq-lobbyists" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is a lobbyist?</a>
             <a href="#faq-ties" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What happens if there is a tie?</a>
             <a href="#faq-vote-counting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How are votes counted?</a>
@@ -61,29 +65,29 @@
     </div>
     
     <!-- Theme Toggle -->
-    {% block theme_toggle %}
-        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <div class="flex items-center space-x-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
-                <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                    <button type="button" onclick="setTheme('light')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn">
-                        Light
-                    </button>
-                    <button type="button" onclick="setTheme('dark')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn">
-                        Dark
-                    </button>
-                    <button type="button" onclick="setTheme('system')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn">
-                        Auto
-                    </button>
-                </div>
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex items-center space-x-2">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
+            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                <button type="button" onclick="setTheme('light')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn">
+                    Light
+                </button>
+                <button type="button" onclick="setTheme('dark')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn">
+                    Dark
+                </button>
+                <button type="button" onclick="setTheme('system')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn">
+                    Auto
+                </button>
             </div>
         </div>
-    {% endblock %}
-{% endblock sidebar_content %}
+    </div>
+        {% endblock sidebar_content %}
+    </nav>
+{% endblock sidebar %}
 
 {% block content %}
     <!-- Page Content -->
-    <div class="max-w-4xl mx-auto py-8 px-6">
+    <div class="py-8 px-6">
         <div class="space-y-8">
         
             <!-- Overview Section -->
@@ -106,25 +110,26 @@
                             represent others' interests, socially and unregulated by traditional electoral processes and cycles.
                         </p>
                         <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            <em>Example:</em> 'The candidate pledged to crowdvote every official decision to her constituents.'
+                            <em>Example:</em> 'The candidate easily won the election by pledging to <i>crowdvote</i> every official decision to her constituents.'
                         </p>
                         <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             ⎻ORIGIN 2007 http://CrowdVote.com (CC BY-SA 4.0)
                         </p>
                     </div>
 
-                    <div class="prose prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+                    <div class="max-w-none text-gray-700 dark:text-gray-300 space-y-4">
                         <p>
-                            crowdvote it brings a process I've been calling <strong>Social Democracy</strong> 
-                            (as in "Social Media" …not the political ideology) to local communities such as condo associations, 
+                            <strong>CrowdVote</strong> brings a process I've been calling <strong>Social Democracy</strong> 
+                            (as in "Social Media" …not <a href="https://en.wikipedia.org/wiki/Social_democracy">the political ideology</a>) to local communities such as condo associations, 
                             town councils, student governments, and anywhere else you might want to "crowdsource" decisions to 
                             a community of people.
                         </p>
 
                         <p>
                             Unlike a conventional, web-based polling application however, CrowdVote allows community members to 
-                            then delegate their votes on to an Instant Runoff between one or more other members whose judgement 
-                            they trust, <em>whenever -</em> and, specifically, <em>on whichever issues they like</em>.
+                            delegate their votes on to an Instant Runoff between one or more other members whose judgement 
+                            they trust, <em>whenever -</em> and, specifically, <em>on whichever issues they like</em>. And likewise,
+                            those members can delegate their vote on to someone else, and so on.
                         </p>
 
                         <p>
@@ -235,7 +240,7 @@
               <h4 class="text-lg font-semibold mb-4">Get Involved</h4>
               <p>
                 I really appreciate any feedback or words of encouragement at 
-                <strong>jason@CrowdVote.com</strong>, <strong>@CrowdVote</strong> or 
+                <strong>support@CrowdVote.com</strong>, <strong>@CrowdVote</strong> or 
                 <strong>Facebook/CrowdVote</strong>! Beyond just being Open Sourced, I'd love to see this built 
                 such that any non-technical community leader could just deploy their own instance to the cloud 
                 with a simple click of a button.
@@ -265,7 +270,7 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Installation and development guides</p>
                 </div>
                 <div class="px-6 py-6">
-                    <div class="prose prose-lg dark:prose-invert max-w-none">
+                    <div class="max-w-none space-y-4">
                         <p class="text-gray-600 dark:text-gray-400">
                             Technical documentation is coming soon. For now, check out our 
                             <a href="https://github.com/jasonblum/crowdvote" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">GitHub repository</a> 
@@ -282,11 +287,32 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Common questions about CrowdVote</p>
                 </div>
                 <div class="px-6 py-6">
-                    <div class="prose prose-lg dark:prose-invert max-w-none">
+                    <div class="max-w-none space-y-4">
             
                         <div class="space-y-8 divide-y divide-gray-300 dark:divide-gray-600">
                             <!-- FAQ 1 -->
                             <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
+                                <h3 id="faq-star-voting" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                                    What is STAR voting?
+                                </h3>
+                                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
+                                    <p>
+                                        STAR voting stands for <strong>Score Then Automatic Runoff</strong>. It's a voting method where voters score candidates from 0 to 5 stars, then the system automatically conducts a runoff between the two highest-scoring candidates.
+                                    </p>
+                                    <p>
+                                        We chose STAR voting for CrowdVote because it prevents vote-splitting and makes it safe to vote your conscience. Unlike traditional voting where supporting your true favorite might help elect your least favorite candidate, STAR voting ensures your vote never backfires. You can give your favorite candidate 5 stars and still help prevent your worst-case scenario.
+                                    </p>
+                                    <p>
+                                        STAR voting is also highly accurate with any number of candidates and has been extensively peer-reviewed, consistently topping the charts in studies of electoral accuracy and representativeness. It encourages more positive campaigns and ensures every voter has an equally weighted vote.
+                                    </p>
+                                    <p>
+                                        To learn more about STAR voting, including detailed studies and comparisons with other voting methods, visit <a href="https://www.starvoting.org/" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">starvoting.org</a>.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- FAQ 2 -->
+                            <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
                                 <h3 id="faq-lobbyists" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   What is a lobbyist? (… Or why are some members' votes not counted?)
                 </h3>
@@ -808,15 +834,7 @@
                   </p>
                                 </div>
                             </div>
-                            
-                            <!-- Additional FAQs abbreviated for brevity -->
-                            <div class="pt-8 text-center">
-                                <p class="text-gray-600 dark:text-gray-400">
-                                    The complete FAQ section contains 11 detailed questions covering topics from 
-                                    lobbyists and voting security to community adoption and governance.
-                                </p>
-                            </div>
-                        </div>
+                          </div>
                     </div>
                 </div>
             </section>

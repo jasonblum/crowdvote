@@ -12,6 +12,7 @@ services:
     volumes:
       - .:/app
     environment:
+      - DJANGO_SETTINGS_MODULE=crowdvote.settings
       - PGDATABASE=crowdvote_dev
       - PGUSER=postgres
       - PGPASSWORD=postgres

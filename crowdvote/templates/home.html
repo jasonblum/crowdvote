@@ -8,6 +8,36 @@
 {% endblock %}
 
 {% block content %}
+<!-- Beta Alert Banner -->
+<div class="bg-blue-600">
+  <div class="mx-auto max-w-7xl px-3 py-3 sm:px-6 lg:px-8">
+    <div class="flex flex-wrap items-center justify-between">
+      <div class="flex w-0 flex-1 items-center">
+        <span class="flex rounded-lg bg-blue-800 p-2">
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </span>
+        <p class="ml-3 font-medium text-white">
+          <span class="md:hidden">Hey! This application is in Beta - still under construction but feel free to login and poke around!<br>Please send feedback to <a href="mailto:support@crowdvote.com" class="underline hover:text-blue-200">support@crowdvote.com</a>.</span>
+          <span class="hidden md:inline">Hey! This application is in Beta - still under construction but feel free to login and poke around!<br>Please send feedback to <a href="mailto:support@crowdvote.com" class="underline hover:text-blue-200">support@crowdvote.com</a>. For more information, <a href="{% url 'docs' %}" class="underline hover:text-blue-200">check out the docs</a>.</span>
+        </p>
+      </div>
+      <div class="order-3 mt-2 w-full flex-shrink-0 sm:order-2 sm:mt-0 sm:w-auto">
+        <a href="{% url 'docs' %}" class="flex items-center justify-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 sm:hidden">Learn more</a>
+      </div>
+      <div class="order-2 flex-shrink-0 sm:order-3 sm:ml-3">
+        <button type="button" onclick="this.closest('.bg-blue-600').style.display='none'" class="-mr-1 flex rounded-md p-2 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white sm:-mr-2">
+          <span class="sr-only">Dismiss</span>
+          <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="relative h-screen overflow-hidden">
   <!-- Ken Burns Background -->
   <div class="absolute inset-0 ken-burns-bg" style="background-image: url('{% static 'crowd.jpg' %}'); background-size: 100% 100%; background-position: center center; background-repeat: no-repeat;"></div>
@@ -20,23 +50,8 @@
       <!-- Left side - empty for home page -->
       <div></div>
       
-      <!-- Right side - Theme switcher and Docs link -->
-      <div class="flex items-center space-x-6">
-        <!-- Theme Toggle -->
-        <div class="flex items-center space-x-2">
-          <div class="flex bg-black/20 backdrop-blur-sm rounded-lg p-1">
-            <button type="button" onclick="setTheme('light')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn bg-white/20 text-white">
-              Light
-            </button>
-            <button type="button" onclick="setTheme('dark')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn text-white/70 hover:text-white">
-              Dark
-            </button>
-            <button type="button" onclick="setTheme('system')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn text-white/70 hover:text-white">
-              Auto
-            </button>
-          </div>
-        </div>
-        
+      <!-- Right side - Docs link only -->
+      <div class="flex items-center">
         <!-- Docs Link -->
         <a href="{% url 'docs' %}" class="text-2xl/6 font-semibold text-white hover:text-gray-300 transition-colors">
           Help <span aria-hidden="true">→</span>
