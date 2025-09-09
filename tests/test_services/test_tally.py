@@ -46,7 +46,8 @@ class TestCompleteTallyProcess:
             decision=decision,
             voter=delegation_users['A'],
             is_calculated=False,
-            tags="apple,orange,banana"
+            tags="apple,orange,banana",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_a, choice=choice_a, stars=5)
         VoteFactory(ballot=ballot_a, choice=choice_b, stars=3)
@@ -112,7 +113,8 @@ class TestCompleteTallyProcess:
             decision=decision,
             voter=manual_voter1,
             is_calculated=False,
-            tags="independent"
+            tags="independent",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_m1, choice=choice_a, stars=2)
         VoteFactory(ballot=ballot_m1, choice=choice_b, stars=4)
@@ -121,7 +123,8 @@ class TestCompleteTallyProcess:
             decision=decision,
             voter=manual_voter2,
             is_calculated=False,
-            tags="independent"
+            tags="independent",
+            with_votes=False
         )
         VoteFactory(ballot=ballot_m2, choice=choice_a, stars=1)
         VoteFactory(ballot=ballot_m2, choice=choice_b, stars=5)
@@ -302,12 +305,12 @@ class TestCompleteTallyProcess:
         
         # User1 in community1
         MembershipFactory(community=community1, member=user1)
-        ballot1 = BallotFactory(decision=decision1, voter=user1, is_calculated=False)
+        ballot1 = BallotFactory(decision=decision1, voter=user1, is_calculated=False, with_votes=False)
         VoteFactory(ballot=ballot1, choice=choice1, stars=3)
         
         # User2 in community2
         MembershipFactory(community=community2, member=user2)
-        ballot2 = BallotFactory(decision=decision2, voter=user2, is_calculated=False)
+        ballot2 = BallotFactory(decision=decision2, voter=user2, is_calculated=False, with_votes=False)
         VoteFactory(ballot=ballot2, choice=choice2, stars=4)
         
         # Run tally service

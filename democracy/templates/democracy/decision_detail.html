@@ -210,7 +210,7 @@
                                         <div class="flex items-center space-x-1 star-rating" data-choice-id="{{ choice.id }}">
                                             {% for star in "12345" %}
                                                 <button type="button" 
-                                                        class="star text-3xl hover:text-yellow-400 transition-colors focus:outline-none cursor-pointer"
+                                                        class="star text-3xl transition-colors focus:outline-none cursor-pointer"
                                                         data-rating="{{ star }}"
                                                         title="{{ star }} star{{ star|pluralize }}"
                                                         style="color: var(--star-empty-color, #d1d5db);">
@@ -340,11 +340,22 @@
 }
 </style>
 <script>
+console.log('JavaScript file loading...');
+console.log('User authenticated:', {{ user.is_authenticated|yesno:"true,false" }});
+console.log('Can vote:', {{ can_vote|yesno:"true,false" }});
+console.log('Decision status:', '{{ status }}');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing star ratings...');
+    console.log('Page URL:', window.location.href);
+    console.log('Document title:', document.title);
     // Initialize star ratings
     const starRatings = document.querySelectorAll('.star-rating');
     console.log('Found', starRatings.length, 'star rating containers');
+    
+    // Debug: Let's see what elements exist
+    console.log('Vote form exists:', !!document.getElementById('vote-form'));
+    console.log('All star elements:', document.querySelectorAll('.star').length);
+    console.log('All rating inputs:', document.querySelectorAll('.rating-input').length);
     
     starRatings.forEach(rating => {
         const stars = rating.querySelectorAll('.star');
@@ -401,6 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Hover effects
             star.addEventListener('mouseenter', function() {
+                console.log('Star hover:', index + 1);
                 highlightStars(stars, index + 1);
             });
         });
@@ -439,13 +451,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function highlightStars(stars, count) {
+        console.log('highlightStars called with count:', count);
         stars.forEach((star, index) => {
             if (index < count) {
                 star.textContent = '★';
                 star.style.color = '#fbbf24'; // yellow-400
+                console.log('Highlighting star', index + 1, 'yellow');
             } else {
                 star.textContent = '☆';
-                star.style.color = ''; // reset to CSS default
+                star.style.color = 'var(--star-empty-color, #d1d5db)'; // explicit reset to empty color
+                console.log('Resetting star', index + 1, 'to empty');
             }
         });
     }

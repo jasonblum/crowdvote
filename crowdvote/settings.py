@@ -34,6 +34,11 @@ DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.railway.app', 'crowdvote.com', 'www.crowdvote.com'])
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.crowdvote.com',
+    'https://crowdvote.com',
+    'https://*.railway.app',
+]
 
 # Application definition
 

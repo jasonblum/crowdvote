@@ -342,7 +342,7 @@ class TestVoteModel:
     def test_vote_creation(self):
         """Test basic vote creation."""
         ballot = BallotFactory(with_votes=False)
-        choice = ChoiceFactory()
+        choice = ChoiceFactory(decision=ballot.decision)
         
         vote = VoteFactory(
             ballot=ballot,
@@ -357,7 +357,7 @@ class TestVoteModel:
     def test_vote_string_representation(self):
         """Test Vote __str__ method."""
         ballot = BallotFactory(with_votes=False)
-        choice = ChoiceFactory(title="Test Choice")
+        choice = ChoiceFactory(decision=ballot.decision, title="Test Choice")
         vote = VoteFactory(ballot=ballot, choice=choice, stars=3)
         
         expected = f"3 stars for Test Choice"
@@ -366,7 +366,7 @@ class TestVoteModel:
     def test_vote_stars_validation(self):
         """Test vote stars field validation."""
         ballot = BallotFactory(with_votes=False)
-        choice = ChoiceFactory()
+        choice = ChoiceFactory(decision=ballot.decision)
         
         # Valid star ratings (0-5)
         for stars in range(0, 6):
@@ -386,7 +386,7 @@ class TestVoteModel:
     def test_vote_unique_constraint(self):
         """Test that ballot-choice combinations must be unique."""
         ballot = BallotFactory(with_votes=False)
-        choice = ChoiceFactory()
+        choice = ChoiceFactory(decision=ballot.decision)
         
         # First vote should work
         VoteFactory(ballot=ballot, choice=choice, stars=3)
@@ -487,7 +487,7 @@ class TestSTARVotingConstraints:
     def test_star_rating_range_enforcement(self):
         """Test that star ratings are enforced at model level."""
         ballot = BallotFactory(with_votes=False)
-        choice = ChoiceFactory()
+        choice = ChoiceFactory(decision=ballot.decision)
         
         # Test boundary values
         vote_0 = VoteFactory(ballot=ballot, choice=choice, stars=0)
