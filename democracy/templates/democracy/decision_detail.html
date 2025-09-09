@@ -210,9 +210,10 @@
                                         <div class="flex items-center space-x-1 star-rating" data-choice-id="{{ choice.id }}">
                                             {% for star in "12345" %}
                                                 <button type="button" 
-                                                        class="star text-3xl text-gray-300 dark:text-gray-600 hover:text-yellow-400 transition-colors focus:outline-none"
+                                                        class="star text-3xl hover:text-yellow-400 transition-colors focus:outline-none cursor-pointer"
                                                         data-rating="{{ star }}"
-                                                        title="{{ star }} star{{ star|pluralize }}">
+                                                        title="{{ star }} star{{ star|pluralize }}"
+                                                        style="color: var(--star-empty-color, #d1d5db);">
                                                     ☆
                                                 </button>
                                             {% endfor %}
@@ -330,10 +331,20 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+:root {
+    --star-empty-color: #d1d5db; /* gray-300 */
+}
+.dark {
+    --star-empty-color: #6b7280; /* gray-500 for dark mode */
+}
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing star ratings...');
     // Initialize star ratings
     const starRatings = document.querySelectorAll('.star-rating');
+    console.log('Found', starRatings.length, 'star rating containers');
     
     starRatings.forEach(rating => {
         const stars = rating.querySelectorAll('.star');
@@ -354,11 +365,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         {% endif %}
         
-        // Add click handlers
+        // Add click handlers with more robust event handling
         stars.forEach((star, index) => {
-            star.addEventListener('click', function() {
+            // Click handler
+            star.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 const rating_value = index + 1;
-                setRating(rating, rating_value);
+                console.log('Star clicked:', rating_value, 'for choice:', choiceId);
+                
+                // Direct DOM update for immediate feedback
+                const hiddenInput = rating.parentElement.querySelector('.rating-input');
+                const ratingText = rating.querySelector('.rating-text');
+                
+                if (hiddenInput) {
+                    hiddenInput.value = rating_value;
+                    console.log('Updated hidden input to:', rating_value);
+                }
+                
+                // Update visual feedback
+                highlightStars(stars, rating_value);
+                
+                // Update rating text
+                const labels = {
+                    1: '1 star - Strongly oppose',
+                    2: '2 stars - Oppose', 
+                    3: '3 stars - Neutral',
+                    4: '4 stars - Support',
+                    5: '5 stars - Strongly support'
+                };
+                if (ratingText) {
+                    ratingText.textContent = labels[rating_value] || `${rating_value} stars`;
+                }
             });
             
             // Hover effects
@@ -379,7 +417,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const ratingText = ratingContainer.querySelector('.rating-text');
         const hiddenInput = ratingContainer.parentElement.querySelector('.rating-input');
         
-        hiddenInput.value = value;
+        console.log('setRating called:', value, 'hiddenInput:', hiddenInput);
+        if (hiddenInput) {
+            hiddenInput.value = value;
+            console.log('Hidden input value set to:', hiddenInput.value);
+        } else {
+            console.error('Hidden input not found!');
+        }
         highlightStars(stars, value);
         
         // Update text
@@ -398,12 +442,10 @@ document.addEventListener('DOMContentLoaded', function() {
         stars.forEach((star, index) => {
             if (index < count) {
                 star.textContent = '★';
-                star.classList.add('text-yellow-400');
-                star.classList.remove('text-gray-300');
+                star.style.color = '#fbbf24'; // yellow-400
             } else {
                 star.textContent = '☆';
-                star.classList.add('text-gray-300');
-                star.classList.remove('text-yellow-400');
+                star.style.color = ''; // reset to CSS default
             }
         });
     }
