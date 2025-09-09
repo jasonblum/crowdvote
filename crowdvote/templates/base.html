@@ -12,6 +12,9 @@
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
+    <!-- Alpine.js for dropdown functionality -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <!-- Jdenticon for user avatars -->
     <script src="https://cdn.jsdelivr.net/npm/jdenticon@3.3.0/dist/jdenticon.min.js" async
             integrity="sha384-LfouGM03m83ArVtne1JPk926e3SGD0Tz8XHtW2OKGsgeBU/UfR0Fa8eX+UlwSSAZ" crossorigin="anonymous">
@@ -35,65 +38,151 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    <!-- Global Header -->
-    {% block header %}
-        <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <!-- Left side - Logo/Brand -->
-                    <div class="flex items-center">
-                        <a href="/" class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <span class="text-2xl font-bold text-gray-900 dark:text-white">CrowdVote</span>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    {% block page_layout %}
+        <!-- Standard Application Layout -->
+        <div class="{% block layout_classes %}lg:flex{% endblock %}">
+            <!-- Sidebar Navigation (optional, can be overridden) -->
+            {% block sidebar %}
+                {% if user.is_authenticated %}
+                    <!-- Default sidebar for authenticated users -->
+                    <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
+                        {% block sidebar_content %}
+                            <div class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                            <span class="text-white font-bold text-sm">🏠</span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h1 class="text-lg font-medium text-gray-900 dark:text-white">CrowdVote</h1>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Democracy Platform</p>
+                                    </div>
+                                </div>
                             </div>
-                        </a>
-                    </div>
-                    
-                    <!-- Right side - Theme switcher and user menu -->
-                    <div class="flex items-center space-x-4">
-                        <!-- Theme Toggle -->
-                        <div class="flex items-center space-x-2">
-                            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                                <button type="button" onclick="setTheme('light')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn bg-white text-gray-900 shadow-sm">
-                                    Light
-                                </button>
-                                <button type="button" onclick="setTheme('dark')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                    Dark
-                                </button>
-                                <button type="button" onclick="setTheme('system')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                    Auto
-                                </button>
+                            
+                            <!-- Theme Toggle (in sidebar for consistent placement) -->
+                            {% block theme_toggle %}
+                                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
+                                        <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                            <button type="button" onclick="setTheme('light')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn">
+                                                Light
+                                            </button>
+                                            <button type="button" onclick="setTheme('dark')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn">
+                                                Dark
+                                            </button>
+                                            <button type="button" onclick="setTheme('system')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn">
+                                                Auto
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endblock %}
+                        {% endblock sidebar_content %}
+                    </nav>
+                {% endif %}
+            {% endblock sidebar %}
+
+            <!-- Main Content Area -->
+            <main class="flex-1 lg:pl-0">
+                <!-- Top Header Navigation -->
+                {% block header %}
+                    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                        <div class="px-6 py-4">
+                            <div class="flex justify-between items-center">
+                                <!-- Left side - Logo/Brand -->
+                                <div class="flex items-center">
+                                    {% if user.is_authenticated %}
+                                        <!-- Logo links to user profile when logged in -->
+                                        <a href="{% url 'accounts:member_profile' user.username %}" class="flex items-center">
+                                            <span class="text-xl font-bold text-gray-900 dark:text-white">CrowdVote</span>
+                                        </a>
+                                    {% else %}
+                                        <!-- Logo links to landing page when not logged in -->
+                                        <a href="/" class="flex items-center">
+                                            <span class="text-xl font-bold text-gray-900 dark:text-white">CrowdVote</span>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Right side - User menu -->
+                                <div class="flex items-center space-x-4">
+                                    {% if user.is_authenticated %}
+                                        <!-- User Menu Dropdown -->
+                                        <div class="relative" x-data="{ open: false }">
+                                            <!-- Dropdown Trigger -->
+                                            <button @click="open = !open" 
+                                                    class="flex items-center space-x-2 text-sm rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                {% load member_tags %}
+                                                {% user_avatar user 28 %}
+                                                <span class="text-gray-700 dark:text-gray-300 font-medium">{{ user.get_display_name }}</span>
+                                                <!-- Dropdown Arrow -->
+                                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </button>
+                                            
+                                            <!-- Dropdown Menu -->
+                                            <div x-show="open" 
+                                                 @click.away="open = false"
+                                                 x-transition:enter="transition ease-out duration-100"
+                                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                                 x-transition:leave="transition ease-in duration-75"
+                                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                                 class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-50">
+                                                <div class="py-1">
+                                                    <!-- Profile Link -->
+                                                    <a href="{% url 'accounts:member_profile' user.username %}" 
+                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                        </svg>
+                                                        Profile
+                                                    </a>
+                                                    
+                                                    <!-- Documentation Link -->
+                                                    <a href="{% url 'docs' %}" 
+                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                                        </svg>
+                                                        Documentation
+                                                    </a>
+                                                    
+                                                    <!-- Logout Link -->
+                                                    <a href="{% url 'account_logout' %}" 
+                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-200 dark:border-gray-600">
+                                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                                        </svg>
+                                                        Logout
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <!-- Sign In Link -->
+                                        <a href="/" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
+                                            Sign In
+                                        </a>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- User Menu (when logged in) -->
-                        {% if user.is_authenticated %}
-                            <div class="relative">
-                                <button type="button" class="flex items-center space-x-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    {% load member_tags %}
-                                    {% user_avatar user 32 %}
-                                    <span class="text-gray-700 dark:text-gray-300 font-medium">{{ user.get_display_name }}</span>
-                                </button>
-                                <!-- Dropdown menu would go here in future -->
-                            </div>
-                        {% else %}
-                            <!-- Login link for non-authenticated users -->
-                            <a href="/" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
-                                Sign In
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </header>
-    {% endblock %}
-    
-    <!-- Main Content -->
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
+                    </header>
+                {% endblock header %}
+                
+                <!-- Page Content -->
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    {% endblock page_layout %}
     
     <!-- Global Theme Management Script -->
     <script>

@@ -3,53 +3,90 @@
 
 {% block title %}{{ community.name }} - CrowdVote{% endblock %}
 
-{% block content %}
-<!-- Navigation Breadcrumb -->
-<div class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-    <div class="max-w-6xl mx-auto px-6">
-        <div class="flex items-center justify-between h-16">
-            <nav class="flex items-center space-x-4 text-sm">
-                <a href="{% url 'home' %}" class="text-gray-500 hover:text-gray-700 transition-colors">🏠 Home</a>
-                <span class="text-gray-300">›</span>
-                <a href="{% url 'accounts:community_discovery' %}" class="text-gray-500 hover:text-gray-700 transition-colors">🌐 Communities</a>
-                <span class="text-gray-300">›</span>
-                <span class="text-gray-900 font-medium">{{ community.name }}</span>
-            </nav>
-            
-            <div class="flex items-center space-x-3">
-                {% if user_membership %}
-                    <a href="{% url 'democracy:decision_list' community.id %}" 
-                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2">
-                        🗳️ View Decisions
-                        {% if recent_decisions %}
-                            <span class="bg-blue-500 text-xs px-2 py-1 rounded-full">{{ recent_decisions|length }}</span>
-                        {% endif %}
-                    </a>
-                    {% if user_membership.is_community_manager %}
-                        <a href="{% url 'democracy:decision_create' community.id %}" 
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                            ➕ Create Decision
-                        </a>
-                        <a href="{% url 'democracy:community_manage' community.id %}" 
-                           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                            ⚙️ Manage
-                        </a>
-                    {% endif %}
-                {% endif %}
-                <a href="{% url 'accounts:dashboard' %}" 
-                   class="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                    📊 Dashboard
-                </a>
+{% block sidebar_content %}
+    <!-- Community Detail Sidebar -->
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">{{ community.name|first|upper }}</span>
+                </div>
+            </div>
+            <div class="ml-3">
+                <h1 class="text-lg font-medium text-gray-900 dark:text-white">{{ community.name }}</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Community Details</p>
             </div>
         </div>
     </div>
-</div>
+    
+    <!-- Navigation Menu -->
+    <div class="px-6 py-4">
+        <nav class="space-y-2">
+            <a href="#community-info" class="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                🏘️ Community Info
+            </a>
+            <a href="#members-section" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                👥 Members
+            </a>
+            <a href="#delegation-tree" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                🌳 Delegation Tree
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        {% if user_membership %}
+            <div class="space-y-3">
+                <a href="{% url 'democracy:decision_list' community.id %}" 
+                   class="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
+                    🗳️ View Decisions
+                    {% if recent_decisions %}
+                        <span class="ml-2 bg-blue-500 text-xs px-2 py-1 rounded-full">{{ recent_decisions|length }}</span>
+                    {% endif %}
+                </a>
+                {% if user_membership.is_community_manager %}
+                    <a href="{% url 'democracy:decision_create' community.id %}" 
+                       class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors">
+                        ➕ Create Decision
+                    </a>
+                    <a href="{% url 'democracy:community_manage' community.id %}" 
+                       class="inline-flex items-center justify-center w-full px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors">
+                        ⚙️ Manage
+                    </a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+                <p class="text-xs text-yellow-800 dark:text-yellow-200">You need to join this community to access decisions and features.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Theme Toggle -->
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex items-center space-x-2">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
+            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                <button type="button" onclick="setTheme('light')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn">
+                    Light
+                </button>
+                <button type="button" onclick="setTheme('dark')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn">
+                    Dark
+                </button>
+                <button type="button" onclick="setTheme('system')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn">
+                    Auto
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock sidebar_content %}
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12">
-    <div class="max-w-6xl mx-auto px-6">
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-6">
         
         <!-- Community Header -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-blue-200">
+        <section id="community-info" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-8 mb-8">
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center">
                     <span class="text-4xl mr-4">
@@ -58,8 +95,8 @@
                         {% else %}🏛️{% endif %}
                     </span>
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">{{ community.name }}</h1>
-                        <p class="text-gray-600">{{ stats.total_members }} members • {{ stats.voting_members }} voters</p>
+                        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">{{ community.name }}</h1>
+                        <p class="text-gray-600 dark:text-gray-300">{{ stats.total_members }} members • {{ stats.voting_members }} voters</p>
                     </div>
                 </div>
                 
@@ -95,80 +132,80 @@
             </div>
             
             <!-- Community Description -->
-            <p class="text-gray-700 text-lg leading-relaxed mb-6">
+            <p class="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">
                 {{ community.description }}
             </p>
             
             <!-- Community Stats -->
             <div class="grid grid-cols-4 gap-4 text-center">
-                <div class="bg-blue-50 rounded-lg p-4">
-                    <div class="text-2xl font-bold text-blue-600">{{ stats.total_members }}</div>
-                    <div class="text-sm text-blue-800">Total Members</div>
+                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ stats.total_members }}</div>
+                    <div class="text-sm text-blue-800 dark:text-blue-200">Total Members</div>
                 </div>
-                <div class="bg-green-50 rounded-lg p-4">
-                    <div class="text-2xl font-bold text-green-600">{{ stats.voting_members }}</div>
-                    <div class="text-sm text-green-800">Voters</div>
+                <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ stats.voting_members }}</div>
+                    <div class="text-sm text-green-800 dark:text-green-200">Voters</div>
                 </div>
-                <div class="bg-yellow-50 rounded-lg p-4">
-                    <div class="text-2xl font-bold text-yellow-600">{{ stats.lobbyists }}</div>
-                    <div class="text-sm text-yellow-800">Lobbyists</div>
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
+                    <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ stats.lobbyists }}</div>
+                    <div class="text-sm text-yellow-800 dark:text-yellow-200">Lobbyists</div>
                 </div>
-                <div class="bg-purple-50 rounded-lg p-4">
-                    <div class="text-2xl font-bold text-purple-600">{{ stats.managers }}</div>
-                    <div class="text-sm text-purple-800">Managers</div>
+                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ stats.managers }}</div>
+                    <div class="text-sm text-purple-800 dark:text-purple-200">Managers</div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Quick Actions -->
         {% if user_membership %}
-        <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200 mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Community Actions</h2>
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Community Actions</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <a href="{% url 'democracy:decision_list' community.id %}" 
-                   class="flex items-center p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors">
-                    <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                   class="flex items-center p-4 border border-blue-200 dark:border-blue-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                    <div class="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-4">
                         <span class="text-2xl">🗳️</span>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-gray-900">View Decisions</h3>
-                        <p class="text-sm text-gray-600">See active votes and past decisions</p>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">View Decisions</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">See active votes and past decisions</p>
                     </div>
                 </a>
                 
                 {% if user_membership.is_community_manager %}
                 <a href="{% url 'democracy:decision_create' community.id %}" 
-                   class="flex items-center p-4 border-2 border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors">
-                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                   class="flex items-center p-4 border border-green-200 dark:border-green-700 rounded-lg hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-4">
                         <span class="text-2xl">📝</span>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-gray-900">Create Decision</h3>
-                        <p class="text-sm text-gray-600">Start a new community vote</p>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Create Decision</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Start a new community vote</p>
                     </div>
                 </a>
                 {% endif %}
             </div>
-        </div>
+        </section>
         {% endif %}
 
         <!-- Members Section -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-200">
+        <section id="members-section" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 mb-6">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Community Members</h2>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Community Members</h2>
                 
                 <!-- Member Filters -->
                 <div class="flex space-x-2">
-                    <a href="?role=all" class="{% if role_filter == 'all' %}bg-crowdvote-blue text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                    <a href="?role=all" class="{% if role_filter == 'all' %}bg-blue-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
                         All ({{ stats.total_members }})
                     </a>
-                    <a href="?role=managers" class="{% if role_filter == 'managers' %}bg-purple-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                    <a href="?role=managers" class="{% if role_filter == 'managers' %}bg-purple-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
                         Managers ({{ stats.managers }})
                     </a>
-                    <a href="?role=voters" class="{% if role_filter == 'voters' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                    <a href="?role=voters" class="{% if role_filter == 'voters' %}bg-green-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
                         Voters ({{ stats.voting_members }})
                     </a>
-                    <a href="?role=lobbyists" class="{% if role_filter == 'lobbyists' %}bg-yellow-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} px-3 py-1 rounded text-sm">
+                    <a href="?role=lobbyists" class="{% if role_filter == 'lobbyists' %}bg-yellow-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
                         Lobbyists ({{ stats.lobbyists }})
                     </a>
                 </div>
@@ -182,9 +219,9 @@
                            name="search" 
                            value="{{ search_query }}"
                            placeholder="Search members..."
-                           class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-crowdvote-blue focus:border-transparent">
+                           class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <button type="submit" 
-                            class="bg-crowdvote-blue hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg">
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg transition-colors">
                         Search
                     </button>
                 </div>
@@ -234,38 +271,38 @@
                     </div>
                 {% endfor %}
             </div>
-        </div>
+        </section>
 
         <!-- Influence Tree Panel -->
         {% if influence_tree.has_relationships %}
-        <div class="bg-white rounded-2xl shadow-xl p-8 mt-8 border border-blue-200">
+        <section id="delegation-tree" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 mb-6">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">🌳 Delegation Network</h2>
-                <div class="text-sm text-gray-600">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">🌳 Delegation Network</h2>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
                     {{ influence_tree.stats.total_relationships }} relationship{{ influence_tree.stats.total_relationships|pluralize }}
                 </div>
             </div>
             
-            <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <pre class="text-sm font-mono leading-relaxed text-gray-800 whitespace-pre-wrap overflow-x-auto">{{ influence_tree.tree_text|safe }}</pre>
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-600">
+                <pre class="text-sm font-mono leading-relaxed text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-x-auto">{{ influence_tree.tree_text|safe }}</pre>
             </div>
             
-            <div class="mt-4 text-xs text-gray-500">
+            <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
                 <p><strong>How to read this tree:</strong> This shows hierarchical delegation chains. If H→F→C→A, then when H doesn't vote, they inherit from F, who inherits from C, who inherits from A. The deeper the nesting, the longer the delegation chain.</p>
             </div>
-        </div>
+        </section>
         {% endif %}
 
         <!-- Recent Decisions (if any) -->
         {% if recent_decisions %}
-        <div class="bg-white rounded-2xl shadow-xl p-8 mt-8 border border-blue-200">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Recent Decisions</h2>
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent Decisions</h2>
             <div class="space-y-4">
                 {% for decision in recent_decisions %}
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold text-gray-900">{{ decision.title }}</h3>
-                        <p class="text-sm text-gray-600 mt-1">{{ decision.description|truncatewords:20 }}</p>
-                        <div class="text-xs text-gray-500 mt-2">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ decision.title }}</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ decision.description|truncatewords:20 }}</p>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">
                             {% if decision.is_open %}
                                 Open until {{ decision.dt_close|date:"M j, Y g:i A" }}
                             {% else %}
@@ -275,7 +312,7 @@
                     </div>
                 {% endfor %}
             </div>
-        </div>
+        </section>
         {% endif %}
 
     </div>

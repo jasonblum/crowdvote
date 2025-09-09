@@ -1,5 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
+from django.urls import reverse
 import os
 import re
 
@@ -44,7 +45,13 @@ def home(request):
     """
     Home page view displaying the CrowdVote welcome message and key features.
     In production, shows an under construction page to prevent premature access.
+    
+    Logged-in users are redirected to their profile page instead of seeing the landing page.
     """
+    # Redirect logged-in users to their profile page
+    if request.user.is_authenticated:
+        return redirect('accounts:member_profile', username=request.user.username)
+    
     # Show under construction page in production
     if not settings.DEBUG:
         return render(request, 'under_construction.html')

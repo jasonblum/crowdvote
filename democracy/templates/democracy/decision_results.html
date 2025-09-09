@@ -3,24 +3,21 @@
 
 {% block title %}{{ decision.title }} - Results | {{ community.name }}{% endblock %}
 
-{% block content %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <div class="lg:flex">
-        <!-- Sidebar Navigation -->
-        <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-sm">📊</span>
-                        </div>
-                    </div>
-                    <div class="ml-3">
-                        <h1 class="text-lg font-medium text-gray-900 dark:text-white">Decision Results</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ community.name }}</p>
-                    </div>
+{% block sidebar_content %}
+    <!-- Decision Results Sidebar -->
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">📊</span>
                 </div>
             </div>
+            <div class="ml-3">
+                <h1 class="text-lg font-medium text-gray-900 dark:text-white">Decision Results</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ community.name }}</p>
+            </div>
+        </div>
+    </div>
             
             <!-- Navigation Menu -->
             <div class="px-6 py-4">
@@ -41,44 +38,43 @@
                 </nav>
             </div>
             
-            <!-- Back to Decision -->
-            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
-                   class="flex items-center justify-center w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    ← Back to Decision
-                </a>
-            </div>
-        </nav>
+    <!-- Back to Decision -->
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
+           class="flex items-center justify-center w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            ← Back to Decision
+        </a>
+    </div>
+{% endblock sidebar_content %}
 
-        <!-- Main Content Area -->
-        <main class="flex-1 lg:pl-0">
-            <!-- Page Header -->
-            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ decision.title }}</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Results Analysis • {{ latest_snapshot.created_at|date:"M j, Y \a\t g:i A" }}
-                            {% if latest_snapshot.is_final %}
-                                <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    🔒 Final
-                                </span>
-                            {% else %}
-                                <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    🟢 Live
-                                </span>
-                            {% endif %}
-                        </p>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Participation Rate</div>
-                        <div class="text-2xl font-bold text-green-600">{{ latest_snapshot.participation_rate|floatformat:1 }}%</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Content Sections -->
-            <div class="max-w-7xl mx-auto py-8 px-6">
+{% block content %}
+<!-- Page Header -->
+<div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ decision.title }}</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Results Analysis • {{ latest_snapshot.created_at|date:"M j, Y \a\t g:i A" }}
+                {% if latest_snapshot.is_final %}
+                    <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                        🔒 Final
+                    </span>
+                {% else %}
+                    <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+                        🟢 Live
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="text-right">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Participation Rate</div>
+            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ latest_snapshot.participation_rate|floatformat:1 }}%</div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Sections -->
+<div class="max-w-4xl mx-auto py-8 px-6">
                 <div class="space-y-8">
                     
                     <!-- Section 1: Decision Header & Details -->
@@ -417,11 +413,9 @@
                     
                 </div>
             </div>
-        </main>
-    </div>
-</div>
+{% endblock content %}
 
-<!-- Vote Tally Table Interactive Features -->
+{% block scripts %}
 <script>
     // Search functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -534,4 +528,4 @@
         rows.forEach(row => tbody.appendChild(row));
     }
 </script>
-{% endblock %}
+{% endblock scripts %}
