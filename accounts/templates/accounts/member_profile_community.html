@@ -29,7 +29,8 @@
                     <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8 text-white">
                         <div class="flex items-center space-x-4">
                             <div class="w-20 h-20 rounded-full bg-white bg-opacity-20 p-1">
-                                {{ member.get_avatar_html:72|safe }}
+                                {% load member_tags %}
+                                {% user_avatar member 72 %}
                             </div>
                             <div>
                                 <h1 class="text-3xl font-bold">{{ member.get_display_name }}</h1>

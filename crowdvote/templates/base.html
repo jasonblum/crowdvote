@@ -71,10 +71,9 @@
                         {% if user.is_authenticated %}
                             <div class="relative">
                                 <button type="button" class="flex items-center space-x-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                                        <span class="text-white font-medium text-sm">{{ user.username|first|upper }}</span>
-                                    </div>
-                                    <span class="text-gray-700 dark:text-gray-300 font-medium">{{ user.username }}</span>
+                                    {% load member_tags %}
+                                    {% user_avatar user 32 %}
+                                    <span class="text-gray-700 dark:text-gray-300 font-medium">{{ user.get_display_name }}</span>
                                 </button>
                                 <!-- Dropdown menu would go here in future -->
                             </div>

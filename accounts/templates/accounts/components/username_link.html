@@ -7,9 +7,10 @@ This component handles:
 - Consistent styling across the application
 {% endcomment %}
 
+{% load member_tags %}
 <div class="flex items-center space-x-2">
     <!-- Jdenticon Avatar -->
-    {{ user.get_avatar_html:24|safe }}
+    {% user_avatar user 24 %}
     
     <!-- Username Link -->
     {% if profile_url %}

@@ -30,24 +30,26 @@ class DelegationTreeService:
     
     def format_username(self, user, community=None):
         """
-        Format username with optional link to profile.
+        Format username with optional link to profile and avatar.
         
         Args:
             user: User object to format
             community: Community object for profile link context
             
         Returns:
-            str: Formatted username (HTML if include_links=True)
+            str: Formatted username with avatar (HTML if include_links=True)
         """
+        display_name = user.get_display_name() if hasattr(user, 'get_display_name') else user.username
+        avatar_html = user.get_avatar_html(20) if hasattr(user, 'get_avatar_html') else ''
+        
         if self.include_links and community:
             try:
                 profile_url = reverse('accounts:member_profile', args=[community.id, user.id])
-                display_name = user.get_display_name() if hasattr(user, 'get_display_name') else user.username
-                return f'<a href="{profile_url}" class="text-blue-600 hover:text-blue-800 underline">{display_name}</a>'
+                return f'<span class="inline-flex items-center space-x-2">{avatar_html}<a href="{profile_url}" class="text-blue-600 hover:text-blue-800 underline">{display_name}</a></span>'
             except Exception as e:
-                return user.get_display_name() if hasattr(user, 'get_display_name') else user.username
+                return f'<span class="inline-flex items-center space-x-2">{avatar_html}<span>{display_name}</span></span>'
         else:
-            return user.get_display_name() if hasattr(user, 'get_display_name') else user.username
+            return f'<span class="inline-flex items-center space-x-2">{avatar_html}<span>{display_name}</span></span>'
     
     def build_delegation_map(self, users, filter_community=None):
         """
@@ -273,7 +275,7 @@ class DelegationTreeService:
                 username = f"Anonymous Voter #{str(voter.id)[:8]}"
                 return f"{username} ({vote_type}: {stars}) [Tags: {tags}]"
             
-            # Format username with optional link
+            # Format username with optional link and avatar
             username_html = self.format_username(voter, decision.community)
             return f"{username_html} ({vote_type}: {stars}) [Tags: {tags}]"
         
