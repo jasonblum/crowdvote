@@ -2,35 +2,50 @@
 
 {% block title %}Edit Profile - CrowdVote{% endblock %}
 
+{% block sidebar_content %}
+    <!-- Inherit logo from base.html -->
+    {{ block.super }}
+    
+    <!-- Navigation Menu -->
+    <div class="px-6 py-4">
+        <nav class="space-y-2">
+            <a href="#avatar-section" class="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                🎨 Avatar
+            </a>
+            <a href="#basic-info" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                👤 Basic Info
+            </a>
+            <a href="#social-links" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                🔗 Social Links
+            </a>
+        </nav>
+    </div>
+{% endblock sidebar_content %}
+
+{% block header_left %}
+    <div class="flex items-center">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Edit Your Profile</h1>
+    </div>
+{% endblock header_left %}
+
 {% block content %}
 <div class="py-8 px-6">
     <div class="space-y-8">
         
-        <!-- Navigation Breadcrumb -->
-        <div class="mb-8">
-            <nav class="flex items-center space-x-4 text-sm text-gray-600">
-                <a href="{% url 'home' %}" class="hover:text-gray-900 transition-colors">🏠 Home</a>
-                <span class="text-gray-300">›</span>
-                <a href="{% url 'accounts:dashboard' %}" class="hover:text-gray-900 transition-colors">📊 Dashboard</a>
-                <span class="text-gray-300">›</span>
-                <span class="text-gray-900 font-medium">Edit Profile</span>
-            </nav>
-        </div>
-
         <!-- Page Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Edit Your Profile</h1>
-            <p class="text-gray-600 mt-2">Update your information to help other community members make informed delegation decisions.</p>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Edit Your Profile</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">Update your information to help other community members make informed delegation decisions.</p>
         </div>
 
         <form method="post" class="space-y-8">
             {% csrf_token %}
             
             <!-- Avatar Preview -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Your Avatar</h3>
-                    <p class="text-sm text-gray-500 mt-1">Your unique avatar is automatically generated and appears next to your name throughout CrowdVote</p>
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Your Avatar</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your unique avatar is automatically generated and appears next to your name throughout CrowdVote</p>
                 </div>
                 <div class="px-6 py-6">
                     <div class="flex items-center space-x-4">
@@ -50,7 +65,7 @@
                             </div>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm text-gray-600">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
                                 <strong>How it works:</strong> Your avatar is automatically generated using your unique user ID, 
                                 so it's always the same and helps other members recognize you visually. 
                                 It appears next to your username throughout CrowdVote.
@@ -61,15 +76,15 @@
             </div>
             
             <!-- Basic Information -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Basic Information</h3>
-                    <p class="text-sm text-gray-500 mt-1">Your name and basic details</p>
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your name and basic details</p>
                 </div>
                 <div class="px-6 py-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.first_name.label }}
                             </label>
                             {{ form.first_name }}
@@ -83,7 +98,7 @@
                             {% endif %}
                         </div>
                         <div>
-                            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {{ form.last_name.label }}
                             </label>
                             {{ form.last_name }}
@@ -99,7 +114,7 @@
                     </div>
                     
                     <div class="mt-6">
-                        <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             {{ form.location.label }}
                         </label>
                         {{ form.location }}
@@ -116,13 +131,13 @@
             </div>
 
             <!-- Biography -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Biography</h3>
-                    <p class="text-sm text-gray-500 mt-1">Share your background and expertise</p>
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Biography</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Share your background and expertise</p>
                 </div>
                 <div class="px-6 py-6">
-                    <label for="{{ form.bio.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="{{ form.bio.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         {{ form.bio.label }}
                     </label>
                     {{ form.bio }}
@@ -138,14 +153,14 @@
             </div>
 
             <!-- Social Links -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Social Links</h3>
-                    <p class="text-sm text-gray-500 mt-1">Help others verify your identity and expertise</p>
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Social Links</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Help others verify your identity and expertise</p>
                 </div>
                 <div class="px-6 py-6 space-y-6">
                     <div>
-                        <label for="{{ form.website_url.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="{{ form.website_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             {{ form.website_url.label }}
                         </label>
                         {{ form.website_url }}
@@ -160,7 +175,7 @@
                     </div>
                     
                     <div>
-                        <label for="{{ form.twitter_url.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="{{ form.twitter_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             {{ form.twitter_url.label }}
                         </label>
                         {{ form.twitter_url }}
@@ -175,7 +190,7 @@
                     </div>
                     
                     <div>
-                        <label for="{{ form.linkedin_url.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="{{ form.linkedin_url.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             {{ form.linkedin_url.label }}
                         </label>
                         {{ form.linkedin_url }}
@@ -192,15 +207,15 @@
             </div>
 
             <!-- Privacy Settings -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Privacy Settings</h3>
-                    <p class="text-sm text-gray-500 mt-1">Control what information is visible to other community members</p>
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Privacy Settings</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Control what information is visible to other community members</p>
                 </div>
                 <div class="px-6 py-6 space-y-4">
                     <div class="flex items-center">
                         {{ form.bio_public }}
-                        <label for="{{ form.bio_public.id_for_label }}" class="ml-3 text-sm text-gray-700">
+                        <label for="{{ form.bio_public.id_for_label }}" class="ml-3 text-sm text-gray-700 dark:text-gray-300">
                             {{ form.bio_public.label }}
                         </label>
                     </div>
@@ -210,7 +225,7 @@
                     
                     <div class="flex items-center">
                         {{ form.location_public }}
-                        <label for="{{ form.location_public.id_for_label }}" class="ml-3 text-sm text-gray-700">
+                        <label for="{{ form.location_public.id_for_label }}" class="ml-3 text-sm text-gray-700 dark:text-gray-300">
                             {{ form.location_public.label }}
                         </label>
                     </div>
@@ -220,7 +235,7 @@
                     
                     <div class="flex items-center">
                         {{ form.social_links_public }}
-                        <label for="{{ form.social_links_public.id_for_label }}" class="ml-3 text-sm text-gray-700">
+                        <label for="{{ form.social_links_public.id_for_label }}" class="ml-3 text-sm text-gray-700 dark:text-gray-300">
                             {{ form.social_links_public.label }}
                         </label>
                     </div>
@@ -228,12 +243,12 @@
                         <p class="ml-7 text-sm text-gray-500">{{ form.social_links_public.help_text }}</p>
                     {% endif %}
                     
-                    <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
                         <div class="flex items-start">
-                            <div class="text-blue-600 mr-3">ℹ️</div>
+                            <div class="text-blue-600 dark:text-blue-400 mr-3">ℹ️</div>
                             <div>
-                                <h4 class="text-sm font-medium text-blue-900">Privacy Note</h4>
-                                <p class="text-xs text-blue-700 mt-1">
+                                <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100">Privacy Note</h4>
+                                <p class="text-xs text-blue-700 dark:text-blue-300 mt-1">
                                     Your username and expertise tags (from your votes) are always visible to help other members make delegation decisions. 
                                     All other information can be kept private using the settings above.
                                 </p>
@@ -246,12 +261,12 @@
             <!-- Form Actions -->
             <div class="flex items-center justify-between">
                 <a href="{% url 'accounts:dashboard' %}" 
-                   class="text-gray-600 hover:text-gray-900 transition-colors">
+                   class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                     ← Back to Dashboard
                 </a>
                 <div class="space-x-3">
                     <a href="{% url 'accounts:dashboard' %}" 
-                       class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                       class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         Cancel
                     </a>
                     <button type="submit" 

@@ -2,27 +2,64 @@
 
 {% block title %}Discover Communities - CrowdVote{% endblock %}
 
+{% block sidebar_content %}
+    <!-- Inherit logo from base.html -->
+    {{ block.super }}
+    
+    <!-- Progress Steps -->
+    <div class="px-6 py-4">
+        <div class="space-y-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">Email Verified</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Account created</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">Profile Setup</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Profile completed</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-white font-semibold text-sm">3</span>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-blue-600 dark:text-blue-400">Community Selection</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Join communities</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock sidebar_content %}
+
+{% block header_left %}
+    <div class="flex items-center">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Discover Communities</h1>
+    </div>
+{% endblock header_left %}
+
 {% block content %}
 <div class="py-8 px-6">
     <div class="space-y-8">
-        <!-- Progress Indicator -->
-        <div class="text-center mb-8">
-            <div class="flex items-center justify-center space-x-4 mb-4">
-                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">✓</div>
-                <div class="w-16 h-1 bg-green-500"></div>
-                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">✓</div>
-                <div class="w-16 h-1 bg-crowdvote-blue"></div>
-                <div class="w-8 h-8 bg-crowdvote-blue rounded-full flex items-center justify-center text-white font-semibold">3</div>
-            </div>
-            <p class="text-gray-600">Email Verified → Profile Setup → <strong>Community Selection</strong></p>
-        </div>
-
+        
         <!-- Welcome Message -->
         <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-800 mb-4">
+            <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-4">
                 🌍 Discover Communities
             </h1>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Join communities where real democracy happens between elections. 
                 Vote directly or delegate to trusted experts on topics you care about.
             </p>

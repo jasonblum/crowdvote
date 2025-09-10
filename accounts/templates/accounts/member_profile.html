@@ -3,21 +3,8 @@
 {% block title %}{{ member.get_full_name_or_username }} - CrowdVote{% endblock %}
 
 {% block sidebar_content %}
-    <!-- CrowdVote Logo Header -->
-    <div class="px-6 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center h-16">
-            <div class="flex-shrink-0">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-sm">CV</span>
-                </div>
-            </div>
-            <div class="ml-3">
-                <h1 class="text-lg font-medium text-gray-900 dark:text-white">CrowdVote</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Democracy Platform</p>
-            </div>
-        </div>
-    </div>
-    
+    <!-- Inherit logo from base.html -->
+    {{ block.super }}
     
     <!-- Quick Stats -->
     <div class="px-6 py-4">
@@ -42,97 +29,11 @@
     
 {% endblock sidebar_content %}
 
-{% block header %}
-    <!-- Custom header without CrowdVote logo - matches sidebar height exactly -->
-    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div class="px-6">
-            <div class="flex justify-between items-center h-16">
-                <!-- Left side - Page title -->
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Member Profile</h1>
-                </div>
-                
-                <!-- Right side - User menu and Theme toggle -->
-                <div class="flex items-center space-x-4">
-                    {% if user.is_authenticated %}
-                        <!-- User Menu Dropdown -->
-                        <div class="relative" x-data="{ open: false }">
-                            <!-- Dropdown Trigger -->
-                            <button @click="open = !open" 
-                                    class="flex items-center space-x-2 text-sm rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                {% load member_tags %}
-                                {% user_avatar user 28 %}
-                                <span class="text-gray-700 dark:text-gray-300 font-medium">{{ user.get_display_name }}</span>
-                                <!-- Dropdown Arrow -->
-                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            
-                            <!-- Dropdown Menu -->
-                            <div x-show="open" 
-                                 @click.away="open = false"
-                                 x-transition:enter="transition ease-out duration-100"
-                                 x-transition:enter-start="transform opacity-0 scale-95"
-                                 x-transition:enter-end="transform opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-75"
-                                 x-transition:leave-start="transform opacity-100 scale-100"
-                                 x-transition:leave-end="transform opacity-0 scale-95"
-                                 class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-50">
-                                <div class="py-1">
-                                    <!-- Profile Link -->
-                                    <a href="{% url 'accounts:member_profile' user.username %}" 
-                                       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                        </svg>
-                                        Profile
-                                    </a>
-                                    
-                                    <!-- Documentation Link -->
-                                    <a href="{% url 'docs' %}" 
-                                       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                        </svg>
-                                        Documentation
-                                    </a>
-                                    
-                                    <!-- Logout Link -->
-                                    <a href="{% url 'account_logout' %}" 
-                                       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-200 dark:border-gray-600">
-                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                        </svg>
-                                        Logout
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Django Admin Style Theme Toggle -->
-                        <button id="theme-toggle" 
-                                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                title="Toggle theme">
-                            <!-- Sun icon (light mode) -->
-                            <svg id="theme-icon-light" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
-                            </svg>
-                            <!-- Moon icon (dark mode) -->
-                            <svg id="theme-icon-dark" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-                            </svg>
-                            <!-- Half circle icon (system mode) -->
-                            <svg id="theme-icon-system" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8V2z"></path>
-                            </svg>
-                        </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </header>
-{% endblock header %}
+{% block header_left %}
+    <div class="flex items-center">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Member Profile</h1>
+    </div>
+{% endblock header_left %}
 
 {% block content %}
     <!-- Page Content -->
@@ -419,66 +320,4 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-// Django Admin Style Theme Toggle
-document.addEventListener('DOMContentLoaded', function() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const lightIcon = document.getElementById('theme-icon-light');
-    const darkIcon = document.getElementById('theme-icon-dark');
-    const systemIcon = document.getElementById('theme-icon-system');
-    
-    // Theme cycle: light -> dark -> system -> light
-    const themes = ['light', 'dark', 'system'];
-    let currentThemeIndex = 0;
-    
-    // Initialize theme from localStorage or default to light
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    currentThemeIndex = themes.indexOf(savedTheme);
-    if (currentThemeIndex === -1) currentThemeIndex = 0;
-    
-    // Apply theme and update icon
-    function updateTheme(theme) {
-        // Hide all icons
-        lightIcon.classList.add('hidden');
-        darkIcon.classList.add('hidden');
-        systemIcon.classList.add('hidden');
-        
-        // Show appropriate icon
-        if (theme === 'light') {
-            lightIcon.classList.remove('hidden');
-        } else if (theme === 'dark') {
-            darkIcon.classList.remove('hidden');
-        } else {
-            systemIcon.classList.remove('hidden');
-        }
-        
-        // Apply theme to document
-        const root = document.documentElement;
-        if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-        
-        // Save to localStorage
-        localStorage.setItem('theme', theme);
-    }
-    
-    // Initialize on page load
-    updateTheme(themes[currentThemeIndex]);
-    
-    // Handle click to cycle through themes
-    themeToggle.addEventListener('click', function() {
-        currentThemeIndex = (currentThemeIndex + 1) % themes.length;
-        updateTheme(themes[currentThemeIndex]);
-    });
-    
-    // Listen for system theme changes when in system mode
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if (themes[currentThemeIndex] === 'system') {
-            updateTheme('system');
-        }
-    });
-});
-</script>
 {% endblock %}

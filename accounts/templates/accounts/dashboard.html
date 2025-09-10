@@ -2,61 +2,93 @@
 
 {% block title %}Dashboard - CrowdVote{% endblock %}
 
+{% block sidebar_content %}
+    <!-- Inherit logo from base.html -->
+    {{ block.super }}
+    
+    <!-- Quick Stats -->
+    <div class="px-6 py-4">
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-3">📊 Quick Stats</h3>
+            <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-blue-700 dark:text-blue-300">Communities</span>
+                    <span class="font-semibold text-blue-900 dark:text-blue-100">{{ total_communities }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-blue-700 dark:text-blue-300">Pending</span>
+                    <span class="font-semibold text-blue-900 dark:text-blue-100">{{ total_pending }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-blue-700 dark:text-blue-300">Decisions</span>
+                    <span class="font-semibold text-blue-900 dark:text-blue-100">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock sidebar_content %}
+
+{% block header_left %}
+    <div class="flex items-center">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+    </div>
+{% endblock header_left %}
+
 {% block content %}
 {% csrf_token %}
 <div class="py-8 px-6">
     <div class="space-y-8">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">
-                Welcome back, {{ user.first_name }}! 👋
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                Welcome back, {{ user.get_display_name }}! 👋
             </h1>
-            <p class="mt-2 text-gray-600">
+            <p class="mt-2 text-gray-600 dark:text-gray-400">
                 Here's what's happening in your communities
             </p>
         </div>
 
         <!-- Quick Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span class="text-blue-600 font-semibold">🏘️</span>
+                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600 dark:text-blue-400 font-semibold">🏘️</span>
                         </div>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">My Communities</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ total_communities }}</p>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">My Communities</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_communities }}</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <span class="text-yellow-600 font-semibold">⏳</span>
+                        <div class="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
+                            <span class="text-yellow-600 dark:text-yellow-400 font-semibold">⏳</span>
                         </div>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Pending Applications</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ total_pending }}</p>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Applications</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_pending }}</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <span class="text-green-600 font-semibold">🗳️</span>
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                            <span class="text-green-600 dark:text-green-400 font-semibold">🗳️</span>
                         </div>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Active Decisions</p>
-                        <p class="text-2xl font-bold text-gray-900">0</p>
-                        <p class="text-xs text-gray-400">Coming soon!</p>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Decisions</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500">Coming soon!</p>
                     </div>
                 </div>
             </div>
@@ -64,12 +96,12 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- My Communities -->
-            <div class="bg-white rounded-lg shadow">
-                <div class="px-6 py-4 border-b border-gray-200">
+            <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-900">My Communities</h2>
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">My Communities</h2>
                         <a href="{% url 'accounts:community_discovery' %}" 
-                           class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                           class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
                             Browse All →
                         </a>
                     </div>
@@ -78,10 +110,10 @@
                     {% if user_memberships %}
                         <div class="space-y-4">
                             {% for membership in user_memberships %}
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <div class="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <div class="flex-1">
                                         <div class="flex items-center space-x-3">
-                                            <h3 class="font-medium text-gray-900">
+                                            <h3 class="font-medium text-gray-900 dark:text-white">
                                                 {{ membership.community.name }}
                                             </h3>
                                             <div class="flex space-x-1">
@@ -101,16 +133,16 @@
                                                 {% endif %}
                                             </div>
                                         </div>
-                                        <p class="text-sm text-gray-500 mt-1">
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                             Joined {{ membership.dt_joined|date:"M j, Y" }}
                                         </p>
                                     </div>
                                     <div class="flex space-x-2">
                                         <a href="{% url 'democracy:community_detail' membership.community.id %}" 
-                                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                           class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
                                             View Details
                                         </a>
-                                        <button class="text-red-600 hover:text-red-800 text-sm font-medium"
+                                        <button class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium"
                                                 onclick="confirmLeave('{{ membership.community.name }}', '{{ membership.community.id }}')">
                                             Leave
                                         </button>
@@ -123,8 +155,8 @@
                             <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
                                 <span class="text-2xl">🏘️</span>
                             </div>
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Communities Yet</h3>
-                            <p class="text-gray-500 mb-4">Join your first community to start participating in democracy!</p>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Communities Yet</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-4">Join your first community to start participating in democracy!</p>
                             <a href="{% url 'accounts:community_discovery' %}" 
                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                                 Browse Communities
@@ -138,17 +170,17 @@
             <div class="space-y-6">
                 <!-- Pending Applications -->
                 {% if pending_applications %}
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">Pending Applications</h2>
+                <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Pending Applications</h2>
                     </div>
                     <div class="p-6">
                         <div class="space-y-3">
                             {% for application in pending_applications %}
-                                <div class="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div class="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                                     <div>
-                                        <p class="font-medium text-gray-900">{{ application.community.name }}</p>
-                                        <p class="text-sm text-gray-500">Applied {{ application.created|date:"M j, Y" }}</p>
+                                        <p class="font-medium text-gray-900 dark:text-white">{{ application.community.name }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Applied {{ application.created|date:"M j, Y" }}</p>
                                     </div>
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                         ⏳ Pending
@@ -162,28 +194,28 @@
 
                 <!-- Available Communities -->
                 {% if available_communities %}
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">Suggested Communities</h2>
+                <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Suggested Communities</h2>
                     </div>
                     <div class="p-6">
                         <div class="space-y-3">
                             {% for community in available_communities %}
-                                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <div>
-                                        <p class="font-medium text-gray-900">{{ community.name }}</p>
-                                        <p class="text-sm text-gray-500">{{ community.members.count }} members</p>
+                                        <p class="font-medium text-gray-900 dark:text-white">{{ community.name }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ community.members.count }} members</p>
                                     </div>
                                     <a href="{% url 'accounts:community_discovery' %}" 
-                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                       class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
                                         View
                                     </a>
                                 </div>
                             {% endfor %}
                         </div>
-                        <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                             <a href="{% url 'accounts:community_discovery' %}" 
-                               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                               class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
                                 Browse all communities →
                             </a>
                         </div>
@@ -193,17 +225,17 @@
 
                 <!-- Recent Activity -->
                 {% if recent_applications %}
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+                <div class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h2>
                     </div>
                     <div class="p-6">
                         <div class="space-y-3">
                             {% for application in recent_applications %}
-                                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
                                     <div>
-                                        <p class="font-medium text-gray-900">{{ application.community.name }}</p>
-                                        <p class="text-sm text-gray-500">
+                                        <p class="font-medium text-gray-900 dark:text-white">{{ application.community.name }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
                                             {% if application.status == 'approved' %}
                                                 Approved {{ application.reviewed_at|date:"M j, Y" }}
                                             {% elif application.status == 'rejected' %}
@@ -233,11 +265,11 @@
 
 <!-- Leave Community Confirmation Modal -->
 <div id="leaveModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="mt-3 text-center">
-            <h3 class="text-lg font-medium text-gray-900" id="modalTitle">Leave Community?</h3>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white" id="modalTitle">Leave Community?</h3>
             <div class="mt-2 px-7 py-3">
-                <p class="text-sm text-gray-500" id="modalMessage">
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="modalMessage">
                     Are you sure you want to leave this community? You'll need to reapply to rejoin.
                 </p>
             </div>
@@ -247,7 +279,7 @@
                     Leave
                 </button>
                 <button onclick="closeModal()" 
-                        class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-24 hover:bg-gray-400">
+                        class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-base font-medium rounded-md w-24 hover:bg-gray-400 dark:hover:bg-gray-500">
                     Cancel
                 </button>
             </div>

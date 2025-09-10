@@ -2,121 +2,55 @@
 
 {% block title %}Complete Your Profile - CrowdVote{% endblock %}
 
+{% block sidebar_content %}
+    <!-- Inherit logo from base.html -->
+    {{ block.super }}
+    
+    <!-- Progress Steps -->
+    <div class="px-6 py-4">
+        <div class="space-y-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">Email Verified</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Account created successfully</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-white font-semibold text-sm">2</span>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-blue-600 dark:text-blue-400">Profile Setup</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Choose your username and details</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-gray-600 dark:text-gray-400 font-semibold text-sm">3</span>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Community Selection</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500">Join your first community</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock sidebar_content %}
+
+{% block header_left %}
+    <div class="flex items-center">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Welcome to CrowdVote! 🎉</h1>
+    </div>
+{% endblock header_left %}
+
 {% block content %}
-<!-- Application Shell with Modern Layout -->
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <div class="lg:flex">
-        <!-- Sidebar Navigation -->
-        <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
-            <div class="p-6">
-                <!-- Logo/Header -->
-                <div class="flex items-center space-x-3 mb-8">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">C</span>
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-bold text-gray-900 dark:text-white">CrowdVote</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Profile Setup</p>
-                    </div>
-                </div>
-
-                <!-- Progress Steps -->
-                <div class="space-y-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900 dark:text-white">Email Verified</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Account created successfully</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span class="text-white font-semibold text-sm">2</span>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-blue-600 dark:text-blue-400">Profile Setup</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Choose your username and details</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span class="text-gray-600 dark:text-gray-400 font-semibold text-sm">3</span>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Community Selection</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">Join your first community</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </nav>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 lg:pl-0">
-            <!-- Header -->
-            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome to CrowdVote! 🎉</h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Let's set up your profile so you can start participating in democracy</p>
-                    </div>
-                    
-                    <!-- Header Controls -->
-                    <div class="flex items-center space-x-4">
-                        <!-- Theme Toggle -->
-                        <div class="flex items-center space-x-2">
-                            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                                <button type="button" onclick="setTheme('light')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn bg-white text-gray-900 shadow-sm">
-                                    Light
-                                </button>
-                                <button type="button" onclick="setTheme('dark')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                    Dark
-                                </button>
-                                <button type="button" onclick="setTheme('system')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                                    Auto
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- TODO: Add when user is logged in:
-                        <div class="flex items-center space-x-3">
-                            <div class="flex items-center space-x-2">
-                                <img class="w-8 h-8 rounded-full" src="{{ user.avatar_url }}" alt="{{ user.username }}">
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">{{ user.username }}</span>
-                            </div>
-                            <div class="relative">
-                                <button class="flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                                <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg">
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">View Profile</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Logout</a>
-                                </div>
-                            </div>
-                        </div>
-                        -->
-                        
-                        <!-- Mobile menu button -->
-                        <button type="button" class="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
-                            <span class="sr-only">Open menu</span>
-                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Form Content -->
             <div class="py-8 px-6">
                 <div class="space-y-8">
@@ -260,9 +194,6 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-</div>
 
 
 <!-- Username Validation Script -->

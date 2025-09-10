@@ -3,24 +3,9 @@
 
 {% block title %}CrowdVote Documentation{% endblock %}
 
-{% block sidebar %}
-    <!-- Always show sidebar for docs page -->
-    <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
-        {% block sidebar_content %}
-    <!-- Documentation Sidebar Navigation -->
-    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center">
-            <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-sm">📚</span>
-                </div>
-            </div>
-            <div class="ml-3">
-                <h1 class="text-lg font-medium text-gray-900 dark:text-white">Documentation</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400">CrowdVote Guide & FAQs</p>
-            </div>
-        </div>
-    </div>
+{% block sidebar_content %}
+    <!-- Inherit logo from base.html -->
+    {{ block.super }}
     
     <!-- Support Section -->
     <div class="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
@@ -65,26 +50,13 @@
         </div>
     </div>
     
-    <!-- Theme Toggle -->
-    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center space-x-2">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
-            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                <button type="button" onclick="setTheme('light')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn">
-                    Light
-                </button>
-                <button type="button" onclick="setTheme('dark')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn">
-                    Dark
-                </button>
-                <button type="button" onclick="setTheme('system')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn">
-                    Auto
-                </button>
-            </div>
-        </div>
+{% endblock sidebar_content %}
+
+{% block header_left %}
+    <div class="flex items-center">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Documentation</h1>
     </div>
-        {% endblock sidebar_content %}
-    </nav>
-{% endblock sidebar %}
+{% endblock header_left %}
 
 {% block content %}
     <!-- Page Content -->

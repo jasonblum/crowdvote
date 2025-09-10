@@ -48,39 +48,15 @@
                     <!-- Default sidebar for authenticated users -->
                     <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
                         {% block sidebar_content %}
-                            <div class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                            <span class="text-white font-bold text-sm">🏠</span>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3">
-                                        <h1 class="text-lg font-medium text-gray-900 dark:text-white">CrowdVote</h1>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">Democracy Platform</p>
-                                    </div>
+                            <!-- CrowdVote Logo Header -->
+                            <div class="px-6 border-b border-gray-200 dark:border-gray-700">
+                                <div class="flex items-center justify-center h-16">
+                                    {% load static %}
+                                    <a href="{% url 'accounts:dashboard' %}" class="block">
+                                        <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-14 w-auto">
+                                    </a>
                                 </div>
                             </div>
-                            
-                            <!-- Theme Toggle (in sidebar for consistent placement) -->
-                            {% block theme_toggle %}
-                                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
-                                        <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                                            <button type="button" onclick="setTheme('light')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn">
-                                                Light
-                                            </button>
-                                            <button type="button" onclick="setTheme('dark')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn">
-                                                Dark
-                                            </button>
-                                            <button type="button" onclick="setTheme('system')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn">
-                                                Auto
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endblock %}
                         {% endblock sidebar_content %}
                     </nav>
                 {% endif %}
@@ -91,27 +67,30 @@
                 <!-- Top Header Navigation -->
                 {% block header %}
                     <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                        <div class="px-6 py-4">
-                            <div class="flex justify-between items-center">
-                                <!-- Left side - Logo/Brand -->
+                        <div class="px-6">
+                            <div class="flex justify-between items-center h-16">
+                                <!-- Left side - Logo/Brand or Page Title -->
+                                {% block header_left %}
                                 <div class="flex items-center">
+                                    {% load static %}
                                     {% if user.is_authenticated %}
-                                        <!-- Logo links to user profile when logged in -->
-                                        <a href="{% url 'accounts:member_profile' user.username %}" class="flex items-center">
-                                            <span class="text-xl font-bold text-gray-900 dark:text-white">CrowdVote</span>
+                                        <!-- Logo links to dashboard when logged in -->
+                                        <a href="{% url 'accounts:dashboard' %}" class="flex items-center">
+                                            <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-8 w-auto">
                                         </a>
                                     {% else %}
                                         <!-- Logo links to landing page when not logged in -->
                                         <a href="/" class="flex items-center">
-                                            <span class="text-xl font-bold text-gray-900 dark:text-white">CrowdVote</span>
+                                            <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-8 w-auto">
                                         </a>
                                     {% endif %}
                                 </div>
+                                {% endblock header_left %}
                                 
-                                <!-- Right side - User menu -->
-                                <div class="flex items-center space-x-4">
-                                    {% if user.is_authenticated %}
-                                        <!-- User Menu Dropdown -->
+                                <!-- Right side - User menu and Theme toggle -->
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <!-- User Menu Dropdown -->
                                         <div class="relative" x-data="{ open: false }">
                                             <!-- Dropdown Trigger -->
                                             <button @click="open = !open" 
@@ -136,6 +115,15 @@
                                                  x-transition:leave-end="transform opacity-0 scale-95"
                                                  class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-50">
                                                 <div class="py-1">
+                                                    <!-- Dashboard Link -->
+                                                    <a href="{% url 'accounts:dashboard' %}" 
+                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2v0zm0 0V5a2 2 0 012-2h6l2 2h6a2 2 0 012 2v0M7 13h10"></path>
+                                                        </svg>
+                                                        Dashboard
+                                                    </a>
+                                                    
                                                     <!-- Profile Link -->
                                                     <a href="{% url 'accounts:member_profile' user.username %}" 
                                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -165,8 +153,26 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    {% endif %}
-                                </div>
+                        
+                        <!-- Django Admin Style Theme Toggle -->
+                        <button id="theme-toggle" 
+                                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                title="Toggle theme">
+                            <!-- Sun icon (light mode) -->
+                            <svg id="theme-icon-light" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <!-- Moon icon (dark mode) -->
+                            <svg id="theme-icon-dark" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                            </svg>
+                            <!-- Half circle icon (system mode) -->
+                            <svg id="theme-icon-system" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8V2z"></path>
+                            </svg>
+                        </button>
+                    {% endif %}
+                </div>
                             </div>
                         </div>
                     </header>
@@ -221,6 +227,9 @@
             applyTheme(savedTheme);
             updateThemeButtons(savedTheme);
             
+            // Initialize Django Admin Style Theme Toggle
+            initializeThemeToggle();
+            
             // Listen for system theme changes
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
                 const currentTheme = localStorage.getItem('theme');
@@ -229,6 +238,69 @@
                 }
             });
         });
+        
+        // Django Admin Style Theme Toggle
+        function initializeThemeToggle() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('theme-icon-light');
+            const darkIcon = document.getElementById('theme-icon-dark');
+            const systemIcon = document.getElementById('theme-icon-system');
+            
+            if (!themeToggle) return; // Exit if theme toggle not present on page
+            
+            // Theme cycle: light -> dark -> system -> light
+            const themes = ['light', 'dark', 'system'];
+            let currentThemeIndex = 0;
+            
+            // Initialize theme from localStorage or default to light
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            currentThemeIndex = themes.indexOf(savedTheme);
+            if (currentThemeIndex === -1) currentThemeIndex = 0;
+            
+            // Apply theme and update icon
+            function updateThemeToggle(theme) {
+                // Hide all icons
+                lightIcon.classList.add('hidden');
+                darkIcon.classList.add('hidden');
+                systemIcon.classList.add('hidden');
+                
+                // Show appropriate icon
+                if (theme === 'light') {
+                    lightIcon.classList.remove('hidden');
+                } else if (theme === 'dark') {
+                    darkIcon.classList.remove('hidden');
+                } else {
+                    systemIcon.classList.remove('hidden');
+                }
+                
+                // Apply theme to document
+                const root = document.documentElement;
+                if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    root.classList.add('dark');
+                } else {
+                    root.classList.remove('dark');
+                }
+                
+                // Save to localStorage
+                localStorage.setItem('theme', theme);
+            }
+            
+            // Initialize on page load
+            updateThemeToggle(themes[currentThemeIndex]);
+            
+            // Handle click to cycle through themes
+            themeToggle.addEventListener('click', function() {
+                currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+                updateThemeToggle(themes[currentThemeIndex]);
+            });
+            
+            // Listen for system theme changes when in system mode
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (themes[currentThemeIndex] === 'system') {
+                    updateThemeToggle('system');
+                }
+            });
+        }
     </script>
     
     <!-- Page-specific scripts -->
