@@ -137,22 +137,20 @@ class TestDecisionModel:
     
     def test_decision_status_properties(self):
         """Test decision status property methods."""
-        # Active decision
+        # Active decision (voting is open)
         future_date = timezone.now() + timedelta(days=7)
         active_decision = DecisionFactory(
             dt_close=future_date,
             with_choices=False
         )
-        assert active_decision.is_active() is True
-        assert active_decision.is_closed() is False
+        assert active_decision.is_open is True
         
-        # Closed decision
+        # Closed decision (voting has ended)
         past_date = timezone.now() - timedelta(days=1)
         closed_decision = DecisionFactory(with_choices=False)
         closed_decision.dt_close = past_date
         closed_decision.save()
-        assert closed_decision.is_active() is False
-        assert closed_decision.is_closed() is True
+        assert closed_decision.is_open is False
 
 
 @pytest.mark.models

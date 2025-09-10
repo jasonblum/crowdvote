@@ -17,6 +17,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.utils import timezone
 from taggit.managers import TaggableManager
 
 from shared.models import BaseModel
@@ -82,6 +83,26 @@ class Community(BaseModel):
     def __str__(self):
         """Return string representation of the community."""
         return self.name
+    
+    @property
+    def member_count(self):
+        """Return the total number of members in this community."""
+        return self.memberships.count()
+    
+    def get_stats(self):
+        """Return comprehensive statistics about this community.
+        
+        Returns:
+            dict: Dictionary containing member counts, decision counts, and other stats
+        """
+        return {
+            'total_members': self.memberships.count(),
+            'voting_members': self.memberships.filter(is_voting_community_member=True).count(),
+            'managers': self.memberships.filter(is_community_manager=True).count(),
+            'lobbyists': self.memberships.filter(is_voting_community_member=False).count(),
+            'total_decisions': self.decisions.count(),
+            'active_decisions': self.decisions.filter(dt_close__gt=timezone.now()).count(),
+        }
     
     def get_voting_members(self):
         """
@@ -249,6 +270,33 @@ class Decision(BaseModel):
     def __str__(self):
         """Return string representation of the decision."""
         return self.title
+    
+    @property
+    def choice_count(self):
+        """Return the number of choices for this decision."""
+        return self.choices.count()
+    
+    def get_participation_stats(self):
+        """Return participation statistics for this decision.
+        
+        Returns:
+            dict: Dictionary containing participation rates and vote counts
+        """
+        total_ballots = self.ballots.count()
+        voting_member_ballots = self.ballots.filter(voter__memberships__community=self.community, 
+                                                   voter__memberships__is_voting_community_member=True).count()
+        total_voting_members = self.community.memberships.filter(is_voting_community_member=True).count()
+        
+        participation_rate = (voting_member_ballots / total_voting_members * 100) if total_voting_members > 0 else 0
+        
+        return {
+            'total_ballots': total_ballots,
+            'voting_member_ballots': voting_member_ballots,
+            'total_voting_members': total_voting_members,
+            'participation_rate': round(participation_rate, 1),
+            'manual_ballots': self.ballots.filter(is_calculated=False).count(),
+            'calculated_ballots': self.ballots.filter(is_calculated=True).count(),
+        }
 
     def clean(self):
         """
@@ -285,26 +333,8 @@ class Decision(BaseModel):
         Returns:
             bool: True if voting is open, False if closed
         """
-        from django.utils import timezone
         return timezone.now() < self.dt_close
     
-    def is_active(self):
-        """
-        Check if this decision is currently active (voting is open).
-        
-        Returns:
-            bool: True if voting is open, False if closed
-        """
-        return self.is_open
-    
-    def is_closed(self):
-        """
-        Check if this decision is closed (voting has ended).
-        
-        Returns:
-            bool: True if voting is closed, False if still open
-        """
-        return not self.is_open
     
     def get_total_ballots(self):
         """
@@ -369,6 +399,7 @@ class Choice(BaseModel):
     score = models.DecimalField(
         null=True,
         blank=True,
+        default=0.0,
         max_digits=5,
         decimal_places=4,
         validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
@@ -377,6 +408,7 @@ class Choice(BaseModel):
     runoff_score = models.DecimalField(
         null=True,
         blank=True,
+        default=0.0,
         max_digits=5,
         decimal_places=4,
         validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
@@ -389,6 +421,24 @@ class Choice(BaseModel):
     def __str__(self):
         """Return string representation of the choice."""
         return self.title
+    
+    @property
+    def vote_count(self):
+        """Return the number of votes cast for this choice."""
+        return self.votes.count()
+    
+    def get_average_score(self):
+        """Calculate and return the average score for this choice.
+        
+        Returns:
+            float: Average score from all votes, or 0.0 if no votes
+        """
+        votes = self.votes.all()
+        if not votes:
+            return 0.0
+        
+        total_stars = sum(vote.stars for vote in votes)
+        return round(total_stars / len(votes), 2)
 
     def get_id_display(self):
         """Get a short display ID for this choice."""
@@ -473,6 +523,7 @@ class Ballot(BaseModel):
     tags = models.CharField(
         max_length=500,
         blank=True,
+        null=True,
         help_text="Comma-separated tags this voter applied to characterize this decision (e.g., 'environmental,fiscal')"
     )
     comments = models.TextField(
@@ -715,11 +766,11 @@ class Result(BaseModel):
         Get the automatic runoff results (top 2 choices head-to-head).
         
         Returns:
-            dict or None: Runoff results, or None if no runoff occurred
+            list: Runoff results, or empty list if no runoff occurred
         """
         if 'runoff_phase' in self.stats:
             return self.stats['runoff_phase']
-        return None
+        return []
     
     def get_participation_stats(self):
         """
@@ -837,8 +888,9 @@ class AnonymousVoteMapping(BaseModel):
             ballot = decision.ballots.get(voter=user)
             
             if ballot.is_anonymous:
-                # User chose to be anonymous - return GUID
-                return cls.get_or_create_guid(decision, user)
+                # User chose to be anonymous - return user-friendly anonymous name
+                guid = cls.get_or_create_guid(decision, user)
+                return f"Anonymous Voter #{guid[:8]}"
             else:
                 # User chose to be public - return real username
                 return user.username

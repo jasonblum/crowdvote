@@ -391,6 +391,9 @@ When planning features:
 - Suggest alternatives when appropriate
 - Explain technical decisions clearly
 - Never guess - always ask when uncertain
+- Be concise! Just give me short, direct answers and avoid meta-commentary.
+- Just give me answers and stop. Don't go on and on repeatedly summarizing what was accomplished.
+- Avoid hyperbole and praise and sycophancy.
 
 ## Django-Specific Agent Checks
 

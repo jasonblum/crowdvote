@@ -142,16 +142,16 @@ class TestFollowingModel:
         assert str(following) == expected
     
     def test_following_unique_constraint(self):
-        """Test that follower-followee pairs must be unique."""
+        """Test that follower-followee pairs with same tags must be unique."""
         follower = UserFactory()
         followee = UserFactory()
         
         # First following should work
-        FollowingFactory(follower=follower, followee=followee)
+        FollowingFactory(follower=follower, followee=followee, tags="governance")
         
-        # Second following with same users should fail
+        # Second following with same users and same tags should fail
         with pytest.raises(IntegrityError):
-            FollowingFactory(follower=follower, followee=followee)
+            FollowingFactory(follower=follower, followee=followee, tags="governance")
     
     def test_self_following_prevention(self):
         """Test that users cannot follow themselves."""

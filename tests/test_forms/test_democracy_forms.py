@@ -223,12 +223,12 @@ class TestChoiceFormSet(TestCase):
         """Test formset validation for minimum and maximum choices."""
         # Test minimum choices (should require at least 2)
         formset_data = {
-            'form-TOTAL_FORMS': '1',
-            'form-INITIAL_FORMS': '0',
-            'form-MIN_NUM_FORMS': '2',
-            'form-MAX_NUM_FORMS': '10',
-            'form-0-title': 'Only Choice',
-            'form-0-description': 'This is the only choice'
+            'choices-TOTAL_FORMS': '1',
+            'choices-INITIAL_FORMS': '0',
+            'choices-MIN_NUM_FORMS': '2',
+            'choices-MAX_NUM_FORMS': '10',
+            'choices-0-title': 'Only Choice',
+            'choices-0-description': 'This is the only choice'
         }
         
         formset = ChoiceFormSet(data=formset_data, instance=self.decision)
@@ -236,11 +236,11 @@ class TestChoiceFormSet(TestCase):
         
         # Test valid number of choices
         formset_data.update({
-            'form-TOTAL_FORMS': '2',
-            'form-MIN_NUM_FORMS': '2',
-            'form-MAX_NUM_FORMS': '10',
-            'form-1-title': 'Second Choice',
-            'form-1-description': 'This is the second choice'
+            'choices-TOTAL_FORMS': '2',
+            'choices-MIN_NUM_FORMS': '2',
+            'choices-MAX_NUM_FORMS': '10',
+            'choices-1-title': 'Second Choice',
+            'choices-1-description': 'This is the second choice'
         })
         
         formset = ChoiceFormSet(data=formset_data, instance=self.decision)
@@ -253,13 +253,13 @@ class TestChoiceFormSet(TestCase):
         """Test that formset enforces maximum choice limit."""
         # Create data for 11 choices (should exceed max of 10)
         formset_data = {
-            'form-TOTAL_FORMS': '11',
-            'form-INITIAL_FORMS': '0'
+            'choices-TOTAL_FORMS': '11',
+            'choices-INITIAL_FORMS': '0'
         }
         
         for i in range(11):
-            formset_data[f'form-{i}-title'] = f'Choice {i+1}'
-            formset_data[f'form-{i}-description'] = f'Description for choice {i+1} with sufficient length to pass validation.'
+            formset_data[f'choices-{i}-title'] = f'Choice {i+1}'
+            formset_data[f'choices-{i}-description'] = f'Description for choice {i+1} with sufficient length to pass validation.'
         
         formset = ChoiceFormSet(data=formset_data, instance=self.decision)
         self.assertFalse(formset.is_valid())
@@ -360,7 +360,7 @@ class TestDecisionSearchForm(TestCase):
         form_data = {
             'search': 'test query',
             'status': 'active',
-            'sort': 'newest'
+            'sort': '-created'  # Use valid sort choice for "newest first"
         }
         
         form = DecisionSearchForm(data=form_data)
@@ -449,10 +449,10 @@ class TestFormSecurityAndEdgeCases(TestCase):
         """Test that forms handle Unicode characters correctly."""
         unicode_strings = [
             'Decision with émojis 🗳️ and spéciál chars',
-            'Ñoñó español título',
-            '中文标题测试',
-            'Тест на русском языке',
-            '🎉🗳️🌟 Emoji decision 🚀🎯'
+            'Ñoñó español título con más caracteres',
+            '中文标题测试需要更多字符来满足最小长度要求',
+            'Тест на русском языке с дополнительными символами',
+            '🎉🗳️🌟 Emoji decision with more chars 🚀🎯'
         ]
         
         for unicode_str in unicode_strings:
@@ -501,4 +501,5 @@ class TestFormSecurityAndEdgeCases(TestCase):
         # This is validated by checking that forms are standard Django forms
         self.assertIsInstance(form, forms.ModelForm)
         self.assertTrue(hasattr(form, 'is_valid'))
-        self.assertTrue(hasattr(form, 'cleaned_data'))
+        # cleaned_data only exists after is_valid() is called and returns True
+        self.assertTrue(callable(getattr(form, 'full_clean', None)))

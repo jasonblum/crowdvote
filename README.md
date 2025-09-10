@@ -263,7 +263,7 @@ We're actively seeking communities to collaborate with for real-world testing an
 - Want more democratic participation
 - Are open to trying new approaches
 
-If this sounds like your community, please reach out to jason@CrowdVote.com
+If this sounds like your community, please reach out to support@CrowdVote.com
 
 ## Support
 

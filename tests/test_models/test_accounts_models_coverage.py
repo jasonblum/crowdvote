@@ -29,26 +29,28 @@ class TestAccountsModelsCoverage(TestCase):
         
     def test_user_get_tag_usage_frequency_with_tags(self):
         """Test CustomUser get_tag_usage_frequency with tagged ballots - covers tag counting logic."""
-        # Create a decision and some ballots with tags
-        decision = DecisionFactory(community=self.community, with_choices=False)
+        # Create different decisions and ballots with tags
+        decision1 = DecisionFactory(community=self.community, with_choices=False)
+        decision2 = DecisionFactory(community=self.community, with_choices=False)
+        decision3 = DecisionFactory(community=self.community, with_choices=False)
         
         # Create ballots with different tags
         ballot1 = BallotFactory(
-            decision=decision, 
+            decision=decision1, 
             voter=self.user, 
             is_calculated=False,
             tags="governance,budget",
             with_votes=False
         )
         ballot2 = BallotFactory(
-            decision=decision, 
+            decision=decision2, 
             voter=self.user, 
             is_calculated=False,
             tags="governance,environment",
             with_votes=False
         )
         ballot3 = BallotFactory(
-            decision=decision, 
+            decision=decision3, 
             voter=self.user, 
             is_calculated=False,
             tags="governance",
@@ -68,18 +70,19 @@ class TestAccountsModelsCoverage(TestCase):
         
     def test_user_get_tag_usage_frequency_empty_tags(self):
         """Test CustomUser get_tag_usage_frequency with empty tags - covers empty tag filtering."""
-        # Create ballots with empty or no tags
-        decision = DecisionFactory(community=self.community, with_choices=False)
+        # Create ballots with empty or no tags  
+        decision1 = DecisionFactory(community=self.community, with_choices=False)
+        decision2 = DecisionFactory(community=self.community, with_choices=False)
         
         ballot1 = BallotFactory(
-            decision=decision, 
+            decision=decision1, 
             voter=self.user, 
             is_calculated=False,
             tags="",  # Empty string
             with_votes=False
         )
         ballot2 = BallotFactory(
-            decision=decision, 
+            decision=decision2, 
             voter=self.user, 
             is_calculated=False,
             tags=None,  # No tags
@@ -93,20 +96,21 @@ class TestAccountsModelsCoverage(TestCase):
         
     def test_user_get_tag_usage_frequency_skip_calculated_ballots(self):
         """Test CustomUser get_tag_usage_frequency skips calculated ballots - covers manual ballot filtering."""
-        decision = DecisionFactory(community=self.community, with_choices=False)
+        decision1 = DecisionFactory(community=self.community, with_choices=False)
+        decision2 = DecisionFactory(community=self.community, with_choices=False)
         
         # Create manual ballot (should be counted)
         manual_ballot = BallotFactory(
-            decision=decision, 
+            decision=decision1, 
             voter=self.user, 
             is_calculated=False,
             tags="governance",
             with_votes=False
         )
         
-        # Create calculated ballot (should be skipped)
+        # Create calculated ballot for different decision (should be skipped)
         calculated_ballot = BallotFactory(
-            decision=decision, 
+            decision=decision2, 
             voter=self.user, 
             is_calculated=True,
             tags="budget",

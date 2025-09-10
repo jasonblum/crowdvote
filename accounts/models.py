@@ -263,8 +263,12 @@ class Following(BaseModel):
         ]
         verbose_name = "Following Relationship"
         verbose_name_plural = "Following Relationships"
-        # TODO: Add unique constraint when tags are implemented to prevent
-        # duplicate following relationships for the same tags
+        constraints = [
+            models.UniqueConstraint(
+                fields=['follower', 'followee', 'tags'],
+                name='unique_following_relationship'
+            )
+        ]
 
     def __str__(self):
         """Return string representation of the following relationship."""
@@ -272,15 +276,25 @@ class Following(BaseModel):
 
     def clean(self):
         """
-        Validate the following relationship.
+        Validate the following relationship and clean tags.
         
         Raises:
-            ValidationError: If user tries to follow themselves
+            ValidationError: If user tries to follow themselves or has invalid order
         """
         from django.core.exceptions import ValidationError
         
         if self.follower == self.followee:
             raise ValidationError("Users cannot follow themselves.")
+        
+        # Validate order
+        if self.order is not None and self.order < 1:
+            raise ValidationError({'order': 'Order must be 1 or greater.'})
+        
+        # Clean tags - remove extra spaces and normalize
+        if self.tags:
+            # Split on commas, strip whitespace, and rejoin
+            cleaned_tags = [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+            self.tags = ','.join(cleaned_tags)
 
     def save(self, *args, **kwargs):
         """Override save to run validation."""

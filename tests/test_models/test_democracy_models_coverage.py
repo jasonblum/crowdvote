@@ -365,8 +365,8 @@ class TestDemocracyModelsCoverage(TestCase):
         )
         self.assertFalse(closed_decision.is_open)
         
-    def test_decision_is_active_method(self):
-        """Test Decision is_active method - covers active status logic."""
+    def test_decision_is_open_method(self):
+        """Test Decision is_open property - covers open status logic."""
         future_close = timezone.now() + timedelta(days=1)
         decision = DecisionFactory(
             community=self.community,
@@ -374,10 +374,10 @@ class TestDemocracyModelsCoverage(TestCase):
             with_choices=False
         )
         
-        self.assertTrue(decision.is_active())
+        self.assertTrue(decision.is_open)
         
-    def test_decision_is_closed_method(self):
-        """Test Decision is_closed method - covers closed status logic."""
+    def test_decision_is_closed_logic(self):
+        """Test Decision closed status using not is_open - covers closed status logic."""
         past_close = timezone.now() - timedelta(days=1)
         decision = DecisionFactory(
             community=self.community,
@@ -385,7 +385,7 @@ class TestDemocracyModelsCoverage(TestCase):
             with_choices=False
         )
         
-        self.assertTrue(decision.is_closed())
+        self.assertTrue(not decision.is_open)
         
     def test_ballot_clean_method(self):
         """Test Ballot clean method - covers validation logic."""
