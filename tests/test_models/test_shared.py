@@ -7,7 +7,7 @@ used across the CrowdVote application.
 import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from shared.models import BaseModel
+from crowdvote.models import BaseModel
 from tests.factories import UserFactory, CommunityFactory
 
 

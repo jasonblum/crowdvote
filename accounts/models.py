@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 import uuid
 
-from shared.models import BaseModel
+from crowdvote.models import BaseModel
 
 
 class CustomUser(AbstractUser):

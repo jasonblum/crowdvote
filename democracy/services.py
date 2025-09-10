@@ -4,7 +4,7 @@ from django.utils import timezone
 from service_objects.services import Service
 
 from .models import Ballot, Community
-from shared.utilities import get_object_or_None, normal_round
+from crowdvote.utilities import get_object_or_None, normal_round
 
 
 class StageBallots(Service):

@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 
 from tests.factories.user_factory import UserFactory
-from shared.utilities import get_object_or_None, normal_round, get_random_madeup_tags
+from crowdvote.utilities import get_object_or_None, normal_round, get_random_madeup_tags
 
 User = get_user_model()
 

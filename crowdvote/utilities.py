@@ -1,3 +1,9 @@
+"""
+Shared utilities for the CrowdVote application.
+
+This module contains common utility functions used across the CrowdVote project.
+"""
+
 import math, random
 from django.shortcuts import _get_queryset
 

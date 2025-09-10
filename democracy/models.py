@@ -20,7 +20,7 @@ from django.db import models
 from django.utils import timezone
 from taggit.managers import TaggableManager
 
-from shared.models import BaseModel
+from crowdvote.models import BaseModel
 
 User = get_user_model()
 

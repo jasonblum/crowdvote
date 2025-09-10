@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     'django_htmx',
     
     # CrowdVote apps
-    'shared',
     'accounts',
     'democracy',
 ]

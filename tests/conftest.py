@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from accounts.models import Following, CommunityApplication  
 from democracy.models import Community, Decision, Choice, Ballot, Vote, Membership
-from shared.models import BaseModel
+from crowdvote.models import BaseModel
 
 User = get_user_model()
 
