@@ -36,7 +36,7 @@ class TestDemocracyViewGaps(TestCase):
         
     def test_community_detail_view_basic_rendering(self):
         """Test basic community detail view rendering - covers community display logic."""
-        url = reverse('democracy:community_detail', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_detail', kwargs={'community_id': self.community.pk})
         
         response = self.client.get(url)
         
@@ -48,7 +48,7 @@ class TestDemocracyViewGaps(TestCase):
         """Test community detail view with non-existent community - covers 404 handling."""
         import uuid
         fake_uuid = uuid.uuid4()
-        url = reverse('democracy:community_detail', kwargs={'pk': fake_uuid})
+        url = reverse('democracy:community_detail', kwargs={'community_id': fake_uuid})
         
         response = self.client.get(url)
         
@@ -185,7 +185,7 @@ class TestDemocracyViewGaps(TestCase):
     def test_community_manage_view_manager(self):
         """Test community management view for manager - covers management interface."""
         self.client.force_login(self.user)
-        url = reverse('democracy:community_manage', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_manage', kwargs={'community_id': self.community.pk})
         
         response = self.client.get(url)
         
@@ -199,7 +199,7 @@ class TestDemocracyViewGaps(TestCase):
         self.membership.save()
         
         self.client.force_login(self.user)
-        url = reverse('democracy:community_manage', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_manage', kwargs={'community_id': self.community.pk})
         
         response = self.client.get(url)
         
@@ -281,7 +281,7 @@ class TestDemocracyViewGaps(TestCase):
         # Create some decisions for the community
         DecisionFactory.create_batch(3, community=self.community, with_choices=False)
         
-        url = reverse('democracy:community_detail', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_detail', kwargs={'community_id': self.community.pk})
         
         response = self.client.get(url)
         

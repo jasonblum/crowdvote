@@ -85,6 +85,22 @@ class CustomUser(AbstractUser):
         """Return string representation of the user."""
         return self.username
 
+    def clean(self):
+        """
+        Validate the user profile.
+        
+        Raises:
+            ValidationError: If bio exceeds max length
+        """
+        from django.core.exceptions import ValidationError
+        
+        super().clean()
+        
+        if self.bio and len(self.bio) > 1000:
+            raise ValidationError({
+                'bio': 'Biography must be no more than 1000 characters.'
+            })
+
     def get_display_name(self):
         """
         Return the user's preferred display name.

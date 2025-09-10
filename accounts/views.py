@@ -246,8 +246,18 @@ def apply_to_community(request, community_id):
             html = render_to_string('accounts/community_status.html', context, request=request)
             return HttpResponse(html)
         else:
-            # Return JSON for non-HTMX requests
-            return JsonResponse(context)
+            # Return JSON for non-HTMX requests (make community serializable)
+            json_context = {
+                'success': success,
+                'message': message,
+                'status': status,
+                'community': {
+                    'id': str(community.id),
+                    'name': community.name,
+                    'description': community.description
+                }
+            }
+            return JsonResponse(json_context)
     
     # Check if user is already a member
     if community.members.filter(id=request.user.id).exists():

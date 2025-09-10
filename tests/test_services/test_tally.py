@@ -194,7 +194,8 @@ class TestCompleteTallyProcess:
             decision=decision,
             voter=delegation_users['A'],
             is_calculated=False,
-            tags="budget,nutrition,economics"
+            tags="budget,nutrition,economics",
+            with_votes=False  # Don't auto-create votes, we'll create them manually
         )
         VoteFactory(ballot=ballot_a, choice=choice_smoothies, stars=2)
         VoteFactory(ballot=ballot_a, choice=choice_balanced, stars=5)
@@ -208,7 +209,8 @@ class TestCompleteTallyProcess:
             decision=decision,
             voter=contrarian,
             is_calculated=False,
-            tags="individual_choice"
+            tags="individual_choice",
+            with_votes=False  # Manual vote creation
         )
         VoteFactory(ballot=ballot_contrarian, choice=choice_smoothies, stars=5)
         VoteFactory(ballot=ballot_contrarian, choice=choice_balanced, stars=1)
@@ -248,7 +250,8 @@ class TestCompleteTallyProcess:
             decision=decision,
             voter=delegation_users['A'],
             is_calculated=False,
-            tags="governance"
+            tags="governance",
+            with_votes=False  # Manual vote creation
         )
         VoteFactory(ballot=ballot_a, choice=choice, stars=4)
         
@@ -357,7 +360,8 @@ class TestCompleteTallyProcess:
             decision=decision,
             voter=users[0],
             is_calculated=False,
-            tags="performance"
+            tags="performance",
+            with_votes=False  # Manual vote creation
         )
         VoteFactory(ballot=ballot_root, choice=choice, stars=3)
         

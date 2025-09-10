@@ -62,7 +62,7 @@ class TestAccountsViewsFinalPush(TestCase):
         self.client.force_login(self.user)
         
         # Test invalid username (too short)
-        response = self.client.post(reverse('accounts:check_username_availability'), {
+        response = self.client.post(reverse('accounts:check_username'), {
             'username': 'ab'  # Too short
         })
         
@@ -75,7 +75,7 @@ class TestAccountsViewsFinalPush(TestCase):
         existing_user = UserFactory(username="takenname")
         self.client.force_login(self.user)
         
-        response = self.client.post(reverse('accounts:check_username_availability'), {
+        response = self.client.post(reverse('accounts:check_username'), {
             'username': 'takenname'
         })
         
@@ -95,7 +95,7 @@ class TestAccountsViewsFinalPush(TestCase):
         )
         
         self.client.force_login(self.user)
-        response = self.client.post(reverse('accounts:community_application'), {
+        response = self.client.post(reverse('accounts:apply_to_community', args=[self.community.pk]), {
             'community_id': str(self.community.pk)
         })
         
@@ -113,7 +113,7 @@ class TestAccountsViewsFinalPush(TestCase):
         )
         
         self.client.force_login(self.user)
-        response = self.client.post(reverse('accounts:community_application'), {
+        response = self.client.post(reverse('accounts:apply_to_community', args=[self.community.pk]), {
             'community_id': str(self.community.pk)
         })
         
@@ -138,7 +138,7 @@ class TestAccountsViewsFinalPush(TestCase):
         )
         
         self.client.force_login(self.user)
-        response = self.client.post(reverse('accounts:community_application'), {
+        response = self.client.post(reverse('accounts:apply_to_community', args=[self.community.pk]), {
             'community_id': str(self.community.pk)
         })
         
@@ -156,7 +156,7 @@ class TestAccountsViewsFinalPush(TestCase):
         )
         
         self.client.force_login(self.user)
-        response = self.client.post(reverse('accounts:community_application'), {
+        response = self.client.post(reverse('accounts:apply_to_community', args=[self.community.pk]), {
             'community_id': str(self.community.pk)
         })
         
@@ -173,7 +173,7 @@ class TestAccountsViewsFinalPush(TestCase):
         
     def test_magic_link_request_existing_user(self):
         """Test magic link request for existing user - covers user lookup path."""
-        response = self.client.post(reverse('accounts:request_login_code'), {
+        response = self.client.post(reverse('accounts:request_magic_link'), {
             'email': self.user.email
         })
         
@@ -188,7 +188,7 @@ class TestAccountsViewsFinalPush(TestCase):
         """Test magic link request for new email - covers new user path."""
         new_email = "newuser@example.com"
         
-        response = self.client.post(reverse('accounts:request_login_code'), {
+        response = self.client.post(reverse('accounts:request_magic_link'), {
             'email': new_email
         })
         
@@ -247,7 +247,7 @@ class TestAccountsViewsFinalPush(TestCase):
         """Test logout view with authenticated user - covers logout path."""
         self.client.force_login(self.user)
         
-        response = self.client.get(reverse('accounts:logout'))
+        response = self.client.get(reverse('account_logout'))
         
         # Should log out and redirect
         self.assertEqual(response.status_code, 302)
@@ -258,7 +258,7 @@ class TestAccountsViewsFinalPush(TestCase):
         
     def test_logout_view_unauthenticated(self):
         """Test logout view with unauthenticated user - covers anonymous path."""
-        response = self.client.get(reverse('accounts:logout'))
+        response = self.client.get(reverse('account_logout'))
         
         # Should still redirect even if not logged in
         self.assertEqual(response.status_code, 302)
@@ -310,7 +310,7 @@ class TestAccountsViewsFinalPush(TestCase):
         
         # Add HTMX header
         response = self.client.get(
-            reverse('accounts:community_status', args=[str(self.community.pk)]),
+            reverse('accounts:apply_to_community', args=[str(self.community.pk)]),
             HTTP_HX_REQUEST='true'
         )
         

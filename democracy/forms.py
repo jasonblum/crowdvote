@@ -115,6 +115,15 @@ class ChoiceForm(forms.ModelForm):
             }),
         }
     
+    def clean_description(self):
+        """Validate choice description length."""
+        description = self.cleaned_data.get('description', '').strip()
+        
+        if len(description) > 1000:
+            raise ValidationError("Description must be no more than 1000 characters.")
+        
+        return description
+    
     def clean_title(self):
         """Validate choice title."""
         title = self.cleaned_data.get('title', '').strip()

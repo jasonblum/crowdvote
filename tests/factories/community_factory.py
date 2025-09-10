@@ -23,7 +23,7 @@ class CommunityFactory(DjangoModelFactory):
     
     name = factory.Faker('company')
     description = factory.Faker('text', max_nb_chars=1000)
-    auto_approve_applications = True
+    # auto_approve_applications uses model default (False) unless explicitly set
     
     @factory.post_generation
     def with_members(obj, create, extracted, **kwargs):
@@ -52,6 +52,7 @@ class MinionCommunityFactory(CommunityFactory):
     
     name = "Minion Collective"
     description = "A community of loyal minions working together for world domination and banana management."
+    auto_approve_applications = True  # Demo community
     
     @factory.post_generation
     def create_minion_members(obj, create, extracted, **kwargs):
@@ -85,6 +86,7 @@ class SpringfieldCommunityFactory(CommunityFactory):
     
     name = "Springfield Town Council"
     description = "Democratic decision-making for the citizens of Springfield."
+    auto_approve_applications = True  # Demo community
     
     @factory.post_generation
     def create_simpson_members(obj, create, extracted, **kwargs):

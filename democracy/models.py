@@ -250,6 +250,23 @@ class Decision(BaseModel):
         """Return string representation of the decision."""
         return self.title
 
+    def clean(self):
+        """
+        Validate the decision.
+        
+        Raises:
+            ValidationError: If dt_close is in the past
+        """
+        from django.core.exceptions import ValidationError
+        from django.utils import timezone
+        
+        super().clean()
+        
+        if self.dt_close and self.dt_close <= timezone.now():
+            raise ValidationError({
+                'dt_close': 'Decision deadline cannot be in the past.'
+            })
+
     @property
     def result(self):
         """
@@ -338,6 +355,7 @@ class Choice(BaseModel):
         help_text="Short, descriptive name for this choice"
     )
     description = models.TextField(
+        blank=True,
         help_text="Detailed description of what this choice represents"
     )
     decision = models.ForeignKey(
@@ -353,6 +371,7 @@ class Choice(BaseModel):
         blank=True,
         max_digits=5,
         decimal_places=4,
+        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
         help_text="Average star score from all votes (0.0000-5.0000)"
     )
     runoff_score = models.DecimalField(
@@ -360,6 +379,7 @@ class Choice(BaseModel):
         blank=True,
         max_digits=5,
         decimal_places=4,
+        validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
         help_text="Score in the automatic runoff phase of STAR voting"
     )
 
@@ -368,7 +388,7 @@ class Choice(BaseModel):
 
     def __str__(self):
         """Return string representation of the choice."""
-        return f"{self.title} ({self.decision.title})"
+        return self.title
 
     def get_id_display(self):
         """Get a short display ID for this choice."""

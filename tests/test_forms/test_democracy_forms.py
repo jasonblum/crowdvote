@@ -215,28 +215,39 @@ class TestChoiceForm(TestCase):
 class TestChoiceFormSet(TestCase):
     """Test the ChoiceFormSet for managing multiple choices."""
     
+    def setUp(self):
+        """Set up test data for each test."""
+        self.decision = DecisionFactory()
+    
     def test_formset_validation(self):
         """Test formset validation for minimum and maximum choices."""
         # Test minimum choices (should require at least 2)
         formset_data = {
             'form-TOTAL_FORMS': '1',
             'form-INITIAL_FORMS': '0',
+            'form-MIN_NUM_FORMS': '2',
+            'form-MAX_NUM_FORMS': '10',
             'form-0-title': 'Only Choice',
-            'form-0-description': 'This is the only choice with sufficient description length.'
+            'form-0-description': 'This is the only choice'
         }
         
-        formset = ChoiceFormSet(data=formset_data)
+        formset = ChoiceFormSet(data=formset_data, instance=self.decision)
         self.assertFalse(formset.is_valid())
         
         # Test valid number of choices
         formset_data.update({
             'form-TOTAL_FORMS': '2',
+            'form-MIN_NUM_FORMS': '2',
+            'form-MAX_NUM_FORMS': '10',
             'form-1-title': 'Second Choice',
-            'form-1-description': 'This is the second choice with sufficient description length.'
+            'form-1-description': 'This is the second choice'
         })
         
-        formset = ChoiceFormSet(data=formset_data)
-        self.assertTrue(formset.is_valid(), f"Formset errors: {formset.errors}")
+        formset = ChoiceFormSet(data=formset_data, instance=self.decision)
+        if not formset.is_valid():
+            for i, form in enumerate(formset):
+                print(f"Form {i} valid: {form.is_valid()}, errors: {form.errors}")
+        self.assertTrue(formset.is_valid(), f"Formset errors: {formset.errors}, Non-field errors: {formset.non_form_errors()}")
     
     def test_formset_max_choices(self):
         """Test that formset enforces maximum choice limit."""
@@ -250,7 +261,7 @@ class TestChoiceFormSet(TestCase):
             formset_data[f'form-{i}-title'] = f'Choice {i+1}'
             formset_data[f'form-{i}-description'] = f'Description for choice {i+1} with sufficient length to pass validation.'
         
-        formset = ChoiceFormSet(data=formset_data)
+        formset = ChoiceFormSet(data=formset_data, instance=self.decision)
         self.assertFalse(formset.is_valid())
 
 
@@ -261,7 +272,7 @@ class TestVoteForm(TestCase):
     def setUp(self):
         """Set up test data for each test."""
         self.user = UserFactory()
-        self.decision = DecisionFactory()
+        self.decision = DecisionFactory(with_choices=False)  # Don't auto-create choices
         self.choices = [
             ChoiceFactory(decision=self.decision),
             ChoiceFactory(decision=self.decision),
@@ -279,7 +290,7 @@ class TestVoteForm(TestCase):
             'is_anonymous': False
         }
         
-        form = VoteForm(data=form_data, user=self.user, decision=self.decision)
+        form = VoteForm(self.decision, self.user, data=form_data)
         self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
     
     def test_star_rating_validation(self):
@@ -291,33 +302,41 @@ class TestVoteForm(TestCase):
             'is_anonymous': False
         }
         
-        form = VoteForm(data=form_data, user=self.user, decision=self.decision)
+        form = VoteForm(self.decision, self.user, data=form_data)
         self.assertFalse(form.is_valid())
         
         # Invalid rating (negative)
         form_data[f'choice_{self.choices[0].id}'] = '-1'
-        form = VoteForm(data=form_data, user=self.user, decision=self.decision)
+        form = VoteForm(self.decision, self.user, data=form_data)
         self.assertFalse(form.is_valid())
         
-        # Valid rating
-        form_data[f'choice_{self.choices[0].id}'] = '4'
-        form = VoteForm(data=form_data, user=self.user, decision=self.decision)
-        self.assertTrue(form.is_valid())
+        # Valid rating - provide ratings for all choices
+        form_data = {
+            f'choice_{self.choices[0].id}': '4',
+            f'choice_{self.choices[1].id}': '3', 
+            f'choice_{self.choices[2].id}': '2',
+            'tags': 'governance',
+            'is_anonymous': False
+        }
+        form = VoteForm(self.decision, self.user, data=form_data)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
     
     def test_tag_validation(self):
         """Test tag field validation."""
         form_data = {
             f'choice_{self.choices[0].id}': '4',
+            f'choice_{self.choices[1].id}': '3',
+            f'choice_{self.choices[2].id}': '2',
             'tags': 'governance, budget, environment',
             'is_anonymous': False
         }
         
-        form = VoteForm(data=form_data, user=self.user, decision=self.decision)
+        form = VoteForm(self.decision, self.user, data=form_data)
         self.assertTrue(form.is_valid())
         
         # Test empty tags (should be valid)
         form_data['tags'] = ''
-        form = VoteForm(data=form_data, user=self.user, decision=self.decision)
+        form = VoteForm(self.decision, self.user, data=form_data)
         self.assertTrue(form.is_valid())
     
     def test_at_least_one_vote_required(self):
@@ -327,7 +346,7 @@ class TestVoteForm(TestCase):
             'is_anonymous': False
         }
         
-        form = VoteForm(data=form_data, user=self.user, decision=self.decision)
+        form = VoteForm(self.decision, self.user, data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('You must rate at least one choice with 1 or more stars', str(form.errors))
 

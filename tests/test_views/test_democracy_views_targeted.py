@@ -36,7 +36,7 @@ class TestDemocracyViewsTargeted(TestCase):
         
     def test_community_detail_basic_access(self):
         """Test community detail view basic access - covers community retrieval logic."""
-        url = reverse('democracy:community_detail', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_detail', kwargs={'community_id': self.community.pk})
         
         response = self.client.get(url)
         
@@ -49,7 +49,7 @@ class TestDemocracyViewsTargeted(TestCase):
         # Create some test data for the community
         decision = DecisionFactory(community=self.community, title="Test Decision", with_choices=False)
         
-        url = reverse('democracy:community_detail', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_detail', kwargs={'community_id': self.community.pk})
         
         response = self.client.get(url)
         
@@ -192,7 +192,7 @@ class TestDemocracyViewsTargeted(TestCase):
     def test_community_manage_manager_access(self):
         """Test community management view for manager - covers management logic."""
         self.client.force_login(self.user)
-        url = reverse('democracy:community_manage', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_manage', kwargs={'community_id': self.community.pk})
         
         response = self.client.get(url)
         
@@ -242,7 +242,7 @@ class TestDemocracyViewsTargeted(TestCase):
         fake_uuid = uuid.uuid4()
         
         # Test with non-existent community
-        url = reverse('democracy:community_detail', kwargs={'pk': fake_uuid})
+        url = reverse('democracy:community_detail', kwargs={'community_id': fake_uuid})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
         
@@ -270,7 +270,7 @@ class TestDemocracyViewsTargeted(TestCase):
         # Add more members to test member listing
         MembershipFactory.create_batch(5, community=self.community)
         
-        url = reverse('democracy:community_detail', kwargs={'pk': self.community.pk})
+        url = reverse('democracy:community_detail', kwargs={'community_id': self.community.pk})
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, 200)

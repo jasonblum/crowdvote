@@ -39,12 +39,14 @@ class UserFactory(DjangoModelFactory):
     
     @factory.post_generation
     def social_links(obj, create, extracted, **kwargs):
-        """Add realistic social media links."""
-        if create and fake.boolean(chance_of_getting_true=40):
-            obj.twitter_url = f"https://twitter.com/{obj.username}"
-        if create and fake.boolean(chance_of_getting_true=30):
-            obj.linkedin_url = f"https://linkedin.com/in/{obj.username}"
-        obj.save()
+        """Add realistic social media links, respecting explicitly set values."""
+        if create:
+            # Only set social links if they weren't explicitly provided (empty means explicitly set to empty)
+            if not obj.twitter_url and fake.boolean(chance_of_getting_true=40):
+                obj.twitter_url = f"https://twitter.com/{obj.username}"
+            if not obj.linkedin_url and fake.boolean(chance_of_getting_true=30):
+                obj.linkedin_url = f"https://linkedin.com/in/{obj.username}"
+            obj.save()
 
 
 class ManagerUserFactory(UserFactory):

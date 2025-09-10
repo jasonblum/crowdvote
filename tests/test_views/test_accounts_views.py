@@ -129,35 +129,35 @@ class TestProfileSetupView(TestCase):
     @patch('accounts.views.validate_username')
     def test_profile_setup_username_validation_ajax(self, mock_validate):
         """Test AJAX username validation endpoint."""
-        mock_validate.return_value = True  # Username available
+        mock_validate.return_value = (True, None)  # Username available, no error
         
         self.client.force_login(self.user)
         
-        response = self.client.get(
-            '/profile/setup/',
-            data={'check_username': 'testuser'},
+        response = self.client.post(
+            '/check-username/',
+            data={'username': 'testuser'},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, {'available': True})
+        self.assertIn('is available', response.content.decode())
         mock_validate.assert_called_once_with('testuser', exclude_user=self.user)
     
     @patch('accounts.views.validate_username')
     def test_profile_setup_username_validation_unavailable(self, mock_validate):
         """Test AJAX username validation for unavailable username."""
-        mock_validate.return_value = False  # Username not available
+        mock_validate.return_value = (False, "Username is already taken")  # Username not available
         
         self.client.force_login(self.user)
         
-        response = self.client.get(
-            '/profile/setup/',
-            data={'check_username': 'taken_username'},
+        response = self.client.post(
+            '/check-username/',
+            data={'username': 'taken_username'},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest'
         )
         
         self.assertEqual(response.status_code, 200)
-        self.assertJSONEqual(response.content, {'available': False})
+        self.assertIn('Username is already taken', response.content.decode())
     
     def test_profile_setup_form_submission(self):
         """Test successful profile setup form submission."""

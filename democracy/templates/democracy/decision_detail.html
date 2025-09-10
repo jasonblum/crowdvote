@@ -356,6 +356,15 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Vote form exists:', !!document.getElementById('vote-form'));
     console.log('All star elements:', document.querySelectorAll('.star').length);
     console.log('All rating inputs:', document.querySelectorAll('.rating-input').length);
+    console.log('Voting section exists:', !!document.getElementById('voting-section'));
+    
+    // Debug: Check if can_vote template variable is working correctly
+    {% if can_vote %}
+        console.log('Template says user can vote - voting interface should be visible');
+    {% else %}
+        console.log('Template says user CANNOT vote - voting interface hidden');
+        console.log('This explains why stars don\'t work - the voting section is not rendered');
+    {% endif %}
     
     starRatings.forEach(rating => {
         const stars = rating.querySelectorAll('.star');

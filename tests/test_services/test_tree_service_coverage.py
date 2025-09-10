@@ -96,7 +96,7 @@ class TestTreeServiceCoverage(TestCase):
         service = DelegationTreeService()
         
         users = [self.user_a, self.user_b, self.user_c]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         
         # Should contain delegation relationships
         self.assertIn(self.user_b, delegation_map)
@@ -136,7 +136,7 @@ class TestTreeServiceCoverage(TestCase):
         service = DelegationTreeService(include_links=False)
         
         users = [self.user_a, self.user_b, self.user_c]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         visited = set()
         
         # Build tree for user with delegations
@@ -160,7 +160,7 @@ class TestTreeServiceCoverage(TestCase):
         )
         
         users = [self.user_a, self.user_b]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         visited = set()
         
         # Should handle circular reference gracefully
@@ -180,7 +180,7 @@ class TestTreeServiceCoverage(TestCase):
         Following.objects.create(follower=user_d, followee=self.user_c, tags="governance", order=1)
         
         users = [self.user_a, self.user_b, self.user_c, user_d]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         visited = set()
         
         # Test with low max depth
@@ -328,7 +328,7 @@ class TestTreeServiceCoverage(TestCase):
         service = DelegationTreeService(include_links=False)
         
         users = [self.user_a, self.user_b, self.user_c]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         visited = set()
         
         # Test with custom prefix
@@ -353,7 +353,7 @@ class TestTreeServiceCoverage(TestCase):
         service = DelegationTreeService(include_links=False)
         
         users = [self.user_a, user_d]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         visited = set()
         
         tree_html = service.build_tree_recursive(
@@ -373,7 +373,7 @@ class TestTreeServiceCoverage(TestCase):
         
         # Test delegation map with mixed users
         users = [self.user_a, outsider]
-        delegation_map = service.build_delegation_map(users, filter_community=self.community)
+        delegation_map, _, _ = service.build_delegation_map(users, filter_community=self.community)
         
         # Should handle mixed membership correctly
         self.assertIsInstance(delegation_map, dict)
@@ -399,7 +399,7 @@ class TestTreeServiceCoverage(TestCase):
         service = DelegationTreeService(include_links=False)
         
         users = [self.user_a, self.user_b, user_multi]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         
         # Should handle multiple relationships
         self.assertTrue(len(delegation_map.get(user_multi, [])) >= 2)
@@ -425,7 +425,7 @@ class TestTreeServiceCoverage(TestCase):
         service = DelegationTreeService(include_links=False)
         
         users = [self.user_a, self.user_b, user_priority]
-        delegation_map = service.build_delegation_map(users)
+        delegation_map, _, _ = service.build_delegation_map(users)
         
         # Should respect order/priority
         followings = delegation_map.get(user_priority, [])
@@ -471,7 +471,7 @@ class TestTreeServiceCoverage(TestCase):
                     order=1
                 )
         
-        delegation_map = service.build_delegation_map(chain_users)
+        delegation_map, _, _ = service.build_delegation_map(chain_users)
         visited = set()
         
         # Should handle moderate depth efficiently

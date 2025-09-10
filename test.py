@@ -3,11 +3,12 @@
 CrowdVote Test Runner Script
 
 Runs the complete test suite with coverage reporting and provides
-clear feedback on results and next steps.
+clear test results summary.
 """
 
 import subprocess
 import sys
+import re
 from pathlib import Path
 
 def run_command(command, description):
@@ -24,6 +25,39 @@ def run_command(command, description):
         print(f"❌ {description} - FAILED")
         return False
     return True
+
+def extract_test_results():
+    """Extract test results from the pytest output."""
+    try:
+        # Run pytest with quiet output to capture results
+        result = subprocess.run(
+            'docker-compose exec web sh -c "export DJANGO_SETTINGS_MODULE=crowdvote.settings && python -m pytest tests/ --cov --cov-report=html --tb=no -q"',
+            shell=True, 
+            capture_output=True, 
+            text=True
+        )
+        
+        # Look for the results line like "137 failed, 322 passed, 1893 warnings"
+        lines = result.stdout.split('\n')
+        for line in lines:
+            if 'failed' in line and 'passed' in line:
+                # Parse the results
+                failed_match = re.search(r'(\d+) failed', line)
+                passed_match = re.search(r'(\d+) passed', line)
+                
+                if failed_match and passed_match:
+                    failed = int(failed_match.group(1))
+                    passed = int(passed_match.group(1))
+                    total = failed + passed
+                    success_rate = (passed / total * 100) if total > 0 else 0
+                    
+                    return failed, passed, total, success_rate
+        
+        return None, None, None, None
+        
+    except Exception as e:
+        print(f"   Note: Could not parse test results automatically: {e}")
+        return None, None, None, None
 
 def main():
     """Main test runner function."""
@@ -52,13 +86,14 @@ def main():
     print("✅ Docker environment ready")
     
     # Run complete test suite with coverage
-    success = run_command(
+    run_command(
         'docker-compose exec web sh -c "export DJANGO_SETTINGS_MODULE=crowdvote.settings && python -m pytest tests/ --cov --cov-report=html --cov-report=term-missing --tb=short"',
         "Running complete test suite with coverage analysis"
     )
     
-    # Note: Don't exit on test failures during Plan #14 - we expect some failures
-    # success is based on pytest running, not all tests passing
+    # Extract and display test results
+    print("\n📊 Extracting test results...")
+    failed, passed, total, success_rate = extract_test_results()
     
     # Open coverage report automatically
     run_command(
@@ -66,29 +101,23 @@ def main():
         "Opening HTML coverage report in browser"
     )
     
-    # Display results and next steps
+    # Display results summary
     print("\n" + "=" * 50)
     print("🎉 Test Suite Complete!")
     print("=" * 50)
     
-    print("\n📊 Coverage Reports Available:")
-    print("   • Terminal: See coverage summary above")
-    print("   • HTML Report: Open htmlcov/index.html in your browser")
-    print("   • To view HTML report: open htmlcov/index.html")
+    if failed is not None and passed is not None:
+        print(f"\n📈 Test Results Summary:")
+        print(f"   • Total Tests: {total}")
+        print(f"   • Passing: {passed} ✅")
+        print(f"   • Failing: {failed} ❌") 
+        print(f"   • Success Rate: {success_rate:.1f}%")
+    else:
+        print("\n📈 Test Results: See detailed output above")
     
-    print("\n🔍 Next Steps (Plan #14 - Testing Coverage Expansion):")
-    print("   • Current Status: 210 passing, 60 failing tests (77.8% success rate)")
-    print("   • Coverage: 50% overall (target: 60-70%)")
-    print("   • Major Progress: +17 tests fixed, systematic approach working!")
-    print("   • Focus areas: remaining view 404s, service edge cases, integration tests")
-    print("   • Coverage gaps: need to identify and test uncovered code paths")
-    
-    print("\n💡 Quick Commands:")
-    print("   • Run all tests: python test.py")
-    print("   • View coverage: open htmlcov/index.html")
-    print("   • Manual test run: docker-compose exec web sh -c \"export DJANGO_SETTINGS_MODULE=crowdvote.settings && pytest tests/ -v\"")
-    
-    print("\n✨ Happy testing!")
+    print(f"\n📊 Coverage Report:")
+    print(f"   • HTML Report: htmlcov/index.html (opened in browser)")
+    print(f"   • Terminal: See coverage summary above")
 
 if __name__ == "__main__":
     main()
