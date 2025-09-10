@@ -22,6 +22,7 @@ class DecisionFactory(DjangoModelFactory):
     
     class Meta:
         model = Decision
+        skip_postgeneration_save = True
     
     community = factory.SubFactory('tests.factories.CommunityFactory')
     title = factory.Faker('sentence', nb_words=6)
@@ -72,6 +73,7 @@ class BallotFactory(DjangoModelFactory):
     
     class Meta:
         model = Ballot
+        skip_postgeneration_save = True
     
     decision = factory.SubFactory(DecisionFactory)
     voter = factory.SubFactory('tests.factories.UserFactory')

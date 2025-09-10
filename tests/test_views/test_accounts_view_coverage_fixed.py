@@ -52,7 +52,9 @@ class TestAccountsViewCoverage(TestCase):
         
     def test_profile_setup_get_request(self):
         """Test profile setup GET request - covers form rendering logic."""
-        self.client.force_login(self.user)
+        # Create user without complete profile (no first_name)
+        incomplete_user = UserFactory(username="incomplete", first_name="", last_name="")
+        self.client.force_login(incomplete_user)
         
         response = self.client.get('/profile/setup/')
         
@@ -61,7 +63,9 @@ class TestAccountsViewCoverage(TestCase):
         
     def test_profile_setup_post_valid_data(self):
         """Test profile setup POST with valid data - covers form processing."""
-        self.client.force_login(self.user)
+        # Create user without complete profile (no first_name)
+        incomplete_user = UserFactory(username="incomplete2", first_name="", last_name="")
+        self.client.force_login(incomplete_user)
         
         post_data = {
             'first_name': 'Test',
@@ -75,8 +79,8 @@ class TestAccountsViewCoverage(TestCase):
         self.assertEqual(response.status_code, 302)
         
         # Verify user was updated
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.first_name, 'Test')
+        incomplete_user.refresh_from_db()
+        self.assertEqual(incomplete_user.first_name, 'Test')
         
     def test_check_username_availability_ajax_request(self):
         """Test AJAX username availability check - covers validation logic."""
@@ -273,11 +277,8 @@ class TestAccountsViewCoverage(TestCase):
         
     def test_magic_link_login_valid_token(self):
         """Test magic link login with valid token - covers authentication logic."""
-        # Create a valid magic link
-        magic_link = MagicLink.objects.create(
-            email='test@example.com',
-            expires_at=timezone.now() + timedelta(minutes=15)
-        )
+        # Create a valid magic link using proper factory method
+        magic_link = MagicLink.create_for_email('test@example.com')
         
         response = self.client.get(f'/magic-login/{magic_link.token}/')
         
@@ -290,11 +291,10 @@ class TestAccountsViewCoverage(TestCase):
         
     def test_magic_link_login_expired_token(self):
         """Test magic link login with expired token - covers expiry logic."""
-        # Create an expired magic link
-        magic_link = MagicLink.objects.create(
-            email='test@example.com',
-            expires_at=timezone.now() - timedelta(minutes=15)
-        )
+        # Create a magic link and manually expire it
+        magic_link = MagicLink.create_for_email('test@example.com')
+        magic_link.expires_at = timezone.now() - timedelta(minutes=15)
+        magic_link.save()
         
         response = self.client.get(f'/magic-login/{magic_link.token}/')
         
@@ -387,10 +387,7 @@ class TestAccountsViewCoverage(TestCase):
         
     def test_magic_link_model_methods(self):
         """Test magic link model - covers model behavior."""
-        magic_link = MagicLink.objects.create(
-            email='test@example.com',
-            expires_at=timezone.now() + timedelta(minutes=15)
-        )
+        magic_link = MagicLink.create_for_email('test@example.com')
         
         # Test token generation
         self.assertTrue(len(magic_link.token) > 10)

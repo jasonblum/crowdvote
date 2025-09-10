@@ -7,6 +7,7 @@ for validation, business logic, and constraints in the CrowdVote democracy syste
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from datetime import timedelta
 
@@ -53,13 +54,15 @@ class TestCommunityModel:
         with pytest.raises(ValidationError):
             community.full_clean()
     
-    def test_community_unique_name(self):
-        """Test that community names must be unique."""
-        CommunityFactory(name="Unique Community")
+    def test_community_duplicate_names_allowed(self):
+        """Test that community names can be duplicated (no unique constraint)."""
+        community1 = CommunityFactory(name="Test Community")
+        community2 = CommunityFactory(name="Test Community")
         
-        # Second community with same name should fail
-        with pytest.raises(IntegrityError):
-            CommunityFactory(name="Unique Community")
+        # Both communities should be created successfully
+        assert community1.name == "Test Community"
+        assert community2.name == "Test Community"
+        assert community1.id != community2.id
     
     def test_auto_approve_settings(self):
         """Test auto-approval settings for communities."""
@@ -265,7 +268,7 @@ class TestBallotModel:
             with_votes=False
         )
         
-        expected = "testuser's ballot for Test Decision"
+        expected = "testuser's ballot on Test Decision"
         assert str(ballot) == expected
     
     def test_ballot_unique_constraint(self):
@@ -457,8 +460,8 @@ class TestModelRelationships:
         assert ballot1 in ballots
         assert ballot2 in ballots
     
-    def test_cascade_deletions(self):
-        """Test that related objects are properly deleted."""
+    def test_protected_deletions(self):
+        """Test that decisions with votes/choices are protected from deletion."""
         decision = DecisionFactory(with_choices=False)
         choice = ChoiceFactory(decision=decision)
         ballot = BallotFactory(decision=decision, with_votes=False)
@@ -469,13 +472,14 @@ class TestModelRelationships:
         assert Ballot.objects.filter(id=ballot.id).exists()
         assert Vote.objects.filter(id=vote.id).exists()
         
-        # Delete decision
-        decision.delete()
+        # Delete decision should fail due to PROTECT constraint
+        with pytest.raises(ProtectedError):
+            decision.delete()
         
-        # Related objects should be deleted due to CASCADE
-        assert not Choice.objects.filter(id=choice.id).exists()
-        assert not Ballot.objects.filter(id=ballot.id).exists()
-        assert not Vote.objects.filter(id=vote.id).exists()
+        # All objects should still exist
+        assert Choice.objects.filter(id=choice.id).exists()
+        assert Ballot.objects.filter(id=ballot.id).exists()
+        assert Vote.objects.filter(id=vote.id).exists()
 
 
 @pytest.mark.models

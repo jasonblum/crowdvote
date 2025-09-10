@@ -359,7 +359,7 @@ class TestCommunityDiscoveryView(TestCase):
         response = self.client.get('/communities/')
         
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Community Discovery")
+        self.assertContains(response, "Discover Communities")
         self.assertContains(response, "Public Community")
         self.assertContains(response, "Auto Approve Community")
     

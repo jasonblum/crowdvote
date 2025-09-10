@@ -137,14 +137,16 @@ class TestDemocracyViewsTargeted(TestCase):
         
     def test_decision_results_basic_access(self):
         """Test decision results view - covers results calculation and display."""
+        self.client.force_login(self.user)  # Authenticate user
+        
         decision = DecisionFactory(community=self.community, with_choices=False)
         choice = ChoiceFactory(decision=decision, title="Test Choice")
-        
+
         url = reverse('democracy:decision_results', kwargs={
             'community_id': self.community.pk,
             'decision_id': decision.pk
         })
-        
+
         response = self.client.get(url)
         
         # Should render results page
@@ -307,6 +309,8 @@ class TestDemocracyViewsTargeted(TestCase):
     def test_decision_results_with_votes(self):
         """Test decision results with actual votes - covers vote aggregation logic."""
         from tests.factories.decision_factory import BallotFactory, VoteFactory
+        
+        self.client.force_login(self.user)  # Authenticate user
         
         decision = DecisionFactory(community=self.community, with_choices=False)
         choice = ChoiceFactory(decision=decision, title="Test Choice")

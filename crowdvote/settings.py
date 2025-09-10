@@ -62,8 +62,11 @@ INSTALLED_APPS = [
     'democracy',
 ]
 
-# Add development apps when in DEBUG mode
-if DEBUG:
+# Add development apps when in DEBUG mode (but not during testing)
+import sys
+TESTING = 'pytest' in sys.modules or 'test' in sys.argv
+
+if DEBUG and not TESTING:
     INSTALLED_APPS += [
         'debug_toolbar',
         'django_extensions',
@@ -112,8 +115,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Add Debug Toolbar middleware when in DEBUG mode
-if DEBUG:
+# Add Debug Toolbar middleware when in DEBUG mode (but not during testing)
+if DEBUG and not TESTING:
     MIDDLEWARE.insert(1, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 ROOT_URLCONF = 'crowdvote.urls'
@@ -234,7 +237,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Django Debug Toolbar Configuration
-if DEBUG:
+if DEBUG and not TESTING:
     import socket
     
     # Get the hostname for Docker compatibility

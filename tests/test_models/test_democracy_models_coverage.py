@@ -31,50 +31,40 @@ class TestDemocracyModelsCoverage(TestCase):
         
     def test_membership_str_method(self):
         """Test Membership __str__ method - covers string representation."""
-        membership = MembershipFactory(
-            member=self.user, 
-            community=self.community
-        )
-        
+        # Use the membership created in setUp
         expected = f"{self.user.username} in {self.community.name}"
-        self.assertEqual(str(membership), expected)
+        self.assertEqual(str(self.membership), expected)
         
     def test_membership_role_display_manager_voter(self):
         """Test Membership role_display for manager who votes - covers manager + voter path."""
-        membership = MembershipFactory(
-            member=self.user,
-            community=self.community,
-            is_community_manager=True,
-            is_voting_community_member=True
-        )
+        # Modify existing membership to be manager + voter
+        self.membership.is_community_manager = True
+        self.membership.is_voting_community_member = True
+        self.membership.save()
         
-        role_display = membership.role_display
+        role_display = self.membership.role_display
         self.assertIn("Manager", role_display)
         self.assertIn("Voter", role_display)
         
     def test_membership_role_display_lobbyist(self):
         """Test Membership role_display for lobbyist - covers lobbyist path."""
-        membership = MembershipFactory(
-            member=self.user,
-            community=self.community,
-            is_community_manager=False,
-            is_voting_community_member=False
-        )
+        # Modify existing membership to be lobbyist (neither manager nor voter)
+        self.membership.is_community_manager = False
+        self.membership.is_voting_community_member = False
+        self.membership.save()
         
-        role_display = membership.role_display
+        role_display = self.membership.role_display
         self.assertIn("Lobbyist", role_display)
         self.assertNotIn("Voter", role_display)
         
     def test_membership_role_display_manager_only(self):
         """Test Membership role_display for manager who doesn't vote - covers manager + lobbyist path."""
-        membership = MembershipFactory(
-            member=self.user,
-            community=self.community,
-            is_community_manager=True,
-            is_voting_community_member=False
-        )
+        # Modify existing membership to be manager but not voter
+        self.membership.is_community_manager = True
+        self.membership.is_voting_community_member = False
+        self.membership.save()
         
-        role_display = membership.role_display
+        role_display = self.membership.role_display
         self.assertIn("Manager", role_display)
         self.assertIn("Lobbyist", role_display)
         
@@ -257,7 +247,7 @@ class TestDemocracyModelsCoverage(TestCase):
             with_choices=False
         )
         
-        expected = f"{decision.title} ({self.community.name})"
+        expected = decision.title
         self.assertEqual(str(decision), expected)
         
     def test_choice_str_method(self):
@@ -341,8 +331,9 @@ class TestDemocracyModelsCoverage(TestCase):
         vote_max = VoteFactory(choice=choice, ballot=ballot, stars=5)
         self.assertEqual(vote_max.stars, 5)
         
-        # Test vote with minimum value
-        vote_min = Vote.objects.create(choice=choice, ballot=ballot, stars=0)
+        # Test vote with minimum value (need different choice due to unique constraint)
+        choice_b = ChoiceFactory(decision=decision, title="Choice B")
+        vote_min = Vote.objects.create(choice=choice_b, ballot=ballot, stars=0)
         self.assertEqual(vote_min.stars, 0)
         
     def test_decision_is_open_property(self):

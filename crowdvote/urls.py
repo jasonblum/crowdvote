@@ -28,8 +28,11 @@ urlpatterns = [
     path('', include('democracy.urls')),
 ]
 
-# Add Debug Toolbar URLs when in DEBUG mode
-if settings.DEBUG:
+# Add Debug Toolbar URLs when in DEBUG mode (but not during testing)
+import sys
+TESTING = 'pytest' in sys.modules or 'test' in sys.argv
+
+if settings.DEBUG and not TESTING:
     import debug_toolbar
     urlpatterns = [
         path('__debug__/', include(debug_toolbar.urls)),

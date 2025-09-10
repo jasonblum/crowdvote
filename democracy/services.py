@@ -458,15 +458,19 @@ class StageBallots(Service):
             tuple: (should_inherit: bool, matching_tags: list)
         """
         # If following has no tags specified, inherit from all ballots
-        if not following.tags.strip():
-            followee_tags = [tag.strip() for tag in followee_ballot.tags.split(',') if tag.strip()]
+        if not following.tags or not following.tags.strip():
+            followee_tags = []
+            if followee_ballot.tags:
+                followee_tags = [tag.strip() for tag in followee_ballot.tags.split(',') if tag.strip()]
             return True, followee_tags
         
         # Get tags we're following this person on
         following_tags = set(tag.strip() for tag in following.tags.split(',') if tag.strip())
         
         # Get tags the followee applied to their ballot
-        followee_tags = set(tag.strip() for tag in followee_ballot.tags.split(',') if tag.strip())
+        followee_tags = set()
+        if followee_ballot.tags:
+            followee_tags = set(tag.strip() for tag in followee_ballot.tags.split(',') if tag.strip())
         
         # Find intersection - we inherit if there's any overlap
         matching_tags = following_tags.intersection(followee_tags)

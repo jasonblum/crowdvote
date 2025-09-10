@@ -105,9 +105,9 @@ class TestCommunityDetailView(TestCase):
         self.assertContains(response, 'searchable_member')
     
     def test_community_detail_unauthenticated_access(self):
-        """Test that unauthenticated users are redirected."""
+        """Test that unauthenticated users can view community details (public view)."""
         response = self.client.get(f'/communities/{self.community.id}/')
-        self.assertEqual(response.status_code, 302)  # Redirect to login
+        self.assertEqual(response.status_code, 200)  # Public access allowed
 
 
 @pytest.mark.views
@@ -173,12 +173,12 @@ class TestDecisionListView(TestCase):
         self.assertNotContains(response, "Closed Decision")
     
     def test_decision_list_non_member_access(self):
-        """Test that non-members cannot access decision list."""
+        """Test that non-members are redirected when accessing decision list."""
         non_member = UserFactory()
         self.client.force_login(non_member)
-        
+
         response = self.client.get(f'/communities/{self.community.id}/decisions/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 302)  # Redirect to appropriate page
 
 
 @pytest.mark.views

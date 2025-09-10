@@ -20,6 +20,7 @@ class CommunityFactory(DjangoModelFactory):
     
     class Meta:
         model = Community
+        skip_postgeneration_save = True
     
     name = factory.Faker('company')
     description = factory.Faker('text', max_nb_chars=1000)

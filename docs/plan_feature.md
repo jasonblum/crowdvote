@@ -10,6 +10,7 @@ The user will provide a feature description. Your job is to:
 3. Avoid any product manager style sections (no success criteria, timeline, migration, etc)
 4. Avoid writing any actual code in the plan.
 5. Include specific and verbatim details from the user's prompt to ensure the plan is accurate.
+6. Plan also on writing new tests or updating old ones to ensure any changes to the code are covered with comprehensive tests.
 
 This is strictly a technical requirements document that should:
 1. Include a brief description to set context at the top

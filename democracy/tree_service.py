@@ -271,7 +271,8 @@ class DelegationTreeService:
             tags = data.get('tags', 'no tags')
             
             # Handle anonymous voters
-            if hasattr(voter, 'is_anonymous') and getattr(voter, 'is_anonymous', False):
+            ballot = data.get('ballot')
+            if ballot and ballot.is_anonymous:
                 username = f"Anonymous Voter #{str(voter.id)[:8]}"
                 return f"{username} ({vote_type}: {stars}) [Tags: {tags}]"
             

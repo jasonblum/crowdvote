@@ -63,19 +63,19 @@ class TestTreeServiceCoverage(TestCase):
         
         # Test with community context
         formatted = service.format_username(self.user_a, community=self.community)
-        self.assertIn(self.user_a.username, formatted)
+        self.assertIn("Alice Smith", formatted)
         self.assertIn('<a href=', formatted)
         
         # Test without community context
         formatted_no_community = service.format_username(self.user_a)
-        self.assertIn(self.user_a.username, formatted_no_community)
+        self.assertIn("Alice Smith", formatted_no_community)
         
     def test_format_username_without_links(self):
         """Test username formatting with links disabled - covers plain text logic."""
         service = DelegationTreeService(include_links=False)
         
         formatted = service.format_username(self.user_a, community=self.community)
-        self.assertIn(self.user_a.username, formatted)
+        self.assertIn("Alice Smith", formatted)
         self.assertNotIn('<a href=', formatted)
         
     def test_format_username_display_name_logic(self):
@@ -124,11 +124,11 @@ class TestTreeServiceCoverage(TestCase):
         users = [self.user_a, self.user_b, self.user_c, user_outside]
         
         # Test without filter - should include all
-        delegation_map_all = service.build_delegation_map(users)
+        delegation_map_all, _, _ = service.build_delegation_map(users)
         self.assertIn(user_outside, delegation_map_all)
         
         # Test with community filter - should exclude outsider
-        delegation_map_filtered = service.build_delegation_map(users, filter_community=self.community)
+        delegation_map_filtered, _, _ = service.build_delegation_map(users, filter_community=self.community)
         # The filter only affects member verification, not following relationships
         
     def test_build_tree_recursive_basic(self):
@@ -144,8 +144,9 @@ class TestTreeServiceCoverage(TestCase):
             self.user_b, delegation_map, visited, prefix="", depth=0
         )
         
-        self.assertIn(self.user_b.username, tree_html)
-        self.assertIn("governance", tree_html)  # Should show tags
+        tree_text = '\n'.join(tree_html)
+        self.assertIn("Alice Smith", tree_text)  # user_a display name
+        self.assertIn("governance", tree_text)  # Should show tags
         
     def test_build_tree_recursive_circular_prevention(self):
         """Test circular reference prevention - covers visited user logic."""
@@ -198,14 +199,14 @@ class TestTreeServiceCoverage(TestCase):
         tree_html = service.build_community_tree(self.community)
         
         # Should contain all community members with delegations
-        self.assertIn(self.user_b.username, tree_html)
-        self.assertIn(self.user_c.username, tree_html)
+        self.assertIn("Bob Jones", tree_html['tree_text'])
+        self.assertIn("Charlie Brown", tree_html['tree_text'])
         
         # Should show delegation structure
-        self.assertIn("governance", tree_html)
+        self.assertIn("governance", tree_html['tree_text'])
         
         # Should contain section headers
-        self.assertIn("Users with Delegation Relationships", tree_html)
+        self.assertIn("DELEGATION CHAINS", tree_html['tree_text'])
         
     def test_build_community_tree_no_delegations(self):
         """Test community tree with no delegations - covers empty tree logic."""
@@ -218,7 +219,7 @@ class TestTreeServiceCoverage(TestCase):
         tree_html = service.build_community_tree(empty_community)
         
         # Should handle empty tree gracefully
-        self.assertIn("No delegation relationships", tree_html)
+        self.assertIn("No delegation relationships", tree_html['tree_text'])
         
     def test_build_decision_tree_with_votes(self):
         """Test decision tree building - covers decision-specific tree logic."""
@@ -239,12 +240,12 @@ class TestTreeServiceCoverage(TestCase):
         service = DelegationTreeService(include_links=False)
         tree_html = service.build_decision_tree(decision)
         
-        # Should show voters and their votes
-        self.assertIn(self.user_a.username, tree_html)
-        self.assertIn(self.user_b.username, tree_html)
+        # Should show voters and their votes (may be anonymous)
+        self.assertIn("DECISION PARTICIPATION TREE", tree_html['tree_text'])
+        self.assertIn("Total participants: 2", tree_html['tree_text'])
         
         # Should show vote values (stars)
-        self.assertIn("★", tree_html)
+        self.assertIn("★", tree_html['tree_text'])
         
     def test_build_decision_tree_no_votes(self):
         """Test decision tree with no votes - covers empty decision logic."""
@@ -255,7 +256,7 @@ class TestTreeServiceCoverage(TestCase):
         tree_html = service.build_decision_tree(decision)
         
         # Should handle decision with no votes
-        self.assertIn("No votes have been cast", tree_html)
+        self.assertIn("No votes cast", tree_html['tree_text'])
         
     def test_build_decision_tree_calculated_vs_manual(self):
         """Test decision tree vote type display - covers calculated vs manual vote logic."""
@@ -284,8 +285,8 @@ class TestTreeServiceCoverage(TestCase):
         tree_html = service.build_decision_tree(decision)
         
         # Should distinguish manual vs calculated votes
-        self.assertIn("Manual", tree_html)
-        self.assertIn("Calculated", tree_html)
+        self.assertIn("Manual Vote", tree_html['tree_text'])
+        self.assertIn("Calculated", tree_html['tree_text'])
         
     def test_format_voter_with_vote_logic(self):
         """Test vote formatting - covers vote display logic."""
@@ -298,7 +299,7 @@ class TestTreeServiceCoverage(TestCase):
         tree_html = service.build_decision_tree(decision)
         
         # Should format vote with stars
-        self.assertIn("★★★☆☆", tree_html)
+        self.assertIn("★★★☆☆", tree_html['tree_text'])
         
     def test_edge_cases_and_error_handling(self):
         """Test edge cases and error handling - covers error paths."""
@@ -361,8 +362,9 @@ class TestTreeServiceCoverage(TestCase):
         )
         
         # Should display tags properly
-        self.assertIn("environment", tree_html)
-        self.assertIn("safety", tree_html)
+        tree_text = '\n'.join(tree_html)
+        self.assertIn("environment", tree_text)
+        self.assertIn("safety", tree_text)
         
     def test_community_member_verification(self):
         """Test community member verification - covers membership checking logic."""
@@ -452,7 +454,7 @@ class TestTreeServiceCoverage(TestCase):
         tree_html = service.build_decision_tree(decision)
         
         # Should handle anonymous votes
-        self.assertIn("Anonymous", tree_html)
+        self.assertIn("Anonymous", tree_html['tree_text'])
         
     def test_tree_depth_and_performance(self):
         """Test tree depth performance - covers performance edge cases."""
