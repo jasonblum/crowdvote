@@ -271,6 +271,24 @@ class Decision(BaseModel):
         from django.utils import timezone
         return timezone.now() < self.dt_close
     
+    def is_active(self):
+        """
+        Check if this decision is currently active (voting is open).
+        
+        Returns:
+            bool: True if voting is open, False if closed
+        """
+        return self.is_open
+    
+    def is_closed(self):
+        """
+        Check if this decision is closed (voting has ended).
+        
+        Returns:
+            bool: True if voting is closed, False if still open
+        """
+        return not self.is_open
+    
     def get_total_ballots(self):
         """
         Get the total number of ballots cast for this decision.

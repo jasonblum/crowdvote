@@ -295,8 +295,8 @@ class TestCommunityManagement:
         
         # Step 4: Verify community structure
         assert community.members.count() == 3
-        assert community.membership_set.filter(is_community_manager=True).count() == 1
-        assert community.membership_set.filter(is_voting_community_member=True).count() == 3
+        assert community.memberships.filter(is_community_manager=True).count() == 1
+        assert community.memberships.filter(is_voting_community_member=True).count() == 3
         
         # Step 5: Test member permissions
         assert manager_membership.is_community_manager
@@ -332,13 +332,13 @@ class TestCommunityManagement:
         # Step 4: Verify membership types
         assert community.members.count() == 2
         
-        voting_members = community.membership_set.filter(
+        voting_members = community.memberships.filter(
             is_voting_community_member=True
         )
         assert voting_members.count() == 1
         assert voting_members.first().member == voter
         
-        non_voting_members = community.membership_set.filter(
+        non_voting_members = community.memberships.filter(
             is_voting_community_member=False
         )
         assert non_voting_members.count() == 1

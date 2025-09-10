@@ -62,22 +62,28 @@
 {% endblock sidebar_content %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-8 px-6">
-        <!-- Header -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 mb-8">
-            <div class="px-6 py-8">
+    <!-- Page Content -->
+    <div class="py-8 px-6">
+        <div class="space-y-8">
+        <!-- Profile Overview Section -->
+        <section class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">👤 Member Profile</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ member.get_full_name_or_username }}'s public profile</p>
+            </div>
+            <div class="px-6 py-6">
                 <div class="flex items-center space-x-6">
                     <div class="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700 p-1">
                         {% load member_tags %}
                         {% user_avatar member 72 %}
                     </div>
                     <div class="flex-1">
-                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                        <h3 class="text-3xl font-bold text-gray-900 dark:text-white">
                             {{ member.get_full_name_or_username }}
-                        </h1>
+                        </h3>
                         <p class="text-lg text-gray-600 dark:text-gray-300">@{{ member.username }}</p>
                         {% if is_own_profile %}
-                            <p class="text-sm text-blue-600 mt-2">This is your profile</p>
+                            <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">This is your profile</p>
                         {% endif %}
                     </div>
                     <div class="flex space-x-4 text-center">
@@ -92,7 +98,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         {% if not can_view_details and not is_own_profile %}
             <!-- Limited access message -->
@@ -112,19 +118,19 @@
             </div>
         {% endif %}
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Communities -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
-                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                        {% if is_own_profile %}
-                            My Communities
-                        {% else %}
-                            Shared Communities
-                        {% endif %}
-                    </h2>
-                </div>
-                <div class="p-6">
+        <!-- Communities Section -->
+        <section class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">🌐 {% if is_own_profile %}My Communities{% else %}Shared Communities{% endif %}</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {% if is_own_profile %}
+                        Communities where you are a member
+                    {% else %}
+                        Communities where both you and {{ member.get_display_name }} are members
+                    {% endif %}
+                </p>
+            </div>
+            <div class="px-6 py-6">
                     {% if visible_memberships %}
                         <div class="space-y-4">
                             {% for membership in visible_memberships %}
@@ -180,24 +186,27 @@
                             {% endif %}
                         </div>
                     {% endif %}
-                </div>
             </div>
+        </section>
 
-            <!-- Delegation Network -->
-            {% if can_view_details or is_own_profile %}
-            <div class="space-y-6">
-                <!-- Following -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        <!-- Delegation Network Section -->
+        {% if can_view_details or is_own_profile %}
+        <section class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">🔗 Delegation Network</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Following and follower relationships</p>
+            </div>
+            <div class="px-6 py-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Following -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
                             {% if is_own_profile %}
                                 People I Follow
                             {% else %}
                                 {{ member.first_name|default:member.username }} Follows
                             {% endif %}
-                        </h2>
-                    </div>
-                    <div class="p-6">
+                        </h3>
                         {% if following %}
                             <div class="space-y-3">
                                 {% for follow in following %}
@@ -246,20 +255,16 @@
                             </div>
                         {% endif %}
                     </div>
-                </div>
 
-                <!-- Followers -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <!-- Followers -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
                             {% if is_own_profile %}
                                 My Followers
                             {% else %}
                                 {{ member.first_name|default:member.username }}'s Followers
                             {% endif %}
-                        </h2>
-                    </div>
-                    <div class="p-6">
+                        </h3>
                         {% if followers %}
                             <div class="space-y-3">
                                 {% for follower in followers %}
@@ -310,26 +315,32 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
-        </div>
-
-        <!-- Actions -->
-        {% if not is_own_profile and can_view_details %}
-        <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Delegation Actions</h3>
-            <div class="flex space-x-4">
-                <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors">
-                    Follow {{ member.first_name|default:member.username }}
-                </button>
-                <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">
-                    Send Message
-                </button>
-            </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Following allows you to delegate your votes to {{ member.first_name|default:member.username }} on specific topics.
-            </p>
-        </div>
+        </section>
         {% endif %}
+
+        <!-- Actions Section -->
+        {% if not is_own_profile and can_view_details %}
+        <section class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">⚡ Delegation Actions</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Follow this member or send them a message</p>
+            </div>
+            <div class="px-6 py-6">
+                <div class="flex space-x-4">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors">
+                        Follow {{ member.first_name|default:member.username }}
+                    </button>
+                    <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">
+                        Send Message
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Following allows you to delegate your votes to {{ member.first_name|default:member.username }} on specific topics.
+                </p>
+            </div>
+        </section>
+        {% endif %}
+
+        </div>
     </div>
-</div>
 {% endblock %}

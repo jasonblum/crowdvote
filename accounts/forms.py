@@ -99,13 +99,19 @@ class ProfileEditForm(forms.ModelForm):
     def clean_twitter_url(self):
         """Validate Twitter URL format."""
         url = self.cleaned_data.get('twitter_url')
-        if url and not any(domain in url for domain in ['twitter.com', 'x.com']):
-            raise forms.ValidationError('Please enter a valid Twitter/X URL.')
+        if url:
+            # Check for exact domain matches, not just substring
+            import re
+            if not re.search(r'https?://(www\.)?(twitter\.com|x\.com)/', url):
+                raise forms.ValidationError('Please enter a valid Twitter/X URL.')
         return url
 
     def clean_linkedin_url(self):
-        """Validate LinkedIn URL format."""
+        """Validate LinkedIn URL format.""" 
         url = self.cleaned_data.get('linkedin_url')
-        if url and 'linkedin.com' not in url:
-            raise forms.ValidationError('Please enter a valid LinkedIn URL.')
+        if url:
+            # Check for exact domain match, not just substring
+            import re
+            if not re.search(r'https?://(www\.)?linkedin\.com/', url):
+                raise forms.ValidationError('Please enter a valid LinkedIn URL.')
         return url

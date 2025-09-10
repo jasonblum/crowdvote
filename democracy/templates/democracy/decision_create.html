@@ -9,9 +9,76 @@
     - CrowdVote
 {% endblock %}
 
+{% block sidebar_content %}
+    <!-- Decision Create/Edit Sidebar -->
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">
+                        {% if is_editing %}✏️{% else %}➕{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="ml-3">
+                <h1 class="text-lg font-medium text-gray-900 dark:text-white">
+                    {% if is_editing %}Edit Decision{% else %}Create Decision{% endif %}
+                </h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ community.name }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <div class="px-6 py-4">
+        <nav class="space-y-2">
+            <a href="#decision-form" class="flex items-center px-3 py-2 text-sm font-medium text-green-600 bg-green-50 dark:bg-green-900/20 rounded-md">
+                📝 Decision Details
+            </a>
+            <a href="#choices-section" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                🎯 Options
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="space-y-3">
+            <a href="{% url 'democracy:decision_list' community.id %}" 
+               class="inline-flex items-center justify-center w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                ← Back to Decisions
+            </a>
+            <a href="{% url 'democracy:community_detail' community.id %}" 
+               class="inline-flex items-center justify-center w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                ← Back to Community
+            </a>
+        </div>
+    </div>
+    
+    <!-- Theme Toggle -->
+    {% block theme_toggle %}
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center space-x-2">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme:</span>
+                <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                    <button type="button" onclick="setTheme('light')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors light-theme-btn">
+                        Light
+                    </button>
+                    <button type="button" onclick="setTheme('dark')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors dark-theme-btn">
+                        Dark
+                    </button>
+                    <button type="button" onclick="setTheme('system')" class="px-2 py-1 text-xs font-medium rounded-md transition-colors system-theme-btn">
+                        Auto
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+{% endblock sidebar_content %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="py-8 px-6">
+    <div class="space-y-8">
         <!-- Header -->
         <div class="mb-8">
             <div class="flex items-center justify-between">

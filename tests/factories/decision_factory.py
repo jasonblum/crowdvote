@@ -152,14 +152,14 @@ class TestDecisionWithVotesFactory(DecisionFactory):
                 ChoiceFactory(decision=obj)
         
         # Get community members
-        members = obj.community.membership_set.filter(is_voting_community_member=True)
+        members = obj.community.memberships.filter(is_voting_community_member=True)
         
         if not members.exists():
             # Create some members if none exist
             from .user_factory import MembershipFactory
             for _ in range(10):
                 MembershipFactory(community=obj.community)
-            members = obj.community.membership_set.filter(is_voting_community_member=True)
+            members = obj.community.memberships.filter(is_voting_community_member=True)
         
         # Create manual ballots for some members
         manual_voters = members[:len(members)//2]  # Half vote manually
