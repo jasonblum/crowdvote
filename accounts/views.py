@@ -472,65 +472,6 @@ def member_profile(request, username):
     return render(request, 'accounts/member_profile.html', context)
 
 
-def member_profile_community(request, community_id, member_id):
-    """
-    Display a member's profile within a specific community context.
-    
-    Shows member information, delegation relationships, and community-specific
-    participation details for better delegation decision making.
-    """
-    from django.shortcuts import get_object_or_404
-    from democracy.models import Community
-    
-    community = get_object_or_404(Community, id=community_id)
-    member = get_object_or_404(User, id=member_id)
-    
-    # Check if member is actually in this community
-    try:
-        membership = community.memberships.get(member=member)
-    except:
-        from django.http import Http404
-        raise Http404("Member not found in this community")
-    
-    # Get tag usage frequency for this member
-    tag_usage = member.get_tag_usage_frequency()
-    
-    # Get delegation network information
-    delegation_network = member.get_delegation_network()
-    
-    # Get member's communities (only show those visible to current user)
-    member_communities = []
-    if request.user.is_authenticated:
-        # Show communities where both users are members
-        user_community_ids = set(
-            request.user.memberships.values_list('community_id', flat=True)
-        )
-        member_memberships = member.memberships.select_related('community').filter(
-            community_id__in=user_community_ids
-        )
-        member_communities = [m.community for m in member_memberships]
-    
-    # Check privacy settings
-    can_view_bio = member.bio_public or request.user == member
-    can_view_location = member.location_public or request.user == member
-    can_view_social_links = member.social_links_public or request.user == member
-    
-    context = {
-        'member': member,
-        'community': community,
-        'membership': membership,
-        'tag_usage': tag_usage,
-        'delegation_network': delegation_network,
-        'member_communities': member_communities,
-        'can_view_bio': can_view_bio,
-        'can_view_location': can_view_location,
-        'can_view_social_links': can_view_social_links,
-        'is_own_profile': request.user == member,
-    }
-    
-    return render(request, 'accounts/member_profile_community.html', context)
-
-
 @login_required
 def edit_profile(request):
     """

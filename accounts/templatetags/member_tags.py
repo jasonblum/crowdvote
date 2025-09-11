@@ -36,33 +36,28 @@ def username_link(user, community=None, css_class="username-link hover:text-blue
         'display_name': display_name,
     }
     
-    if community:
-        try:
-            context['profile_url'] = reverse('accounts:member_profile', args=[community.id, user.id])
-        except:
-            context['profile_url'] = None
-    else:
-        # If no community context, we can't link to profile page yet
+    # Always link to global member profile by username
+    try:
+        context['profile_url'] = reverse('accounts:member_profile', args=[user.username])
+    except:
         context['profile_url'] = None
         
     return context
 
 
 @register.simple_tag
-def username_text_link(username, community_id, user_id):
+def username_text_link(username):
     """
     Generate a simple text-based username link for use in plain text contexts like delegation trees.
     
     Args:
-        username: The username to display
-        community_id: UUID of the community for context
-        user_id: UUID of the user
+        username: The username to display and link to
         
     Returns:
         HTML anchor tag as safe string
     """
     try:
-        profile_url = reverse('accounts:member_profile', args=[community_id, user_id])
+        profile_url = reverse('accounts:member_profile', args=[username])
         return format_html(
             '<a href="{}" class="text-blue-600 hover:text-blue-800 underline">{}</a>',
             profile_url,

@@ -2,6 +2,61 @@
 
 This file documents the development history of the CrowdVote project, capturing key milestones, decisions, and progress made during development sessions.
 
+## 2025-09-11 - ARCHITECTURAL FIX: Member Profile URL Structure Correction
+
+### Session Overview
+**CRITICAL ARCHITECTURE FIX**: Resolved fundamental URL structure issue where member profile links were incorrectly nested under community URLs. Fixed the conceptual flaw where members appeared to "belong to" specific communities instead of being independent entities that participate in multiple communities.
+
+### Problem Identified
+- **Incorrect URL Pattern**: `communities/<uuid>/members/<int>/` suggested members belonged to specific communities
+- **NoReverseMatch Error**: Duplicate URL names caused Django to use wrong URL pattern for member links
+- **Conceptual Confusion**: Members are independent entities, not community-owned resources
+- **Multi-Community Issue**: Members can belong to multiple communities, so community-nested URLs don't make sense
+
+### Architectural Changes Made
+
+**✅ URL STRUCTURE CORRECTION**:
+- **Removed**: `communities/<uuid:community_id>/members/<int:member_id>/` (problematic pattern)
+- **Kept**: `member/<str:username>/` (correct global member profiles)
+- **Fixed**: All member links now go to global profiles: `http://localhost:8000/member/username/`
+
+**✅ CODE CLEANUP**:
+- **Template Tags**: Updated `username_link()` and `username_text_link()` to use global member URLs
+- **Views**: Fixed delegation tree and vote formatting to link to global profiles
+- **Services**: Updated `DelegationTreeService` to use username-based profile links
+- **Removed**: Unused `member_profile_community()` view function
+
+**✅ SYSTEM INTEGRITY**:
+- **NoReverseMatch Error**: Completely resolved - home page and all community pages load correctly
+- **Consistent Architecture**: Members are now properly modeled as independent entities
+- **Multi-Community Support**: URL structure supports members belonging to multiple communities
+- **Clean Codebase**: Removed duplicate URL names and unused view functions
+
+### Files Modified
+- `accounts/urls.py` - Removed problematic URL pattern
+- `accounts/templatetags/member_tags.py` - Fixed template tags to use global member URLs
+- `accounts/views.py` - Removed unused community-specific member view
+- `democracy/views.py` - Updated delegation tree username links
+- `democracy/tree_service.py` - Fixed profile URL generation
+
+### Technical Benefits
+- **Conceptually Correct**: Members are independent entities, not community resources
+- **URL Consistency**: All member links use same pattern regardless of context
+- **Multi-Community Ready**: Architecture supports members in multiple communities
+- **Cleaner Code**: Removed duplicate URL names and unused functionality
+- **Better UX**: Users always land on the same member profile regardless of entry point
+
+### Verification Complete
+- ✅ Home page loads without errors (HTTP 200)
+- ✅ Community pages load correctly (HTTP 200)
+- ✅ Member profile URLs work as expected (HTTP 302 redirect to login)
+- ✅ No linting errors in modified files
+- ✅ All member links now use global profile URLs
+
+**IMPACT**: This fix ensures CrowdVote's URL architecture correctly reflects the multi-community nature of the platform, where members are independent participants who can engage across multiple communities rather than being "owned" by any single community.
+
+---
+
 ## 2025-01-11 - Plan #17: Follow/Unfollow UI & Delegation Management Interface - Phase 1 COMPLETED (FIRST TRY SUCCESS!)
 
 ### Session Overview

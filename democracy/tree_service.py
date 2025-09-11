@@ -42,9 +42,9 @@ class DelegationTreeService:
         display_name = user.get_display_name() if hasattr(user, 'get_display_name') else user.username
         avatar_html = user.get_avatar_html(20) if hasattr(user, 'get_avatar_html') else ''
         
-        if self.include_links and community:
+        if self.include_links:
             try:
-                profile_url = reverse('accounts:member_profile', args=[community.id, user.id])
+                profile_url = reverse('accounts:member_profile', args=[user.username])
                 return f'<span class="inline-flex items-center space-x-2">{avatar_html}<a href="{profile_url}" class="text-blue-600 hover:text-blue-800 underline">{display_name}</a></span>'
             except Exception as e:
                 return f'<span class="inline-flex items-center space-x-2">{avatar_html}<span>{display_name}</span></span>'

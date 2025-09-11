@@ -122,7 +122,7 @@ def build_decision_delegation_tree_old(decision, include_links=True):
         if include_links:
             from django.urls import reverse
             try:
-                profile_url = reverse('accounts:member_profile', args=[decision.community.id, voter.id])
+                profile_url = reverse('accounts:member_profile', args=[voter.username])
                 username_html = f'<a href="{profile_url}" class="text-blue-600 hover:text-blue-800 underline">{voter.username}</a>'
             except:
                 username_html = voter.username
@@ -302,7 +302,7 @@ def build_influence_tree_old(community, include_links=True):
         if include_links:
             from django.urls import reverse
             try:
-                profile_url = reverse('accounts:member_profile', args=[community.id, user.id])
+                profile_url = reverse('accounts:member_profile', args=[user.username])
                 return f'<a href="{profile_url}" class="text-blue-600 hover:text-blue-800 underline">{user.username}</a>'
             except:
                 return user.username
