@@ -1,0 +1,58 @@
+<!-- Follow/Unfollow Button Component -->
+<div id="follow-button-{{ user.id }}" class="inline-block">
+    {% if is_following %}
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" 
+                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm font-medium">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                </svg>
+                {% if following.tags %}
+                    Following on: {{ following.tags }}
+                {% else %}
+                    Following {{ user.get_display_name }}
+                {% endif %}
+                <svg class="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                </svg>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div x-show="open" @click.away="open = false" 
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="transform opacity-0 scale-95"
+                 x-transition:enter-end="transform opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="transform opacity-100 scale-100"
+                 x-transition:leave-end="transform opacity-0 scale-95"
+                 class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-50">
+                <div class="py-1">
+                    <button hx-get="{% url 'accounts:edit_follow' user.id %}" 
+                            hx-target="#follow-modal-container" 
+                            hx-trigger="click"
+                            @click="open = false"
+                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Edit Tags
+                    </button>
+                    <button hx-post="{% url 'accounts:unfollow_user' user.id %}" 
+                            hx-target="#follow-button-{{ user.id }}" 
+                            hx-confirm="Stop following {{ user.get_display_name }}?"
+                            @click="open = false"
+                            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                        Unfollow
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <button hx-get="{% url 'accounts:follow_user' user.id %}" 
+                hx-target="#follow-modal-container" 
+                hx-trigger="click"
+                class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Follow {{ user.get_display_name }}
+        </button>
+    {% endif %}
+</div>

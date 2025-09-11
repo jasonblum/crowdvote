@@ -47,3 +47,5 @@ Astroturf is tacky!
 "*Representation*" is the problem.
 
 ~~K Street~~<br/>Main Street!
+
+Democracy shouldn't be a spectator sport.

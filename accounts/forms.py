@@ -7,6 +7,7 @@ and account-related functionality in CrowdVote.
 
 from django import forms
 from django.contrib.auth import get_user_model
+from .models import Following
 
 User = get_user_model()
 
@@ -115,3 +116,70 @@ class ProfileEditForm(forms.ModelForm):
             if not re.search(r'https?://(www\.)?linkedin\.com/', url):
                 raise forms.ValidationError('Please enter a valid LinkedIn URL.')
         return url
+
+
+class FollowForm(forms.Form):
+    """
+    Form for creating/editing following relationships with tag specification.
+    
+    Allows users to follow other members on specific topics or all topics,
+    with priority ordering for tie-breaking in delegation calculations.
+    """
+    
+    followee = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.HiddenInput()
+    )
+    
+    tags = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Type tags like "budget, environment" or click suggestions below',
+            'class': 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'id': 'follow-tags-input'
+        }),
+        help_text="Specify topics to follow this person on, or leave empty to follow on all topics"
+    )
+    
+    order = forms.IntegerField(
+        min_value=1,
+        initial=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+        }),
+        help_text="Priority for tie-breaking (lower numbers = higher priority)"
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.followee = kwargs.pop('followee', None)
+        super().__init__(*args, **kwargs)
+        
+    def get_suggested_tags(self):
+        """Get tags this followee has used in past votes for suggestions."""
+        if not self.followee:
+            return []
+        
+        # Get tags from user's past ballots, ordered by frequency
+        return self.followee.get_tag_usage_frequency()[:10]  # Top 10 most used tags
+    
+    def clean_tags(self):
+        """Validate and clean tags input."""
+        tags = self.cleaned_data.get('tags', '').strip()
+        
+        if not tags:
+            return ''
+        
+        # Split by comma, clean each tag, remove duplicates
+        tag_list = []
+        for tag in tags.split(','):
+            clean_tag = tag.strip().lower()
+            if clean_tag and len(clean_tag) >= 2 and clean_tag not in tag_list:
+                if len(clean_tag) <= 30:  # Max tag length
+                    tag_list.append(clean_tag)
+        
+        # Limit to 10 tags maximum
+        if len(tag_list) > 10:
+            raise forms.ValidationError("Maximum 10 tags allowed.")
+        
+        return ', '.join(tag_list)

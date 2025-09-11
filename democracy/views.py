@@ -479,6 +479,16 @@ def community_detail(request, community_id):
     # Generate influence tree for community
     influence_tree = build_influence_tree(community)
     
+    # Get follow status for current user (for follow buttons)
+    following_status = {}
+    if request.user.is_authenticated:
+        from accounts.models import Following
+        user_followings = Following.objects.filter(
+            follower=request.user,
+            followee__in=[m.member for m in memberships]
+        ).select_related('followee')
+        following_status = {f.followee.id: f for f in user_followings}
+    
     context = {
         'community': community,
         'user_membership': user_membership,
@@ -488,6 +498,7 @@ def community_detail(request, community_id):
         'role_filter': role_filter,
         'search_query': search_query,
         'influence_tree': influence_tree,
+        'following_status': following_status,
         'stats': {
             'total_members': total_members,
             'voting_members': voting_members,

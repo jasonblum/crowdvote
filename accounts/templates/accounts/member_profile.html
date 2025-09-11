@@ -301,9 +301,7 @@
             </div>
             <div class="px-6 py-6">
                 <div class="flex space-x-4">
-                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors">
-                        Follow {{ member.first_name|default:member.username }}
-                    </button>
+                    {% include 'accounts/components/follow_button.html' with user=member is_following=is_following following=current_following %}
                     <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors">
                         Send Message
                     </button>
@@ -317,6 +315,9 @@
 
         </div>
     </div>
+    
+    <!-- Modal Container for HTMX -->
+    <div id="follow-modal-container"></div>
 {% endblock %}
 
 {% block scripts %}

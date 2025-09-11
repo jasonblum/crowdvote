@@ -1,0 +1,129 @@
+<!-- Follow/Edit Modal Component -->
+<div id="follow-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                {% if editing %}
+                    Edit Following: {{ followee.get_display_name }}
+                {% else %}
+                    Follow {{ followee.get_display_name }}
+                {% endif %}
+            </h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Choose topics to follow them on, or leave empty for all topics
+            </p>
+        </div>
+        
+        <form hx-post="{% url 'accounts:follow_user' followee.id %}" 
+              hx-target="#follow-button-{{ followee.id }}"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            <div class="px-6 py-4">
+                <!-- Hidden followee field -->
+                {{ form.followee }}
+                
+                <!-- Manual Tag Input -->
+                <div class="mb-4">
+                    <label for="follow-tags-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Topics to follow on:
+                    </label>
+                    {{ form.tags }}
+                    {% if form.tags.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {{ form.tags.errors.0 }}
+                        </div>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {{ form.tags.help_text }}
+                    </p>
+                </div>
+                
+                <!-- Suggested Tags Section -->
+                {% with suggested_tags=form.get_suggested_tags %}
+                {% if suggested_tags %}
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ followee.get_display_name }} has voted on these topics:
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        {% for tag, count in suggested_tags %}
+                        <button type="button" 
+                                onclick="addTagToInput('{{ tag }}')"
+                                class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors cursor-pointer">
+                            {{ tag }}
+                            <span class="ml-1 text-xs text-blue-600 dark:text-blue-400">({{ count }})</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Click tags to add them, or type your own in the box above
+                    </p>
+                </div>
+                {% endif %}
+                {% endwith %}
+                
+                <!-- Priority Order -->
+                <div class="mb-4">
+                    <label for="{{ form.order.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Priority Order:
+                    </label>
+                    {{ form.order }}
+                    {% if form.order.errors %}
+                        <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                            {{ form.order.errors.0 }}
+                        </div>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {{ form.order.help_text }}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-3">
+                <button type="button" 
+                        onclick="document.getElementById('follow-modal').remove()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                    {% if editing %}Update{% else %}Follow{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function addTagToInput(tag) {
+    const input = document.getElementById('follow-tags-input');
+    const currentTags = input.value.trim();
+    
+    // Check if tag already exists
+    const tagList = currentTags ? currentTags.split(',').map(t => t.trim().toLowerCase()) : [];
+    if (tagList.includes(tag.toLowerCase())) {
+        return; // Tag already added
+    }
+    
+    // Add new tag
+    const newValue = currentTags ? `${currentTags}, ${tag}` : tag;
+    input.value = newValue;
+    
+    // Visual feedback - briefly highlight the added tag button
+    event.target.classList.add('bg-green-200', 'text-green-800', 'dark:bg-green-900/50', 'dark:text-green-300');
+    setTimeout(() => {
+        event.target.classList.remove('bg-green-200', 'text-green-800', 'dark:bg-green-900/50', 'dark:text-green-300');
+        event.target.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900/30', 'dark:text-blue-300');
+    }, 500);
+}
+
+// Close modal on successful form submission
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id && event.detail.target.id.startsWith('follow-button-')) {
+        const modal = document.getElementById('follow-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+});
+</script>

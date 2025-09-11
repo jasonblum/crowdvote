@@ -27,4 +27,9 @@ urlpatterns = [
     path('member/<str:username>/', views.member_profile, name='member_profile'),
     path('communities/<uuid:community_id>/members/<int:member_id>/', views.member_profile_community, name='member_profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
+    
+    # Follow/Unfollow Management
+    path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
+    path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
+    path('edit-follow/<int:user_id>/', views.edit_follow, name='edit_follow'),
 ]

@@ -264,6 +264,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let formIndex = parseInt(managementForm.value);
     
+    // Debug: Check initial form count
+    console.log('Initial form count from management form:', managementForm.value);
+    console.log('Number of choice forms on page:', choicesContainer.querySelectorAll('.choice-form').length);
+    
     // Add choice functionality
     addChoiceBtn.addEventListener('click', function() {
         if (formIndex >= 10) {
@@ -381,6 +385,55 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
     });
+    
+    // Enhanced datetime-local input with default value and validation
+    const datetimeInput = document.getElementById('{{ form.dt_close.id_for_label }}');
+    
+    if (datetimeInput) {
+        // Set default date (7 days from now at 5:00 PM) if no value exists
+        if (!datetimeInput.value) {
+            const defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 7);
+            defaultDate.setHours(17, 0, 0, 0);
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            const year = defaultDate.getFullYear();
+            const month = String(defaultDate.getMonth() + 1).padStart(2, '0');
+            const day = String(defaultDate.getDate()).padStart(2, '0');
+            const hours = String(defaultDate.getHours()).padStart(2, '0');
+            const minutes = String(defaultDate.getMinutes()).padStart(2, '0');
+            
+            datetimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        
+        // Set minimum date (1 hour from now)
+        const minDate = new Date();
+        minDate.setTime(minDate.getTime() + (60 * 60 * 1000)); // 1 hour from now
+        
+        const minYear = minDate.getFullYear();
+        const minMonth = String(minDate.getMonth() + 1).padStart(2, '0');
+        const minDay = String(minDate.getDate()).padStart(2, '0');
+        const minHours = String(minDate.getHours()).padStart(2, '0');
+        const minMinutes = String(minDate.getMinutes()).padStart(2, '0');
+        
+        datetimeInput.min = `${minYear}-${minMonth}-${minDay}T${minHours}:${minMinutes}`;
+        
+        // Add validation on change
+        datetimeInput.addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const now = new Date();
+            const minDateTime = new Date(now.getTime() + 60 * 60 * 1000);
+            
+            if (selectedDate <= minDateTime) {
+                this.setCustomValidity('Voting deadline must be at least 1 hour in the future');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        console.log('Enhanced datetime-local input initialized successfully');
+        console.log('Default value set to:', datetimeInput.value);
+    }
 });
 </script>
 {% endblock %}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load member_tags %}
+{% load dict_extras %}
 
 {% block title %}{{ community.name }} - CrowdVote{% endblock %}
 
@@ -208,35 +209,45 @@
             <!-- Members List -->
             <div class="space-y-3">
                 {% for membership in memberships %}
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                         <div class="flex items-center space-x-3">
                             <div>
-                                <div class="font-medium text-gray-900">
+                                <div class="font-medium text-gray-900 dark:text-white">
                                     {% username_link membership.member community "hover:text-blue-600 transition-colors" %}
                                 </div>
-                                <div class="text-sm text-gray-600 ml-8">@{{ membership.member.username }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 ml-8">@{{ membership.member.username }}</div>
                             </div>
                         </div>
                         
-                        <!-- Role Badges -->
-                        <div class="flex space-x-2">
-                            {% if membership.is_community_manager %}
-                                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
-                                    👑 Manager
-                                </span>
+                        <!-- Actions and Role Badges -->
+                        <div class="flex items-center space-x-3">
+                            <!-- Follow Button (only for other users) -->
+                            {% if user.is_authenticated and user != membership.member %}
+                                {% with member_following=following_status|get_item:membership.member.id %}
+                                    {% include 'accounts/components/follow_button.html' with user=membership.member is_following=member_following following=member_following %}
+                                {% endwith %}
                             {% endif %}
-                            {% if membership.is_voting_community_member %}
-                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                                    🗳️ Voter
+                            
+                            <!-- Role Badges -->
+                            <div class="flex space-x-2">
+                                {% if membership.is_community_manager %}
+                                    <span class="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-1 rounded text-xs font-medium">
+                                        👑 Manager
+                                    </span>
+                                {% endif %}
+                                {% if membership.is_voting_community_member %}
+                                    <span class="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 px-2 py-1 rounded text-xs font-medium">
+                                        🗳️ Voter
+                                    </span>
+                                {% else %}
+                                    <span class="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">
+                                        📢 Lobbyist
+                                    </span>
+                                {% endif %}
+                                <span class="text-xs text-gray-500 dark:text-gray-400">
+                                    Joined {{ membership.dt_joined|date:"M Y" }}
                                 </span>
-                            {% else %}
-                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
-                                    📢 Lobbyist
-                                </span>
-                            {% endif %}
-                            <span class="text-xs text-gray-500">
-                                Joined {{ membership.dt_joined|date:"M Y" }}
-                            </span>
+                            </div>
                         </div>
                     </div>
                 {% empty %}
@@ -295,4 +306,7 @@
 
     </div>
 </div>
+
+<!-- Modal Container for HTMX -->
+<div id="follow-modal-container"></div>
 {% endblock %}

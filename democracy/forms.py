@@ -145,8 +145,8 @@ ChoiceFormSet = forms.inlineformset_factory(
     Decision,
     Choice,
     form=ChoiceForm,
-    extra=2,  # Start with 2 empty choice forms
-    min_num=2,  # Require at least 2 choices
+    extra=0,  # No extra forms beyond min_num
+    min_num=2,  # Require at least 2 choices (will show 2 forms)
     max_num=10,  # Allow maximum 10 choices
     validate_min=True,
     validate_max=True,

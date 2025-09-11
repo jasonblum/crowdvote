@@ -5,7 +5,7 @@ This module contains views for user account management, including
 profile setup, username validation, and onboarding flows.
 """
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model, login
 from django.http import JsonResponse, HttpResponse
@@ -16,7 +16,8 @@ import logging
 from django.template.loader import render_to_string
 from django.conf import settings
 from .utils import generate_safe_username, validate_username
-from .models import MagicLink
+from .models import MagicLink, Following
+from .forms import FollowForm
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -442,6 +443,19 @@ def member_profile(request, username):
     # Get member's followers (who follows them)
     followers = member.followers.select_related('follower').order_by('follower__username')
     
+    # Check if current user is following this member
+    current_following = None
+    is_following = False
+    if request.user.is_authenticated and request.user != member:
+        try:
+            current_following = Following.objects.get(
+                follower=request.user,
+                followee=member
+            )
+            is_following = True
+        except Following.DoesNotExist:
+            pass
+    
     context = {
         'member': member,
         'visible_memberships': visible_memberships,
@@ -451,6 +465,8 @@ def member_profile(request, username):
         'followers': followers[:10],  # Show first 10
         'is_own_profile': request.user == member,
         'can_view_details': bool(visible_memberships.exists()),
+        'is_following': is_following,
+        'current_following': current_following,
     }
     
     return render(request, 'accounts/member_profile.html', context)
@@ -699,3 +715,126 @@ def magic_link_login(request, token):
             "🎉 Welcome to CrowdVote! Let's set up your profile."
         )
         return redirect('accounts:profile_setup')
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def follow_user(request, user_id):
+    """
+    Handle following a user with tag specification.
+    
+    GET: Returns follow modal for tag specification
+    POST: Creates or updates following relationship
+    """
+    followee = get_object_or_404(User, id=user_id)
+    
+    # Prevent self-following
+    if request.user == followee:
+        messages.error(request, "You cannot follow yourself.")
+        return redirect('accounts:member_profile', username=followee.username)
+    
+    if request.method == "GET":
+        # Return follow modal for tag specification
+        form = FollowForm(initial={'followee': followee}, followee=followee)
+        return render(request, 'accounts/components/follow_modal.html', {
+            'form': form,
+            'followee': followee
+        })
+    
+    if request.method == "POST":
+        form = FollowForm(request.POST, followee=followee)
+        if form.is_valid():
+            # Create or update following relationship
+            following, created = Following.objects.update_or_create(
+                follower=request.user,
+                followee=followee,
+                defaults={
+                    'tags': form.cleaned_data['tags'],
+                    'order': form.cleaned_data['order']
+                }
+            )
+            
+            if request.htmx:
+                # Return updated follow button
+                return render(request, 'accounts/components/follow_button.html', {
+                    'user': followee,
+                    'is_following': True,
+                    'following': following
+                })
+            
+            action = "Updated" if not created else "Now"
+            messages.success(request, f"{action} following {followee.get_display_name()}")
+            return redirect('accounts:member_profile', username=followee.username)
+        
+        # Form invalid - return modal with errors
+        if request.htmx:
+            return render(request, 'accounts/components/follow_modal.html', {
+                'form': form,
+                'followee': followee
+            })
+        
+        messages.error(request, "Please correct the errors below.")
+        return redirect('accounts:member_profile', username=followee.username)
+
+
+@login_required
+@require_POST
+def unfollow_user(request, user_id):
+    """Handle unfollowing a user."""
+    followee = get_object_or_404(User, id=user_id)
+    
+    try:
+        following = Following.objects.get(
+            follower=request.user,
+            followee=followee
+        )
+        following.delete()
+        
+        if request.htmx:
+            # Return updated follow button
+            return render(request, 'accounts/components/follow_button.html', {
+                'user': followee,
+                'is_following': False,
+                'following': None
+            })
+        
+        messages.success(request, f"Stopped following {followee.get_display_name()}")
+        
+    except Following.DoesNotExist:
+        messages.error(request, "You are not following this user")
+    
+    return redirect('accounts:member_profile', username=followee.username)
+
+
+@login_required
+def edit_follow(request, user_id):
+    """Handle editing an existing following relationship."""
+    followee = get_object_or_404(User, id=user_id)
+    
+    try:
+        following = Following.objects.get(
+            follower=request.user,
+            followee=followee
+        )
+    except Following.DoesNotExist:
+        messages.error(request, "You are not following this user")
+        return redirect('accounts:member_profile', username=followee.username)
+    
+    if request.method == "GET":
+        # Return edit modal with current values
+        form = FollowForm(
+            initial={
+                'followee': followee,
+                'tags': following.tags,
+                'order': following.order
+            },
+            followee=followee
+        )
+        return render(request, 'accounts/components/follow_modal.html', {
+            'form': form,
+            'followee': followee,
+            'editing': True
+        })
+    
+    # This view only handles GET - POST goes to follow_user
+    return redirect('accounts:follow_user', user_id=user_id)
