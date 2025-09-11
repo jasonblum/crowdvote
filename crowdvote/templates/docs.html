@@ -3,54 +3,63 @@
 
 {% block title %}CrowdVote Documentation{% endblock %}
 
-{% block sidebar_content %}
-    <!-- Inherit logo from base.html -->
-    {{ block.super }}
-    
-    <!-- Support Section -->
-    <div class="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
-        <div class="text-center">
-            <p class="text-sm text-gray-600 dark:text-gray-300">
-                Need help? Email <a href="mailto:support@crowdvote.com" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">support@crowdvote.com</a>
-            </p>
+{% block sidebar %}
+    <!-- Documentation sidebar - always show regardless of authentication -->
+    <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
+        <!-- CrowdVote Logo Header -->
+        <div class="px-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-center h-16">
+                {% load static %}
+                <a href="{% url 'home' %}" class="block">
+                    <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-14 w-auto">
+                </a>
+            </div>
         </div>
-    </div>
-    
-    <!-- Table of Contents Navigation -->
-    <div class="px-6 py-4">
-        <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Table of Contents</h2>
-        <nav class="space-y-2">
-            <a href="#overview" class="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                📖 Overview
-            </a>
-            <a href="#documentation" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
-                🔧 Technical Docs
-            </a>
-            <a href="#faqs" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
-                ❓ FAQs
-            </a>
-        </nav>
         
-        <!-- FAQ Submenu -->
-        <div class="ml-4 mt-3 space-y-1">
-            <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">FAQ Topics</h3>
-            <a href="#faq-create-community" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How can I create a community?</a>
-            <a href="#faq-star-voting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is STAR voting?</a>
-            <a href="#faq-lobbyists" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is a lobbyist?</a>
-            <a href="#faq-ties" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What happens if there is a tie?</a>
-            <a href="#faq-vote-counting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How are votes counted?</a>
-            <a href="#faq-security" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How secure is CrowdVote?</a>
-            <a href="#faq-publish-decisions" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Who gets to publish decisions?</a>
-            <a href="#faq-influence-score" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What does the influence score mean?</a>
-            <a href="#faq-representatives-role" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Don't representatives do more than vote?</a>
-            <a href="#faq-why-switch" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Why should my community switch?</a>
-            <a href="#faq-finding-people" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How do I find people to follow?</a>
-            <a href="#faq-how-to-get" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How can I get CrowdVote?</a>
-            <a href="#faq-mob-rule" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Isn't this just mob rule?</a>
+        <!-- Support Section -->
+        <div class="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                    Need help? Email <a href="mailto:support@crowdvote.com" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">support@crowdvote.com</a>
+                </p>
+            </div>
         </div>
-    </div>
-    
-{% endblock sidebar_content %}
+        
+        <!-- Table of Contents Navigation -->
+        <div class="px-6 py-4">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Table of Contents</h2>
+            <nav class="space-y-2">
+                <a href="#overview" class="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                    📖 Overview
+                </a>
+                <a href="#documentation" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                    🔧 Technical Docs
+                </a>
+                <a href="#faqs" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                    ❓ FAQs
+                </a>
+            </nav>
+            
+            <!-- FAQ Submenu -->
+            <div class="ml-4 mt-3 space-y-1">
+                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">FAQ Topics</h3>
+                <a href="#faq-create-community" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How can I create a community?</a>
+                <a href="#faq-star-voting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is STAR voting?</a>
+                <a href="#faq-lobbyists" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is a lobbyist?</a>
+                <a href="#faq-ties" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What happens if there is a tie?</a>
+                <a href="#faq-vote-counting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How are votes counted?</a>
+                <a href="#faq-security" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How secure is CrowdVote?</a>
+                <a href="#faq-publish-decisions" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Who gets to publish decisions?</a>
+                <a href="#faq-influence-score" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What does the influence score mean?</a>
+                <a href="#faq-representatives-role" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Don't representatives do more than vote?</a>
+                <a href="#faq-why-switch" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Why should my community switch?</a>
+                <a href="#faq-finding-people" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How do I find people to follow?</a>
+                <a href="#faq-how-to-get" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How can I get CrowdVote?</a>
+                <a href="#faq-mob-rule" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Isn't this just mob rule?</a>
+            </div>
+        </div>
+    </nav>
+{% endblock sidebar %}
 
 {% block header_left %}
     <div class="flex items-center">

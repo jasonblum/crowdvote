@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize environment variables
 env = environ.Env(
-    DEBUG=(bool, True)
+    DEBUG=(bool, False)  # Default to False for production safety
 )
 
 
