@@ -509,25 +509,34 @@ def request_magic_link(request):
     3. Works for both new and existing users
     4. Returns a success message regardless of user existence (security)
     """
-    email = request.POST.get('email', '').strip().lower()
-    
-    if not email:
-        messages.error(request, "Please enter a valid email address")
+    try:
+        email = request.POST.get('email', '').strip().lower()
+        logger.info(f"Magic link requested for email: {email}")
+        
+        if not email:
+            messages.error(request, "Please enter a valid email address")
+            return redirect('home')
+        
+        # Create magic link for any email
+        logger.info(f"Creating magic link for: {email}")
+        magic_link = MagicLink.create_for_email(email)
+        logger.info(f"Magic link created with token: {magic_link.token[:8]}...")
+        
+        # Generate the clickable URL
+        login_url = magic_link.get_login_url(request)
+        logger.info(f"Generated login URL for: {email}")
+        
+        # Prepare email content
+        context = {
+            'email': email,
+            'login_url': login_url,
+            'site_name': 'CrowdVote',
+            'expires_minutes': 15,
+        }
+    except Exception as e:
+        logger.error(f"Error in magic link setup for {email}: {e}", exc_info=True)
+        messages.error(request, "An error occurred. Please try again or contact support.")
         return redirect('home')
-    
-    # Create magic link for any email
-    magic_link = MagicLink.create_for_email(email)
-    
-    # Generate the clickable URL
-    login_url = magic_link.get_login_url(request)
-    
-    # Prepare email content
-    context = {
-        'email': email,
-        'login_url': login_url,
-        'site_name': 'CrowdVote',
-        'expires_minutes': 15,
-    }
     
     # Email content
     subject = 'Your CrowdVote Magic Link 🪄'
@@ -548,6 +557,10 @@ The CrowdVote Team
     
     try:
         # Send the magic link email
+        logger.info(f"Attempting to send email to: {email}")
+        logger.info(f"Using from_email: {settings.DEFAULT_FROM_EMAIL}")
+        logger.info(f"Email backend: {getattr(settings, 'EMAIL_BACKEND', 'default')}")
+        
         send_mail(
             subject=subject,
             message=message,
@@ -556,6 +569,7 @@ The CrowdVote Team
             fail_silently=False,
         )
         
+        logger.info(f"Email sent successfully to: {email}")
         messages.success(
             request, 
             f"✨ Magic link sent to {email}! Check your email and click the link to sign in."
