@@ -30,7 +30,7 @@ media/
 staticfiles/
 
 # Environment variables
-.env
+.env*
 .venv
 env/
 venv/
