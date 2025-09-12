@@ -651,10 +651,12 @@ class Vote(BaseModel):
         on_delete=models.PROTECT,
         help_text="The choice being rated in this vote"
     )
-    stars = models.PositiveSmallIntegerField(
+    stars = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(5)],
-        help_text="Star rating from 0 (worst) to 5 (best) for this choice"
+        help_text="Star rating from 0.00 (worst) to 5.00 (best) for this choice - supports fractional ratings from delegation averaging"
     )
     ballot = models.ForeignKey(
         Ballot,

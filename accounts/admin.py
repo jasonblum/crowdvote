@@ -1,8 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
+from django.contrib.sites.models import Site
 from django.utils.html import format_html
 
 from .models import CustomUser, Following, CommunityApplication
+
+# Unregister built-in models to keep admin interface clean
+admin.site.unregister(Group)
+admin.site.unregister(Site)
 
 
 @admin.register(CustomUser)

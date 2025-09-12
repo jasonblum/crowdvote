@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load member_tags %}
+{% load dict_extras %}
 
 {% block title %}{{ decision.title }} - Results | {{ community.name }}{% endblock %}
 
@@ -306,9 +307,15 @@
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                         {% if ballot.tags %}
-                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                                                                {{ ballot.tags }}
-                                                            </span>
+                                                            <div class="flex flex-wrap gap-1">
+                                                                {% for tag in ballot.tags|split:"," %}
+                                                                    {% if tag|trim %}
+                                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                                                            {{ tag|trim }}
+                                                                        </span>
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </div>
                                                         {% else %}
                                                             <span class="text-gray-400">No tags</span>
                                                         {% endif %}
@@ -320,14 +327,22 @@
                                                                     <div class="flex items-center justify-between">
                                                                         <span class="text-gray-900 dark:text-white">{{ vote.choice.title }}</span>
                                                                         <div class="flex items-center">
-                                                                            {% for i in "12345"|make_list %}
-                                                                                {% if forloop.counter <= vote.stars %}
-                                                                                    <span class="text-yellow-400">★</span>
-                                                                                {% else %}
-                                                                                    <span class="text-gray-300">☆</span>
-                                                                                {% endif %}
-                                                                            {% endfor %}
-                                                                            <span class="ml-2 text-sm text-gray-500">({{ vote.stars }})</span>
+                                                                            {% if ballot.is_calculated %}
+                                                                                <!-- Calculated votes: show fractional score × single star -->
+                                                                                <span class="text-sm text-gray-900 dark:text-white mr-1">{{ vote.stars|floatformat:2 }}</span>
+                                                                                <span class="text-gray-500 mr-1">×</span>
+                                                                                <span class="text-yellow-400">★</span>
+                                                                            {% else %}
+                                                                                <!-- Manual votes: show traditional star display -->
+                                                                                {% for i in "12345"|make_list %}
+                                                                                    {% if forloop.counter <= vote.stars %}
+                                                                                        <span class="text-yellow-400">★</span>
+                                                                                    {% else %}
+                                                                                        <span class="text-gray-300">☆</span>
+                                                                                    {% endif %}
+                                                                                {% endfor %}
+                                                                                <span class="ml-2 text-sm text-gray-500">({{ vote.stars|floatformat:2 }})</span>
+                                                                            {% endif %}
                                                                         </div>
                                                                     </div>
                                                                 {% endfor %}

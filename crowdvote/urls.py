@@ -22,7 +22,7 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('docs/', views.docs, name='docs'),
-    path('admin/', admin.site.urls),
+    path(f'{settings.ADMIN_URL}/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('', include('accounts.urls')),
     path('', include('democracy.urls')),

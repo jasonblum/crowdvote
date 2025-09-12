@@ -221,8 +221,8 @@
                         
                         <!-- Actions and Role Badges -->
                         <div class="flex items-center space-x-3">
-                            <!-- Follow Button (only for other users) -->
-                            {% if user.is_authenticated and user != membership.member %}
+                            <!-- Follow Button (only for community members following other users) -->
+                            {% if user.is_authenticated and user_membership and user != membership.member %}
                                 {% with member_following=following_status|get_item:membership.member.id %}
                                     {% include 'accounts/components/follow_button.html' with user=membership.member is_following=member_following following=member_following %}
                                 {% endwith %}

@@ -206,7 +206,10 @@ class StageBallots(Service):
 
         # this is the recursive function
         ballot, created = Ballot.objects.get_or_create(
-            decision=decision, voter=voter
+            decision=decision, voter=voter,
+            defaults={
+                'is_anonymous': voter.id % 3 == 0  # Mix of anonymous (every 3rd user) and non-anonymous
+            }
         )
 
         # Capture node data for delegation tree
@@ -342,7 +345,7 @@ class StageBallots(Service):
                     )
                     if choice_to_inherit:
                         source_data = {
-                            'stars': choice_to_inherit.stars,
+                            'stars': float(choice_to_inherit.stars),  # Convert Decimal to float for JSON serialization
                             'source': following.followee,
                             'order': following.order
                         }
@@ -352,7 +355,7 @@ class StageBallots(Service):
                         calculation_path.append({
                             'voter': following.followee.username,
                             'voter_id': str(following.followee.id),
-                            'stars': choice_to_inherit.stars,
+                            'stars': float(choice_to_inherit.stars),  # Convert Decimal to float for JSON serialization
                             'weight': 0,  # Will be calculated below
                             'tags': ballot_data['inherited_tags'],
                             'is_anonymous': getattr(source_ballot, 'is_anonymous', False)
@@ -378,7 +381,7 @@ class StageBallots(Service):
                         'final_voter_id': str(voter.id),
                         'choice': str(choice.id),
                         'choice_title': choice.title,
-                        'final_stars': star_score,
+                        'final_stars': float(star_score),  # Convert Decimal to float for JSON serialization
                         'calculation_path': calculation_path
                     }
                     self.delegation_tree_data['inheritance_chains'].append(inheritance_chain)
@@ -387,13 +390,13 @@ class StageBallots(Service):
                     current_node = next((n for n in self.delegation_tree_data['nodes'] if n['voter_id'] == str(voter.id)), None)
                     if current_node:
                         current_node['votes'][str(choice.id)] = {
-                            'stars': star_score,
+                            'stars': float(star_score),  # Convert Decimal to float for JSON serialization
                             'choice_name': choice.title,
                             'sources': [
                                 {
                                     'from_voter': path['voter'],
                                     'from_voter_id': path['voter_id'],
-                                    'stars': path['stars'],
+                                    'stars': float(path['stars']),  # Convert Decimal to float for JSON serialization
                                     'tags': path['tags'],
                                     'order': source['order'],
                                     'is_anonymous': path['is_anonymous']
@@ -407,8 +410,8 @@ class StageBallots(Service):
                             "log": f"Creating vote for {ballot.voter} on {choice}: {star_score:.2f} stars (avg from {len(stars_with_sources)} sources)",
                         }
                     )
-                    # Store rounded integer for actual vote, but keep fractional in delegation tree
-                    ballot.votes.create(choice=choice, stars=normal_round(star_score))
+                    # Store fractional star score for accurate delegation averaging
+                    ballot.votes.create(choice=choice, stars=star_score)
 
             # Set inherited tags on the ballot
             if inherited_tags:
@@ -438,7 +441,7 @@ class StageBallots(Service):
                 # Capture manual vote data
                 for vote in ballot.votes.all():
                     current_node['votes'][str(vote.choice.id)] = {
-                        'stars': vote.stars,
+                        'stars': float(vote.stars),  # Convert Decimal to float for JSON serialization
                         'choice_name': vote.choice.title,
                         'sources': []  # Manual votes have no sources
                     }

@@ -121,6 +121,9 @@ if DEBUG and not TESTING:
 
 ROOT_URLCONF = 'crowdvote.urls'
 
+ADMIN_URL = env('ADMIN_URL', default='zanzibar')
+
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -205,17 +208,6 @@ else:
 # SendPulse API Configuration
 SENDPULSE_API_ID = env('SENDPULSE_API_ID', default='3de6104f5d90ad065edd6c95f3a9f47d')
 SENDPULSE_API_SECRET = env('SENDPULSE_API_SECRET', default='433d2202a83be0eb43b03b591638f8db')
-SENDPULSE_FROM_NAME = env('SENDPULSE_FROM_NAME', default='CrowdVote')
-    
-    # Future: Mailgun settings (when ready to scale)
-    # EMAIL_HOST = 'smtp.mailgun.org'
-    # EMAIL_HOST_USER = env('MAILGUN_SMTP_USERNAME', default='')
-    # EMAIL_HOST_PASSWORD = env('MAILGUN_SMTP_PASSWORD', default='')
-    
-    # Future: Amazon SES settings (most cost-effective at scale)
-    # EMAIL_HOST = 'email-smtp.us-east-1.amazonaws.com'
-    # EMAIL_HOST_USER = env('AWS_SES_ACCESS_KEY_ID', default='')
-    # EMAIL_HOST_PASSWORD = env('AWS_SES_SECRET_ACCESS_KEY', default='')
 
 
 # Static files (CSS, JavaScript, Images)
