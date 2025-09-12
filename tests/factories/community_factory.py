@@ -136,13 +136,14 @@ class TestCommunityWithDelegationFactory(CommunityFactory):
         
         users = {}
         
-        # Create test users A-H
+        # Create test users A-H with unique names per community
+        community_suffix = str(obj.id)[-6:]  # Use last 6 chars of UUID for uniqueness
         for letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
             user = UserFactory(
-                username=f"{letter}_delegationtest",
+                username=f"{letter}_delegationtest_{community_suffix}",
                 first_name=f"User {letter}",
-                last_name="DelegationTest",
-                email=f"{letter.lower()}@delegationtest.com"
+                last_name=f"DelegationTest-{community_suffix}",
+                email=f"{letter.lower()}.{community_suffix}@delegationtest.com"
             )
             users[letter] = user
             

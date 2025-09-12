@@ -63,7 +63,7 @@ class TestDemocracyViewGaps(TestCase):
         self.client.force_login(self.user)
         url = reverse('democracy:decision_detail', kwargs={
             'community_id': self.community.pk,
-            'pk': decision.pk
+            'decision_id': decision.pk
         })
         
         response = self.client.get(url)
@@ -77,7 +77,7 @@ class TestDemocracyViewGaps(TestCase):
         
         url = reverse('democracy:decision_detail', kwargs={
             'community_id': self.community.pk,
-            'pk': decision.pk
+            'decision_id': decision.pk
         })
         
         response = self.client.get(url)
@@ -111,6 +111,7 @@ class TestDemocracyViewGaps(TestCase):
         
     def test_decision_list_view_basic(self):
         """Test decision list view basic functionality - covers list rendering."""
+        self.client.force_login(self.user)
         # Create some decisions
         decision1 = DecisionFactory(community=self.community, title="Decision 1", with_choices=False)
         decision2 = DecisionFactory(community=self.community, title="Decision 2", with_choices=False)
@@ -125,12 +126,15 @@ class TestDemocracyViewGaps(TestCase):
         
     def test_decision_results_view_basic(self):
         """Test decision results view basic functionality - covers results display."""
+        # User already has membership from setUp
+        self.client.force_login(self.user)
+        
         decision = DecisionFactory(community=self.community, with_choices=False)
         choice = ChoiceFactory(decision=decision, title="Test Choice")
         
         url = reverse('democracy:decision_results', kwargs={
             'community_id': self.community.pk,
-            'pk': decision.pk
+            'decision_id': decision.pk
         })
         
         response = self.client.get(url)
@@ -213,7 +217,7 @@ class TestDemocracyViewGaps(TestCase):
         self.client.force_login(self.user)
         url = reverse('democracy:decision_edit', kwargs={
             'community_id': self.community.pk,
-            'pk': decision.pk
+            'decision_id': decision.pk
         })
         
         response = self.client.get(url)
@@ -228,7 +232,7 @@ class TestDemocracyViewGaps(TestCase):
         self.client.force_login(self.user)
         url = reverse('democracy:decision_edit', kwargs={
             'community_id': self.community.pk,
-            'pk': decision.pk
+            'decision_id': decision.pk
         })
         
         edit_data = {
@@ -248,7 +252,7 @@ class TestDemocracyViewGaps(TestCase):
         
         url = reverse('democracy:decision_detail', kwargs={
             'community_id': self.community.pk,
-            'pk': decision.pk
+            'decision_id': decision.pk
         })
         
         response = self.client.get(url)
@@ -265,10 +269,13 @@ class TestDemocracyViewGaps(TestCase):
         import uuid
         fake_uuid = uuid.uuid4()
         
+        # Login user to test error handling (not authentication)
+        self.client.force_login(self.user)
+        
         # Try decision detail with non-existent decision
         url = reverse('democracy:decision_detail', kwargs={
             'community_id': self.community.pk,
-            'pk': fake_uuid
+            'decision_id': fake_uuid
         })
         
         response = self.client.get(url)
@@ -295,6 +302,7 @@ class TestDemocracyViewGaps(TestCase):
         """Test decision detail view with existing votes - covers vote display logic."""
         from tests.factories.decision_factory import BallotFactory, VoteFactory
         
+        self.client.force_login(self.user)
         decision = DecisionFactory(community=self.community, with_choices=False)
         choice = ChoiceFactory(decision=decision, title="Test Choice")
         
@@ -305,7 +313,7 @@ class TestDemocracyViewGaps(TestCase):
         
         url = reverse('democracy:decision_detail', kwargs={
             'community_id': self.community.pk,
-            'pk': decision.pk
+            'decision_id': decision.pk
         })
         
         response = self.client.get(url)
@@ -315,6 +323,7 @@ class TestDemocracyViewGaps(TestCase):
         
     def test_decision_list_filtering(self):
         """Test decision list view with filtering - covers filter logic."""
+        self.client.force_login(self.user)
         url = reverse('democracy:decision_list', kwargs={'community_id': self.community.pk})
         
         # Test with query parameters

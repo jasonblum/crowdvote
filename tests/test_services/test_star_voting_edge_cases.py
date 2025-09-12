@@ -74,7 +74,7 @@ class TestSTARVotingEdgeCases:
         # All choices should have same average score (3.0)
         scores = results['score_phase_results']
         choice_scores = [data['score'] for data in scores.values()]
-        assert all(abs(score - 3.0) < 0.001 for score in choice_scores)
+        assert all(abs(float(score) - 3.0) < 0.001 for score in choice_scores)
     
     def test_extreme_score_distributions(self):
         """Test with extreme score distributions (all 0s vs all 5s)."""
@@ -122,7 +122,7 @@ class TestSTARVotingEdgeCases:
         
         # Both choices should have average score of 2.5
         for choice, data in scores.items():
-            assert abs(data['score'] - 2.5) < 0.001
+            assert abs(float(data['score']) - 2.5) < 0.001
     
     def test_single_voter_decision(self):
         """Test STAR voting with only one voter."""
@@ -251,8 +251,8 @@ class TestSTARVotingEdgeCases:
         
         scores_list = list(scores.items())
         # Choice B should be first (higher score), then Choice A
-        assert abs(scores_list[0][1]['score'] - expected_b) < 0.0001
-        assert abs(scores_list[1][1]['score'] - expected_a) < 0.0001
+        assert abs(float(scores_list[0][1]['score']) - expected_b) < 0.0001
+        assert abs(float(scores_list[1][1]['score']) - expected_a) < 0.0001
     
     def test_runoff_with_identical_preferences(self):
         """Test runoff phase when voters have identical preferences for top 2."""
@@ -357,7 +357,7 @@ class TestSTARVotingEdgeCases:
         # All choices should have 0.0 average
         scores = results['score_phase_results']
         for choice, data in scores.items():
-            assert data['score'] == 0.0
+            assert float(data['score']) == 0.0
     
     def test_missing_votes_for_some_choices(self):
         """Test when some voters don't rate all choices."""
@@ -418,9 +418,9 @@ class TestSTARVotingEdgeCases:
         assert choice_b_data['vote_count'] == 2
         assert choice_c_data['vote_count'] == 1
         
-        assert choice_a_data['score'] == 5.0
-        assert choice_b_data['score'] == 3.5
-        assert choice_c_data['score'] == 2.0
+        assert float(choice_a_data['score']) == 5.0
+        assert float(choice_b_data['score']) == 3.5
+        assert float(choice_c_data['score']) == 2.0
 
 
 @pytest.mark.services

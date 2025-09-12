@@ -234,9 +234,9 @@ class TestAccountsViewsFinalPush(TestCase):
         used_link = MagicLink.objects.create(
             email=self.user.email,
             token="usedtoken123",
-            expires_at=timezone.now() + timedelta(minutes=10),
-            is_used=True  # Already used
+            expires_at=timezone.now() + timedelta(minutes=10)
         )
+        used_link.use()  # Mark as used
         
         response = self.client.get(reverse('accounts:magic_link_login', args=['usedtoken123']))
         
@@ -308,8 +308,8 @@ class TestAccountsViewsFinalPush(TestCase):
         """Test community status HTMX endpoint - covers HTMX response logic."""
         self.client.force_login(self.user)
         
-        # Add HTMX header
-        response = self.client.get(
+        # Add HTMX header (use POST since view only accepts POST)
+        response = self.client.post(
             reverse('accounts:apply_to_community', args=[str(self.community.pk)]),
             HTTP_HX_REQUEST='true'
         )

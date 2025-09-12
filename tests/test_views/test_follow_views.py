@@ -168,6 +168,13 @@ class FollowIntegrationTestCase(TestCase):
         self.user1 = UserFactory(username='user1')
         self.user2 = UserFactory(username='user2')
         
+        # Create shared community so users can see follow buttons
+        from tests.factories.community_factory import CommunityFactory
+        from tests.factories.user_factory import MembershipFactory
+        self.community = CommunityFactory(name='Test Community')
+        MembershipFactory(member=self.user1, community=self.community)
+        MembershipFactory(member=self.user2, community=self.community)
+        
     def test_member_profile_shows_follow_button(self):
         """Test member profile page shows follow button for other users."""
         self.client.force_login(self.user1)

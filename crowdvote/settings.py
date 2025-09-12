@@ -32,7 +32,7 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-q^8ify5*n5rsh3e4rkcx@amd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.railway.app', 'crowdvote.com', 'www.crowdvote.com'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'testserver', '.railway.app', 'crowdvote.com', 'www.crowdvote.com'])
 
 CSRF_TRUSTED_ORIGINS = [
     'https://www.crowdvote.com',

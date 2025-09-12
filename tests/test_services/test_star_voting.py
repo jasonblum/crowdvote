@@ -76,9 +76,9 @@ class TestSTARVoting:
         
         choice_scores = {choice: data['score'] for choice, data in scores.items()}
         
-        assert abs(choice_scores[choice_a] - 4.0) < 0.01
-        assert abs(choice_scores[choice_b] - 4.0) < 0.01
-        assert abs(choice_scores[choice_c] - 2.667) < 0.01
+        assert abs(float(choice_scores[choice_a]) - 4.0) < 0.01
+        assert abs(float(choice_scores[choice_b]) - 4.0) < 0.01
+        assert abs(float(choice_scores[choice_c]) - 2.667) < 0.01
         
         # Verify choices are ordered by score (highest first)
         # A and B should be tied at top, C should be last

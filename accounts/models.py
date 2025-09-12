@@ -181,7 +181,7 @@ class CustomUser(AbstractUser):
             'following': [
                 {
                     'user': f.followee,
-                    'tags': f.tags.split(',') if f.tags else ['all topics'],
+                    'tags': [tag.strip() for tag in f.tags.split(',')] if f.tags else ['all topics'],
                     'order': f.order
                 }
                 for f in following
@@ -189,7 +189,7 @@ class CustomUser(AbstractUser):
             'followers': [
                 {
                     'user': f.follower,
-                    'tags': f.tags.split(',') if f.tags else ['all topics'],
+                    'tags': [tag.strip() for tag in f.tags.split(',')] if f.tags else ['all topics'],
                     'order': f.order
                 }
                 for f in followers
@@ -294,7 +294,7 @@ class Following(BaseModel):
         if self.tags:
             # Split on commas, strip whitespace, and rejoin
             cleaned_tags = [tag.strip() for tag in self.tags.split(',') if tag.strip()]
-            self.tags = ','.join(cleaned_tags)
+            self.tags = ', '.join(cleaned_tags)
 
     def save(self, *args, **kwargs):
         """Override save to run validation."""

@@ -170,10 +170,10 @@ class TestUtilitiesCoverage(TestCase):
         """Test get_object_or_None with positional arguments - covers *args handling."""
         user = UserFactory()
         
-        # Test with positional argument (primary key)
-        result = get_object_or_None(User, user.pk)
+        # Test with keyword argument (primary key)
+        result = get_object_or_None(User, pk=user.pk)
         self.assertEqual(result, user)
         
         # Test with non-existent primary key
-        result = get_object_or_None(User, 99999)
+        result = get_object_or_None(User, pk=99999)
         self.assertIsNone(result)

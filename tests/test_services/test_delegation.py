@@ -410,9 +410,9 @@ class TestStageBallotsDelegation:
         assert len(tree_data['nodes']) >= 2  # At least A and B
         assert len(tree_data['edges']) >= 1  # At least B→A edge
         
-        # Find nodes for A and B
-        node_a = next((n for n in tree_data['nodes'] if n['username'] == 'A_delegationtest'), None)
-        node_b = next((n for n in tree_data['nodes'] if n['username'] == 'B_delegationtest'), None)
+        # Find nodes for A and B (usernames now have unique suffixes)
+        node_a = next((n for n in tree_data['nodes'] if n['username'].startswith('A_delegationtest')), None)
+        node_b = next((n for n in tree_data['nodes'] if n['username'].startswith('B_delegationtest')), None)
         
         assert node_a is not None
         assert node_b is not None
@@ -421,10 +421,12 @@ class TestStageBallotsDelegation:
         assert node_a['vote_type'] == 'manual'
         assert node_b['vote_type'] == 'calculated'
         
-        # Check that edge exists
+        # Check that edge exists (edges use user IDs, not usernames)
+        user_a_id = str(delegation_users['A'].id)
+        user_b_id = str(delegation_users['B'].id)
         edge_b_to_a = next((e for e in tree_data['edges'] 
-                           if e['follower'] == 'B_delegationtest' 
-                           and e['followee'] == 'A_delegationtest'), None)
+                           if e['follower'] == user_b_id 
+                           and e['followee'] == user_a_id), None)
         assert edge_b_to_a is not None
         assert 'apple' in edge_b_to_a['tags']
 

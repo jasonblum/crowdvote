@@ -125,7 +125,7 @@ class TestFollowingModel:
         
         assert following.follower == follower
         assert following.followee == followee
-        assert following.tags == "governance,budget"
+        assert following.tags == "governance, budget"
         assert following.order == 1
     
     def test_following_string_representation(self):
@@ -174,7 +174,7 @@ class TestFollowingModel:
         )
         
         # Should be cleaned of extra spaces
-        expected_tags = "governance,budget,environment"
+        expected_tags = "governance, budget, environment"
         assert following.tags == expected_tags
     
     def test_order_validation(self):

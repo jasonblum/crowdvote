@@ -431,6 +431,11 @@ class StageBallots(Service):
             
             ballot.is_calculated = True
             ballot.save()
+            
+            # Update delegation tree node data after calculation is complete
+            existing_node = next((n for n in self.delegation_tree_data['nodes'] if n['voter_id'] == str(voter.id)), None)
+            if existing_node:
+                existing_node['vote_type'] = 'calculated'
         else:
             # Handle manual votes - capture vote data for delegation tree
             current_node = next((n for n in self.delegation_tree_data['nodes'] if n['voter_id'] == str(voter.id)), None)
