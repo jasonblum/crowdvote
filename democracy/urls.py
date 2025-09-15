@@ -22,4 +22,6 @@ urlpatterns = [
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/edit/', views.decision_edit, name='decision_edit'),
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/vote/', views.vote_submit, name='vote_submit'),
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/results/', views.decision_results, name='decision_results'),
+    path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/recalculate/', views.manual_recalculation, name='manual_recalculation'),
+    path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/status/', views.calculation_status, name='calculation_status'),
 ]

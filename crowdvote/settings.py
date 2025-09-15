@@ -245,11 +245,23 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
+        'crowdvote_events': {
+            'format': '[{asctime}] [{levelname}] {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+        },
+        'crowdvote_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/crowdvote.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'backupCount': 30,  # Keep 30 days of logs
+            'formatter': 'crowdvote_events',
         },
     },
     'root': {
@@ -258,8 +270,23 @@ LOGGING = {
     },
     'loggers': {
         'accounts': {
-            'handlers': ['console'],
+            'handlers': ['console', 'crowdvote_file'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+        'democracy': {
+            'handlers': ['console', 'crowdvote_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'democracy.signals': {
+            'handlers': ['console', 'crowdvote_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'democracy.services': {
+            'handlers': ['console', 'crowdvote_file'],
+            'level': 'INFO',
             'propagate': False,
         },
         'django': {

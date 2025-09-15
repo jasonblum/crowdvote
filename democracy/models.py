@@ -303,7 +303,7 @@ class Decision(BaseModel):
         Validate the decision.
         
         Raises:
-            ValidationError: If dt_close is in the past
+            ValidationError: If dt_close is in the past or decision has no choices
         """
         from django.core.exceptions import ValidationError
         from django.utils import timezone
@@ -313,6 +313,12 @@ class Decision(BaseModel):
         if self.dt_close and self.dt_close <= timezone.now():
             raise ValidationError({
                 'dt_close': 'Decision deadline cannot be in the past.'
+            })
+        
+        # Only validate choices for saved decisions (not during creation)
+        if self.pk and self.choices.count() == 0:
+            raise ValidationError({
+                '__all__': 'A decision must have at least one choice for voting.'
             })
 
     @property
@@ -334,6 +340,56 @@ class Decision(BaseModel):
             bool: True if voting is open, False if closed
         """
         return timezone.now() < self.dt_close
+    
+    def is_calculating(self):
+        """
+        Check if this decision is currently being calculated.
+        
+        Returns True if there's an active calculation snapshot in progress.
+        Used for UI status indicators to show "Calculating..." states.
+        """
+        return self.snapshots.filter(
+            calculation_status__in=['creating', 'staging', 'tallying']
+        ).exists()
+    
+    def get_calculation_status(self):
+        """
+        Get the current calculation status for UI display.
+        
+        Returns:
+            str: Status message for display ('Ready', 'Calculating...', 'Error', etc.)
+        """
+        if not self.is_open:
+            return 'Closed'
+            
+        latest_snapshot = self.snapshots.first()
+        if not latest_snapshot:
+            return 'Ready for Calculation'
+            
+        status_map = {
+            'creating': 'Creating Snapshot...',
+            'ready': 'Ready',
+            'staging': 'Calculating Votes...',
+            'tallying': 'Tallying Results...',
+            'completed': 'Up to Date',
+            'failed_snapshot': 'Error (Snapshot Failed)',
+            'failed_staging': 'Error (Calculation Failed)',
+            'failed_tallying': 'Error (Tally Failed)',
+            'corrupted': 'Error (Data Corrupted)'
+        }
+        
+        return status_map.get(latest_snapshot.calculation_status, 'Unknown Status')
+    
+    @property
+    def last_calculated(self):
+        """
+        Get the timestamp of the last successful calculation.
+        
+        Returns:
+            datetime: When this decision was last calculated, or None if never calculated
+        """
+        completed_snapshot = self.snapshots.filter(calculation_status='completed').first()
+        return completed_snapshot.created if completed_snapshot else None
     
     
     def get_total_ballots(self):

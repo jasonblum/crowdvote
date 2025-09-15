@@ -90,6 +90,16 @@ class DecisionForm(forms.ModelForm):
             raise ValidationError("Voting deadline cannot be more than 1 year in the future.")
         
         return dt_close
+    
+    def clean(self):
+        """
+        Perform final validation on the form.
+        
+        Note: Choice validation is handled in the view using formsets
+        since choices are created separately from the decision.
+        """
+        cleaned_data = super().clean()
+        return cleaned_data
 
 
 class ChoiceForm(forms.ModelForm):

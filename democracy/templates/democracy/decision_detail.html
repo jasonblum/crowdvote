@@ -78,7 +78,36 @@
                         ({{ stats.participation_rate }}%)
                     </span>
                 </div>
+                
+                <!-- Calculation Status -->
+                <div class="flex items-center justify-between">
+                    <span class="text-green-700 dark:text-green-300">Calculation</span>
+                    <span class="font-semibold text-green-900 dark:text-green-100" id="calculation-status">
+                        {{ decision.get_calculation_status }}
+                    </span>
+                </div>
+                
+                {% if decision.last_calculated %}
+                <div class="flex items-center justify-between">
+                    <span class="text-green-700 dark:text-green-300">Last Updated</span>
+                    <span class="font-semibold text-green-900 dark:text-green-100">
+                        {{ decision.last_calculated|timesince }} ago
+                    </span>
+                </div>
+                {% endif %}
             </div>
+            
+            <!-- Manual Recalculation Button (Managers Only) -->
+            {% if can_manage and status == 'active' %}
+            <div class="pt-3 border-t border-green-200 dark:border-green-600 mt-3">
+                <button id="manual-recalc-btn"
+                        onclick="triggerManualRecalculation()"
+                        class="inline-flex items-center justify-center w-full px-3 py-2 border border-orange-300 dark:border-orange-600 text-xs font-medium rounded-md text-orange-700 dark:text-orange-300 bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    🔄 Recalculate Now
+                </button>
+                <div id="recalc-message" class="mt-2 text-xs text-center hidden"></div>
+            </div>
+            {% endif %}
             
             <!-- View Complete Results Link -->
             <div class="pt-3 border-t border-green-200 dark:border-green-600 mt-3">
@@ -333,6 +362,140 @@
 }
 </style>
 <script>
+// Manual Recalculation Function
+function triggerManualRecalculation() {
+    const btn = document.getElementById('manual-recalc-btn');
+    const messageDiv = document.getElementById('recalc-message');
+    const statusSpan = document.getElementById('calculation-status');
+    
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Starting...';
+    messageDiv.className = 'mt-2 text-xs text-center text-blue-600 dark:text-blue-400';
+    messageDiv.textContent = 'Starting recalculation...';
+    messageDiv.classList.remove('hidden');
+    
+    // Make AJAX request
+    fetch('{% url "democracy:manual_recalculation" community.id decision.id %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success - show message and update status
+            messageDiv.className = 'mt-2 text-xs text-center text-green-600 dark:text-green-400';
+            messageDiv.textContent = data.message;
+            
+            if (data.decision_status) {
+                statusSpan.textContent = data.decision_status;
+            }
+            
+            // Start polling for status updates
+            pollCalculationStatus();
+            
+        } else {
+            // Error - show error message and re-enable button
+            messageDiv.className = 'mt-2 text-xs text-center text-red-600 dark:text-red-400';
+            messageDiv.textContent = data.error || 'An error occurred';
+            
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Recalculate Now';
+        }
+    })
+    .catch(error => {
+        console.error('Manual recalculation error:', error);
+        messageDiv.className = 'mt-2 text-xs text-center text-red-600 dark:text-red-400';
+        messageDiv.textContent = 'Network error. Please try again.';
+        
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Recalculate Now';
+    });
+}
+
+// Poll calculation status to update UI in real-time
+function pollCalculationStatus() {
+    const statusSpan = document.getElementById('calculation-status');
+    const btn = document.getElementById('manual-recalc-btn');
+    const messageDiv = document.getElementById('recalc-message');
+    
+    let pollCount = 0;
+    const maxPolls = 12; // Poll for 60 seconds (5s * 12)
+    
+    const pollInterval = setInterval(() => {
+        pollCount++;
+        
+        // Fetch current status
+        fetch('{% url "democracy:calculation_status" community.id decision.id %}', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.calculation_status) {
+                // Update status display
+                statusSpan.textContent = data.calculation_status;
+                
+                // Update visual indicators based on status
+                if (data.is_calculating) {
+                    // Show calculating state
+                    statusSpan.className = 'font-semibold text-blue-600 dark:text-blue-400';
+                    if (messageDiv && !messageDiv.classList.contains('hidden')) {
+                        messageDiv.className = 'mt-2 text-xs text-center text-blue-600 dark:text-blue-400';
+                        messageDiv.textContent = 'Calculation in progress...';
+                    }
+                } else {
+                    // Show completed state
+                    statusSpan.className = 'font-semibold text-green-900 dark:text-green-100';
+                    
+                    // Stop polling when calculation is complete
+                    clearInterval(pollInterval);
+                    
+                    // Re-enable manual recalc button if it exists
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '🔄 Recalculate Now';
+                    }
+                    
+                    if (messageDiv && !messageDiv.classList.contains('hidden')) {
+                        messageDiv.className = 'mt-2 text-xs text-center text-green-600 dark:text-green-400';
+                        messageDiv.textContent = 'Calculation completed!';
+                        
+                        // Hide message after 3 seconds
+                        setTimeout(() => {
+                            messageDiv.classList.add('hidden');
+                        }, 3000);
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Status polling error:', error);
+        });
+        
+        // Stop polling after max attempts
+        if (pollCount >= maxPolls) {
+            clearInterval(pollInterval);
+            
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '🔄 Recalculate Now';
+            }
+            
+            if (messageDiv && !messageDiv.classList.contains('hidden')) {
+                messageDiv.className = 'mt-2 text-xs text-center text-gray-600 dark:text-gray-400';
+                messageDiv.textContent = 'Refresh page to see latest status.';
+            }
+        }
+        
+    }, 5000); // Poll every 5 seconds
+}
+
 console.log('JavaScript file loading...');
 console.log('User authenticated:', {{ user.is_authenticated|yesno:"true,false" }});
 console.log('Can vote:', {{ can_vote|yesno:"true,false" }});
@@ -467,23 +630,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Form validation
-    document.getElementById('vote-form').addEventListener('submit', function(e) {
-        const ratings = document.querySelectorAll('.rating-input');
-        let hasRating = false;
-        
-        ratings.forEach(input => {
-            if (parseInt(input.value) > 0) {
-                hasRating = true;
+    // Form validation and submission handling
+    const voteForm = document.getElementById('vote-form');
+    if (voteForm) {
+        voteForm.addEventListener('submit', function(e) {
+            const ratings = document.querySelectorAll('.rating-input');
+            let hasRating = false;
+            
+            ratings.forEach(input => {
+                if (parseInt(input.value) > 0) {
+                    hasRating = true;
+                }
+            });
+            
+            if (!hasRating) {
+                e.preventDefault();
+                alert('Please rate at least one choice with 1 or more stars before submitting your vote.');
+                return;
             }
+            
+            // Show immediate feedback that vote is being processed
+            const submitBtn = document.getElementById('submit-vote-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Submitting Vote...';
+            }
+            
+            // Start polling for calculation status after form submission
+            // We'll start polling after a short delay to allow the vote to be processed
+            setTimeout(() => {
+                console.log('Starting status polling after vote submission...');
+                
+                // Show a temporary message that calculation is starting
+                const statusSpan = document.getElementById('calculation-status');
+                if (statusSpan) {
+                    statusSpan.textContent = 'Processing Vote...';
+                    statusSpan.className = 'font-semibold text-blue-600 dark:text-blue-400';
+                }
+                
+                // Start polling
+                pollCalculationStatus();
+            }, 2000); // Wait 2 seconds for vote to be processed and signal to fire
         });
-        
-        if (!hasRating) {
-            e.preventDefault();
-            alert('Please rate at least one choice with 1 or more stars before submitting your vote.');
-            return;
-        }
-    });
+    }
     
     // Countdown Timer for Active Decisions
     const countdownElement = document.getElementById('countdown-timer');

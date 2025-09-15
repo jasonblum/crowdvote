@@ -12,8 +12,12 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.db.models import Q
+from django.db import transaction
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from collections import defaultdict
+import threading
+import logging
 
 from .models import Community, Decision, Membership, Ballot, Choice, Vote
 from accounts.models import Following
@@ -774,23 +778,29 @@ def decision_create(request, community_id):
     
     if request.method == 'POST':
         form = DecisionForm(request.POST)
+        choice_formset = ChoiceFormSet(request.POST)
         
-        if form.is_valid():
-            # Create decision but don't save yet
-            decision = form.save(commit=False)
-            decision.community = community
-            
-            # Handle draft vs publish
-            action = request.POST.get('action')
-            if action == 'save_draft':
-                decision.dt_close = None  # Null means draft
-            
-            decision.save()
-            
-            # Handle choices formset
-            choice_formset = ChoiceFormSet(request.POST, instance=decision)
-            if choice_formset.is_valid():
-                choice_formset.save()
+        if form.is_valid() and choice_formset.is_valid():
+            # Use database transaction to ensure atomicity
+            with transaction.atomic():
+                # Create decision but don't save yet
+                decision = form.save(commit=False)
+                decision.community = community
+                
+                # Handle draft vs publish
+                action = request.POST.get('action')
+                if action == 'save_draft':
+                    decision.dt_close = None  # Null means draft
+                
+                decision.save()
+                
+                # Save choices - this will only happen if both forms are valid
+                choice_formset.instance = decision
+                choices = choice_formset.save()
+                
+                # Validate that at least one choice was created (unless it's a draft)
+                if action != 'save_draft' and len(choices) == 0:
+                    raise ValidationError("A published decision must have at least one choice.")
                 
                 if action == 'save_draft':
                     messages.success(request, f'Decision "{decision.title}" saved as draft.')
@@ -798,12 +808,12 @@ def decision_create(request, community_id):
                 else:
                     messages.success(request, f'Decision "{decision.title}" published successfully!')
                     return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision.id)
-            else:
-                # Formset errors - decision was saved but choices weren't
-                messages.error(request, "Please fix the errors in the choices below.")
         else:
-            # Form errors
-            choice_formset = ChoiceFormSet(request.POST)
+            # Form or formset errors - nothing gets saved
+            if not form.is_valid():
+                messages.error(request, "Please fix the errors in the decision form.")
+            if not choice_formset.is_valid():
+                messages.error(request, "Please fix the errors in the choices below.")
     else:
         form = DecisionForm()
         choice_formset = ChoiceFormSet()
@@ -1248,3 +1258,119 @@ def decision_results(request, community_id, decision_id):
     }
     
     return render(request, 'democracy/decision_results.html', context)
+
+
+@login_required
+def calculation_status(request, community_id, decision_id):
+    """
+    HTMX endpoint to get current calculation status for a decision.
+    
+    Returns JSON with current status information for real-time UI updates.
+    """
+    try:
+        community = get_object_or_404(Community, id=community_id)
+        decision = get_object_or_404(Decision, id=decision_id, community=community)
+        
+        # Check if user is a member
+        membership = get_object_or_None(Membership, member=request.user, community=community)
+        if not membership:
+            return JsonResponse({'error': 'Not a community member'}, status=403)
+        
+        status_data = {
+            'calculation_status': decision.get_calculation_status(),
+            'is_calculating': decision.is_calculating(),
+            'last_calculated': decision.last_calculated.isoformat() if decision.last_calculated else None,
+            'last_calculated_display': f"{decision.last_calculated.strftime('%H:%M:%S')}" if decision.last_calculated else None,
+        }
+        
+        return JsonResponse(status_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting calculation status: {str(e)}")
+        return JsonResponse({'error': 'Server error'}, status=500)
+
+
+@login_required
+@require_POST
+def manual_recalculation(request, community_id, decision_id):
+    """
+    Manual recalculation trigger for community managers.
+    
+    Allows community managers to manually trigger vote recalculation
+    for a specific decision when needed (e.g., after system issues).
+    
+    Args:
+        request: HTTP request object
+        community_id: UUID of the community
+        decision_id: UUID of the decision to recalculate
+        
+    Returns:
+        JsonResponse: Status of the recalculation request
+    """
+    logger = logging.getLogger('democracy.views')
+    
+    try:
+        # Get community and decision
+        community = get_object_or_404(Community, id=community_id)
+        decision = get_object_or_404(Decision, id=decision_id, community=community)
+        
+        # Check if user is a community manager
+        try:
+            membership = Membership.objects.get(member=request.user, community=community)
+            if not membership.is_community_manager:
+                logger.warning(f"[MANUAL_RECALC_DENIED] [{request.user.username}] - Non-manager attempted manual recalculation for decision '{decision.title}'")
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Only community managers can trigger manual recalculation'
+                }, status=403)
+        except Membership.DoesNotExist:
+            logger.warning(f"[MANUAL_RECALC_DENIED] [{request.user.username}] - Non-member attempted manual recalculation for decision '{decision.title}'")
+            return JsonResponse({
+                'success': False,
+                'error': 'You must be a community member to trigger recalculation'
+            }, status=403)
+        
+        # Check if decision is open
+        if not decision.is_open():
+            logger.info(f"[MANUAL_RECALC_DENIED] [{request.user.username}] - Attempted manual recalculation for closed decision '{decision.title}'")
+            return JsonResponse({
+                'success': False,
+                'error': 'Cannot recalculate closed decisions'
+            }, status=400)
+        
+        # Check if calculation is already in progress
+        if decision.is_calculating():
+            logger.info(f"[MANUAL_RECALC_DENIED] [{request.user.username}] - Calculation already in progress for decision '{decision.title}'")
+            return JsonResponse({
+                'success': False,
+                'error': 'Calculation already in progress for this decision'
+            }, status=400)
+        
+        # Import the recalculation function
+        from democracy.signals import recalculate_community_decisions_async
+        
+        # Log the manual trigger
+        logger.info(f"[MANUAL_RECALC] [{request.user.username}] - Manual recalculation triggered for decision '{decision.title}'")
+        
+        # Start background recalculation
+        thread = threading.Thread(
+            target=recalculate_community_decisions_async,
+            args=(community.id, f"manual_recalc_by_{request.user.username}", request.user.id),
+            daemon=True
+        )
+        thread.start()
+        
+        logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Manual background recalculation started for decision '{decision.title}'")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Recalculation started for "{decision.title}". Results will update automatically when complete.',
+            'decision_status': decision.get_calculation_status()
+        })
+        
+    except Exception as e:
+        logger.error(f"[MANUAL_RECALC_ERROR] [{request.user.username}] - Error in manual recalculation: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An error occurred while starting recalculation. Please try again.'
+        }, status=500)
