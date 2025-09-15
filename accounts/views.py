@@ -826,6 +826,7 @@ def _check_magic_link_rate_limits(ip, email):
     
     rate_limit_per_hour = getattr(settings, 'MAGIC_LINK_RATE_LIMIT_PER_HOUR', 3)
     min_interval_minutes = getattr(settings, 'MAGIC_LINK_MIN_INTERVAL_MINUTES', 15)
+    min_interval_seconds = min_interval_minutes * 60
     
     # Check IP rate limit
     ip_key = f'magic_link_ip:{ip}'
@@ -836,7 +837,6 @@ def _check_magic_link_rate_limits(ip, email):
     # Check minimum interval for IP
     if ip_data['last_request'] > 0:
         time_since_last = current_time - ip_data['last_request']
-        min_interval_seconds = min_interval_minutes * 60
         
         if time_since_last < min_interval_seconds:
             minutes_remaining = math.ceil((min_interval_seconds - time_since_last) / 60)

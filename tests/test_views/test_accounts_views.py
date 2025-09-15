@@ -425,6 +425,8 @@ class TestMagicLinkAuthenticationViews(TestCase):
     
     def setUp(self):
         """Set up test data for each test."""
+        from django.core.cache import cache
+        cache.clear()  # Clear rate limiting cache
         self.client = Client()
         self.user = UserFactory()
     

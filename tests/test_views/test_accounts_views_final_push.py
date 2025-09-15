@@ -22,6 +22,8 @@ class TestAccountsViewsFinalPush(TestCase):
     """Final targeted tests for accounts/views.py coverage."""
     
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()  # Clear rate limiting cache
         self.client = Client()
         self.user = UserFactory(username="testuser", first_name="", last_name="")  # No names
         self.community = CommunityFactory(name="Test Community")
