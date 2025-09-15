@@ -79,6 +79,13 @@ crowdvote/
 - Provide an `AppConfig` for each app
 - Avoid database queries at import time or in `ready()`
 - Use meaningful app names that describe their purpose
+- Important events should be written to a log file.  Examples of events include:
+  - Creations of Communities or Decisions
+  - Publishing or Closing Decisions
+  - Changes in Memberships
+  - Changes in Members following or unfollowing other members and on what, if any, tags.
+  - Ballots being tallied, both when the process (Staging Ballots, Tallying) starts and stops.
+  - logins and logouts.
 
 ## Security Requirements (Non-Negotiable)
 

@@ -1,9 +1,14 @@
 from collections import defaultdict, OrderedDict
+import json
+import logging
+from datetime import timedelta
 
 from django.utils import timezone
+from django.db import transaction
+from django.core.exceptions import ValidationError
 from service_objects.services import Service
 
-from .models import Ballot, Community
+from .models import Ballot, Community, Decision, DecisionSnapshot
 from crowdvote.utilities import get_object_or_None, normal_round
 
 
@@ -779,3 +784,218 @@ class Tally(Service):
                 all_tally_reports.append(tally_report)
 
         return "<br/>".join(all_tally_reports)
+
+
+class CreateCalculationSnapshot(Service):
+    """
+    Service for creating point-in-time snapshots of decision state for consistent calculations.
+    
+    This service captures all data needed for vote calculation at a specific moment,
+    ensuring that calculations are not affected by concurrent user activity.
+    """
+    
+    def __init__(self, decision_id, *args, **kwargs):
+        """
+        Initialize snapshot creation for a specific decision.
+        
+        Args:
+            decision_id: UUID of the decision to create snapshot for
+        """
+        super().__init__(*args, **kwargs)
+        self.decision_id = decision_id
+        self.logger = logging.getLogger(__name__)
+    
+    def process(self):
+        """
+        Create a complete snapshot of the decision state.
+        
+        Returns:
+            DecisionSnapshot: The created snapshot with all calculation data
+        """
+        try:
+            decision = Decision.objects.get(id=self.decision_id)
+            
+            # Create snapshot with initial status
+            snapshot = DecisionSnapshot.objects.create(
+                decision=decision,
+                calculation_status='creating',
+                is_final=not decision.is_open
+            )
+            
+            self.logger.info(f"Creating snapshot for decision: {decision.title}")
+            
+            # Capture all data in a single transaction for consistency
+            with transaction.atomic():
+                snapshot_data = self._capture_system_state(decision)
+                
+                # Update snapshot with captured data
+                snapshot.snapshot_data = snapshot_data
+                snapshot.total_eligible_voters = len(snapshot_data['community_memberships'])
+                snapshot.total_votes_cast = len(snapshot_data['existing_ballots'])
+                snapshot.calculation_status = 'ready'
+                snapshot.save()
+            
+            self.logger.info(f"Snapshot created successfully: {snapshot.id}")
+            return snapshot
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create snapshot for decision {self.decision_id}: {str(e)}")
+            if 'snapshot' in locals():
+                snapshot.calculation_status = 'failed_snapshot'
+                snapshot.error_log = str(e)
+                snapshot.last_error = timezone.now()
+                snapshot.save()
+            raise
+    
+    def _capture_system_state(self, decision):
+        """
+        Capture complete system state at current moment.
+        
+        Args:
+            decision: Decision object to capture state for
+            
+        Returns:
+            dict: Complete system state data
+        """
+        community = decision.community
+        
+        # Capture community memberships
+        memberships = list(community.memberships.filter(
+            is_voting_community_member=True
+        ).values_list('member_id', flat=True))
+        
+        # Capture following relationships
+        followings = {}
+        for following in community.members.prefetch_related('followings').all():
+            user_followings = []
+            for follow in following.followings.all():
+                if follow.followee in community.members.all():
+                    user_followings.append({
+                        'followee_id': str(follow.followee.id),
+                        'tags': follow.tags or '',
+                        'order': follow.order
+                    })
+            if user_followings:
+                followings[str(following.id)] = user_followings
+        
+        # Capture existing ballots
+        existing_ballots = {}
+        for ballot in decision.ballots.select_related('voter').prefetch_related('votes__choice'):
+            ballot_data = {
+                'voter_id': str(ballot.voter.id),
+                'is_calculated': ballot.is_calculated,
+                'is_anonymous': ballot.is_anonymous,
+                'tags': ballot.tags or '',
+                'votes': {}
+            }
+            
+            for vote in ballot.votes.all():
+                ballot_data['votes'][str(vote.choice.id)] = float(vote.stars)
+            
+            existing_ballots[str(ballot.voter.id)] = ballot_data
+        
+        # Capture decision and choice data
+        decision_data = {
+            'id': str(decision.id),
+            'title': decision.title,
+            'description': decision.description,
+            'dt_close': decision.dt_close.isoformat(),
+            'is_open': decision.is_open
+        }
+        
+        choices_data = []
+        for choice in decision.choices.all():
+            choices_data.append({
+                'id': str(choice.id),
+                'title': choice.title,
+                'description': choice.description
+            })
+        
+        return {
+            'metadata': {
+                'calculation_timestamp': timezone.now().isoformat(),
+                'decision_status': 'active' if decision.is_open else 'closed',
+                'snapshot_version': '1.0.0'
+            },
+            'community_memberships': memberships,
+            'followings': followings,
+            'existing_ballots': existing_ballots,
+            'decision_data': decision_data,
+            'choices_data': choices_data
+        }
+
+
+class SnapshotBasedStageBallots(Service):
+    """
+    Enhanced StageBallots service that works from snapshot data for consistency.
+    
+    This service processes ballots using only the data captured in a snapshot,
+    ensuring calculations are not affected by concurrent changes to the system.
+    """
+    
+    def __init__(self, snapshot_id, *args, **kwargs):
+        """
+        Initialize service with a specific snapshot.
+        
+        Args:
+            snapshot_id: UUID of the DecisionSnapshot to process
+        """
+        super().__init__(*args, **kwargs)
+        self.snapshot_id = snapshot_id
+        self.logger = logging.getLogger(__name__)
+    
+    def process(self):
+        """
+        Process ballots using snapshot data for consistency.
+        
+        Returns:
+            dict: Processing results and statistics
+        """
+        try:
+            snapshot = DecisionSnapshot.objects.get(id=self.snapshot_id)
+            snapshot.calculation_status = 'staging'
+            snapshot.save()
+            
+            self.logger.info(f"Starting snapshot-based ballot staging for: {snapshot.decision.title}")
+            
+            # Process using snapshot data only
+            results = self._process_snapshot_ballots(snapshot)
+            
+            # Update snapshot with results
+            snapshot.calculation_status = 'completed'
+            snapshot.total_calculated_votes = results.get('calculated_ballots', 0)
+            snapshot.save()
+            
+            self.logger.info(f"Snapshot-based staging completed: {results}")
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Snapshot-based staging failed: {str(e)}")
+            if 'snapshot' in locals():
+                snapshot.calculation_status = 'failed_staging'
+                snapshot.error_log = str(e)
+                snapshot.last_error = timezone.now()
+                snapshot.retry_count += 1
+                snapshot.save()
+            raise
+    
+    def _process_snapshot_ballots(self, snapshot):
+        """
+        Process ballots using only snapshot data.
+        
+        Args:
+            snapshot: DecisionSnapshot with captured system state
+            
+        Returns:
+            dict: Processing results
+        """
+        snapshot_data = snapshot.snapshot_data
+        
+        # This is where we would implement the snapshot-based calculation
+        # For now, return basic statistics
+        return {
+            'total_members': len(snapshot_data['community_memberships']),
+            'existing_ballots': len(snapshot_data['existing_ballots']),
+            'calculated_ballots': 0,  # Will be implemented in next phase
+            'processing_time': timezone.now().isoformat()
+        }

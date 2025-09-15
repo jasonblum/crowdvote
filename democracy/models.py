@@ -356,6 +356,24 @@ class Decision(BaseModel):
             voter__memberships__community=self.community,
             voter__memberships__is_voting_community_member=True
         )
+    
+    def get_latest_snapshot(self):
+        """
+        Get the most recent snapshot for this decision.
+        
+        Returns:
+            DecisionSnapshot or None: The latest snapshot for this decision
+        """
+        return self.snapshots.first()  # Uses related_name='snapshots' and ordering=['-created_at']
+    
+    def get_final_snapshot(self):
+        """
+        Get the final snapshot for this decision (if it exists).
+        
+        Returns:
+            DecisionSnapshot or None: The final snapshot if decision is closed, None otherwise
+        """
+        return self.snapshots.filter(is_final=True).first()
 
 
 class Choice(BaseModel):
@@ -987,6 +1005,7 @@ class DecisionSnapshot(BaseModel):
     
     snapshot_data = models.JSONField(
         default=dict,
+        blank=True,
         help_text="Complete system state and calculation results at snapshot time"
     )
     
@@ -1013,12 +1032,47 @@ class DecisionSnapshot(BaseModel):
     
     tags_used = models.JSONField(
         default=list,
+        blank=True,
         help_text="All tags used in voting with frequency counts"
     )
     
     is_final = models.BooleanField(
         default=False,
         help_text="True when decision is closed and results are final"
+    )
+    
+    # Error handling and status tracking fields
+    calculation_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('creating', 'Creating Snapshot'),
+            ('ready', 'Ready for Calculation'),
+            ('staging', 'Stage Ballots in Progress'),
+            ('tallying', 'Tally in Progress'),
+            ('completed', 'Calculation Completed'),
+            ('failed_snapshot', 'Snapshot Creation Failed'),
+            ('failed_staging', 'Stage Ballots Failed'),
+            ('failed_tallying', 'Tally Failed'),
+            ('corrupted', 'Snapshot Corrupted')
+        ],
+        default='ready',
+        help_text="Current status of the calculation process"
+    )
+    
+    error_log = models.TextField(
+        blank=True,
+        help_text="Detailed error information if calculation failed"
+    )
+    
+    retry_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of retry attempts for failed calculations"
+    )
+    
+    last_error = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the last error occurred during calculation"
     )
     
     class Meta:
@@ -1033,6 +1087,37 @@ class DecisionSnapshot(BaseModel):
     def __str__(self):
         status = "Final" if self.is_final else "Interim"
         return f"{status} snapshot for '{self.decision.title}' ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
+    
+    def clean(self):
+        """
+        Validate that only one final snapshot exists per decision.
+        """
+        from django.core.exceptions import ValidationError
+        
+        if self.is_final:
+            existing_final = DecisionSnapshot.objects.filter(
+                decision=self.decision,
+                is_final=True
+            ).exclude(pk=self.pk)
+            
+            if existing_final.exists():
+                raise ValidationError({
+                    'is_final': 'Only one final snapshot is allowed per decision.'
+                })
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to ensure validation runs and handle final snapshot logic.
+        """
+        from django.core.exceptions import ValidationError
+        
+        self.full_clean()
+        
+        # If this is being marked as final, ensure decision is actually closed
+        if self.is_final and self.decision.is_open:
+            raise ValidationError("Cannot create final snapshot for open decision")
+            
+        super().save(*args, **kwargs)
     
     @property
     def participation_rate(self):
@@ -1050,12 +1135,5 @@ class DecisionSnapshot(BaseModel):
             return 0.0
         return (self.total_calculated_votes / total_votes) * 100
     
-    def get_latest_for_decision(self, decision):
-        """Get the most recent snapshot for a decision."""
-        return DecisionSnapshot.objects.filter(decision=decision).first()
-    
-    def get_final_for_decision(self, decision):
-        """Get the final snapshot for a decision (if it exists)."""
-        return DecisionSnapshot.objects.filter(decision=decision, is_final=True).first()
 
 

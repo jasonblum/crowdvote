@@ -115,7 +115,8 @@ class DecisionSnapshotAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         'is_final', 
-        'decision__community', 
+        'decision__community',
+        'decision',
         'created_at',
         'decision__dt_close'
     ]
