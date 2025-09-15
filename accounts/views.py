@@ -501,13 +501,14 @@ def edit_profile(request):
 @require_POST
 def request_magic_link(request):
     """
-    Handle magic link requests for any email address.
+    Handle magic link requests for any email address with rate limiting.
     
     This view:
-    1. Creates a magic link token
-    2. Sends an email with a clickable link (not a code)
-    3. Works for both new and existing users
-    4. Returns a success message regardless of user existence (security)
+    1. Checks rate limits (3 per hour per IP and per email, 15min minimum interval)
+    2. Creates a magic link token
+    3. Sends an email with a clickable link (not a code)
+    4. Works for both new and existing users
+    5. Returns a success message regardless of user existence (security)
     """
     try:
         email = request.POST.get('email', '').strip().lower()
@@ -515,6 +516,19 @@ def request_magic_link(request):
         
         if not email:
             messages.error(request, "Please enter a valid email address")
+            return redirect('home')
+        
+        # Get client IP address
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        
+        # Rate limiting checks
+        rate_limit_error = _check_magic_link_rate_limits(ip, email)
+        if rate_limit_error:
+            messages.error(request, rate_limit_error)
             return redirect('home')
         
         # Create magic link for any email
@@ -525,14 +539,6 @@ def request_magic_link(request):
         # Generate the clickable URL
         login_url = magic_link.get_login_url(request)
         logger.info(f"Generated login URL for: {email}")
-        
-        # Prepare email content
-        context = {
-            'email': email,
-            'login_url': login_url,
-            'site_name': 'CrowdVote',
-            'expires_minutes': 15,
-        }
     except Exception as e:
         logger.error(f"Error in magic link setup for {email}: {e}", exc_info=True)
         messages.error(request, "An error occurred. Please try again or contact support.")
@@ -553,6 +559,8 @@ If you didn't request this, you can safely ignore this email.
 
 Happy voting!
 The CrowdVote Team
+
+Questions? Contact support@crowdvote.com
 """
     
     try:
@@ -572,8 +580,11 @@ The CrowdVote Team
         logger.info(f"Email sent successfully to: {email}")
         messages.success(
             request, 
-            f"✨ Magic link sent to {email}! Check your email and click the link to sign in."
+            f"✨ Magic link sent to {email}! Check your email and click the link to sign in. (Limit: 3 requests per hour)"
         )
+        
+        # Update rate limit counters after successful email send
+        _update_magic_link_rate_limits(ip, email)
         
     except Exception as e:
         # Log the specific error for debugging
@@ -793,3 +804,91 @@ def edit_follow(request, user_id):
     
     # This view only handles GET - POST goes to follow_user
     return redirect('accounts:follow_user', user_id=user_id)
+
+
+def _check_magic_link_rate_limits(ip, email):
+    """
+    Check rate limits for magic link requests.
+    
+    Returns error message if rate limit exceeded, None if allowed.
+    
+    Args:
+        ip (str): Client IP address
+        email (str): Email address requesting magic link
+        
+    Returns:
+        str or None: Error message if rate limited, None if allowed
+    """
+    from django.core.cache import cache
+    from django.conf import settings
+    from django.utils import timezone
+    import math
+    
+    rate_limit_per_hour = getattr(settings, 'MAGIC_LINK_RATE_LIMIT_PER_HOUR', 3)
+    min_interval_minutes = getattr(settings, 'MAGIC_LINK_MIN_INTERVAL_MINUTES', 15)
+    
+    # Check IP rate limit
+    ip_key = f'magic_link_ip:{ip}'
+    ip_data = cache.get(ip_key, {'count': 0, 'last_request': 0})
+    
+    current_time = timezone.now().timestamp()
+    
+    # Check minimum interval for IP
+    if ip_data['last_request'] > 0:
+        time_since_last = current_time - ip_data['last_request']
+        min_interval_seconds = min_interval_minutes * 60
+        
+        if time_since_last < min_interval_seconds:
+            minutes_remaining = math.ceil((min_interval_seconds - time_since_last) / 60)
+            return f"Too many requests from your location. Please wait {minutes_remaining} minutes before requesting another magic link. (Limit: {rate_limit_per_hour} per hour)"
+    
+    # Check hourly limit for IP
+    if ip_data['count'] >= rate_limit_per_hour:
+        return f"Too many requests from your location. Please wait up to 60 minutes before requesting another magic link. (Limit: {rate_limit_per_hour} per hour)"
+    
+    # Check email rate limit
+    email_key = f'magic_link_email:{email}'
+    email_data = cache.get(email_key, {'count': 0, 'last_request': 0})
+    
+    # Check minimum interval for email
+    if email_data['last_request'] > 0:
+        time_since_last = current_time - email_data['last_request']
+        
+        if time_since_last < min_interval_seconds:
+            minutes_remaining = math.ceil((min_interval_seconds - time_since_last) / 60)
+            return f"Too many magic links requested for {email}. Please wait {minutes_remaining} minutes before requesting another. (Limit: {rate_limit_per_hour} per hour)"
+    
+    # Check hourly limit for email
+    if email_data['count'] >= rate_limit_per_hour:
+        return f"Too many magic links requested for {email}. Please wait up to 60 minutes before requesting another. (Limit: {rate_limit_per_hour} per hour)"
+    
+    return None
+
+
+def _update_magic_link_rate_limits(ip, email):
+    """
+    Update rate limit counters after successful magic link request.
+    
+    Args:
+        ip (str): Client IP address
+        email (str): Email address that received magic link
+    """
+    from django.core.cache import cache
+    from django.utils import timezone
+    
+    current_time = timezone.now().timestamp()
+    timeout = 3600  # 1 hour
+    
+    # Update IP counter
+    ip_key = f'magic_link_ip:{ip}'
+    ip_data = cache.get(ip_key, {'count': 0, 'last_request': 0})
+    ip_data['count'] += 1
+    ip_data['last_request'] = current_time
+    cache.set(ip_key, ip_data, timeout)
+    
+    # Update email counter
+    email_key = f'magic_link_email:{email}'
+    email_data = cache.get(email_key, {'count': 0, 'last_request': 0})
+    email_data['count'] += 1
+    email_data['last_request'] = current_time
+    cache.set(email_key, email_data, timeout)

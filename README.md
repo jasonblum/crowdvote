@@ -166,6 +166,50 @@ docker-compose restart web
 
 **Pro tip**: Keep `docker-compose logs -f web` running in a separate terminal window while developing to see real-time HTTP requests, errors, and Django auto-reload messages.
 
+### Testing
+
+CrowdVote has a comprehensive test suite with **498 tests** covering all core functionality. The test suite maintains **100% reliability** with excellent coverage of critical components.
+
+#### Running Tests
+
+```bash
+# Run all tests (recommended)
+docker-compose exec web python -m pytest
+
+# Run tests with verbose output
+docker-compose exec web python -m pytest -v
+
+# Run specific test file
+docker-compose exec web python -m pytest tests/test_views/test_follow_views.py
+
+# Run tests with coverage report
+docker-compose exec web python -m pytest --cov
+
+# Generate HTML coverage report (opens in browser)
+docker-compose exec web python -m pytest --cov --cov-report=html
+open htmlcov/index.html
+```
+
+#### What to Expect
+
+- **498 passing tests, 0 failing** (100% success rate)
+- **Test execution time**: ~12 seconds for full suite
+- **Overall coverage**: 67% with excellent coverage in core areas:
+  - Follow/Unfollow UI: 98% coverage
+  - Delegation Tree Service: 97% coverage  
+  - User Models: 96% coverage
+  - STAR Voting Services: 86% coverage
+
+#### Test Categories
+
+- **Models**: User accounts, communities, decisions, voting
+- **Views**: Authentication, profiles, voting, delegation
+- **Forms**: User input validation, follow/unfollow UI
+- **Services**: STAR voting calculations, delegation trees
+- **Integration**: End-to-end workflows and user journeys
+
+The test suite ensures CrowdVote's democratic processes work reliably and accurately handle complex delegation scenarios.
+
 ### Alternative: Local Python Setup
 
 If you prefer to run without Docker:

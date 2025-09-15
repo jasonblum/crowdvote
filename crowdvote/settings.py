@@ -209,6 +209,10 @@ else:
 SENDPULSE_API_ID = env('SENDPULSE_API_ID', default='3de6104f5d90ad065edd6c95f3a9f47d')
 SENDPULSE_API_SECRET = env('SENDPULSE_API_SECRET', default='433d2202a83be0eb43b03b591638f8db')
 
+# Magic Link Rate Limiting Configuration
+MAGIC_LINK_RATE_LIMIT_PER_HOUR = 3
+MAGIC_LINK_MIN_INTERVAL_MINUTES = 15
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

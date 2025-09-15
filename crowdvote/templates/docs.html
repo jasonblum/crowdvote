@@ -167,7 +167,7 @@
               logging in to CrowdVote and casting her own.
             </p>
 
-            <blockquote class="text-xl font-medium text-center my-8 py-4 border-l-4 border-green-500 pl-6 bg-green-50">
+            <blockquote class="text-xl font-medium text-center my-8 py-4 border-l-4 border-green-500 dark:border-green-400 pl-6 bg-green-50 dark:bg-green-900/20">
               CrowdVote = Free Market Representation.
             </blockquote>
 
@@ -323,79 +323,125 @@
               </div>
 
               <!-- FAQ 2 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-ties" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-ties" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   What happens if there is a tie between two or more choices from the people I'm following?
                 </h3>
-                <p class="text-gray-700 leading-relaxed">
+                <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
                   On your profile page, where you identify members you are following, the order in which they are listed is used to break any ties. So for instance, if the decision is whether to paint the community room red or blue, and you're following only two people: José and Elizabeth, and José voted red, and Elizabeth voted blue, then the choice of whomever is listed earlier among the people you're following breaks the tie.
                 </p>
               </div>
 
               <!-- FAQ 3 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-vote-counting" class="text-xl font-semibold text-gray-900 mb-4">
-                  How are votes counted?
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-vote-counting" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  How are votes calculated?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
-                    CrowdVote uses a sophisticated real-time vote calculation system that continuously monitors for changes and updates results automatically. This ensures complete transparency and eliminates surprises on voting day.
+                    CrowdVote uses a sophisticated two-stage vote calculation system powered by background cron jobs that automatically recalculate results whenever anything changes in the system. The entire process is handled by the <a href="https://github.com/jasonblum/crowdvote/blob/main/democracy/services.py" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium" target="_blank" rel="noopener noreferrer">services.py</a> file, which contains the core democratic algorithms.
                   </p>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Continuous Monitoring System</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🔄 When Recalculation is Triggered</h4>
                   <p>
-                    A background monitoring service constantly checks for any changes that could affect vote outcomes, including:
+                    The system automatically detects changes and triggers a complete recalculation whenever:
                   </p>
                   <ul class="list-disc list-inside ml-4 space-y-1">
-                    <li>New votes cast by community members</li>
-                    <li>Changes to existing votes or vote tags</li>
-                    <li>Updates to delegation relationships (who follows whom)</li>
-                    <li>Modifications to delegation tags (topic-specific following)</li>
+                    <li><strong>Community membership changes:</strong> Someone joins or leaves a community</li>
+                    <li><strong>Delegation relationships change:</strong> Someone follows or unfollows another member</li>
+                    <li><strong>Delegation tags are modified:</strong> Changes to which topics someone follows others on</li>
+                    <li><strong>New votes are cast:</strong> Direct votes or changes to existing votes</li>
+                    <li><strong>Vote tags are updated:</strong> Changes to how votes are tagged for delegation</li>
                   </ul>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Automatic Recalculation Process</h4>
-                  <p>
-                    When the system detects any change, it immediately triggers a comprehensive recalculation process:
-                  </p>
-                  <ol class="list-decimal list-inside ml-4 space-y-2">
-                    <li><strong>Community Iteration:</strong> The system examines all communities with active decisions</li>
-                    <li><strong>Decision Processing:</strong> For each community, it reviews all currently open decisions</li>
-                    <li><strong>Member Analysis:</strong> For each decision, it processes every community member</li>
-                    <li><strong>Recursive Vote Calculation:</strong> For members who haven't voted directly, the system recursively calculates their inherited votes through their delegation chains</li>
-                    <li><strong>Final Tallying:</strong> All votes (direct and calculated) are tallied using the STAR voting method</li>
-                  </ol>
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500 mt-4">
+                    <p class="text-blue-800 dark:text-blue-300">
+                      <strong>Real-time Democracy:</strong> This means CrowdVote provides live community sentiment tracking - you can see exactly how your community feels about each issue as opinions develop, with no surprises on voting day.
+                    </p>
+                  </div>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Real-Time Community Sentiment</h4>
-                  <p class="font-medium text-blue-800">
-                    This creates a revolutionary feature: <em>real-time community sentiment tracking</em>.
-                  </p>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">⚙️ Stage 1: StageBallots Service</h4>
                   <p>
-                    Unlike traditional voting where results are hidden until polls close, CrowdVote allows everyone to see how their community feels about each issue as opinions develop. This means:
+                    The <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-sm">StageBallots</code> service is the heart of CrowdVote's delegation system. It processes every community member for every active decision:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-2">
+                    <li><strong>Direct Vote Detection:</strong> Checks if the member has cast their own vote</li>
+                    <li><strong>Delegation Chain Resolution:</strong> For members who haven't voted, recursively follows their delegation relationships</li>
+                    <li><strong>Tag-Based Inheritance:</strong> Matches decision tags with delegation tags to determine whose vote to inherit</li>
+                    <li><strong>Multi-Level Processing:</strong> Handles complex delegation chains (A→B→C→D) with circular reference prevention</li>
+                    <li><strong>Fractional Averaging:</strong> When inheriting from multiple sources, calculates weighted averages of star ratings</li>
+                    <li><strong>Ballot Creation:</strong> Creates calculated ballots showing both inherited votes and inherited tags</li>
+                  </ul>
+                  
+                  <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500 mt-4">
+                    <h5 class="font-semibold text-green-900 dark:text-green-300 mb-2">Example: Complex Delegation</h5>
+                    <p class="text-green-800 dark:text-green-300 text-sm">
+                      If Alice follows Bob on "budget" issues, and Bob follows Carol on "budget" issues, and Carol votes 4 stars on a budget decision, then Alice's calculated ballot will show 4 stars inherited through Bob→Carol, with tags showing the complete delegation path.
+                    </p>
+                  </div>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🏆 Stage 2: Tally Service (STAR Voting)</h4>
+                  <p>
+                    Once all ballots are staged (both manual and calculated), the <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-sm">Tally</code> service implements the complete STAR voting algorithm:
+                  </p>
+                  
+                  <div class="space-y-3">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                      <h5 class="font-semibold text-gray-900 dark:text-white mb-2">📊 Score Phase</h5>
+                      <ul class="list-disc list-inside text-sm space-y-1">
+                        <li>Calculates average star rating for each choice across all ballots</li>
+                        <li>Handles fractional ratings from delegation averaging</li>
+                        <li>Identifies the two highest-scoring choices for the runoff</li>
+                      </ul>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                      <h5 class="font-semibold text-gray-900 dark:text-white mb-2">🥊 Automatic Runoff Phase</h5>
+                      <ul class="list-disc list-inside text-sm space-y-1">
+                        <li>Conducts head-to-head comparison between top two choices</li>
+                        <li>For each ballot, determines which choice received more stars</li>
+                        <li>Choice preferred by more voters wins the runoff</li>
+                        <li>Handles ties using delegation priority ordering</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🔍 Complete Transparency</h4>
+                  <p>
+                    Every step of this process is completely transparent and auditable:
                   </p>
                   <ul class="list-disc list-inside ml-4 space-y-1">
-                    <li><strong>No surprises:</strong> Community members can see the direction votes are heading</li>
-                    <li><strong>Informed discussions:</strong> Real data enables better community conversations</li>
-                    <li><strong>Dynamic engagement:</strong> Members can see the impact of their participation immediately</li>
-                    <li><strong>No need for pollsters:</strong> The community sentiment is always visible and accurate</li>
+                    <li><strong>Delegation Trees:</strong> Visual representation of how votes flow through trust networks</li>
+                    <li><strong>Vote Tallies:</strong> Complete breakdown showing manual vs. calculated votes</li>
+                    <li><strong>Tag Inheritance:</strong> Clear display of which tags were inherited from whom</li>
+                    <li><strong>STAR Results:</strong> Detailed score phase and runoff results with all calculations shown</li>
+                    <li><strong>Real-time Updates:</strong> Results update immediately as the community participates</li>
                   </ul>
                   
-                  <p class="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                    <strong>Key Benefit:</strong> By eliminating the mystery around vote outcomes, CrowdVote transforms voting from a guessing game into a transparent, data-driven community process where everyone can track the collective will in real time.
+                  <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border-l-4 border-purple-400 dark:border-purple-500 mt-6">
+                    <h5 class="font-semibold text-purple-900 dark:text-purple-300 mb-2">🔬 Open Source Verification</h5>
+                    <p class="text-purple-800 dark:text-purple-300 text-sm">
+                      The complete vote calculation logic is open source and available for inspection in the <a href="https://github.com/jasonblum/crowdvote/blob/main/democracy/services.py" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline font-medium" target="_blank" rel="noopener noreferrer">services.py file</a>. Anyone can verify the algorithms, run their own calculations, or contribute improvements to the democratic process.
+                    </p>
+                  </div>
+                  
+                  <p class="mt-6 font-medium">
+                    <strong>The result:</strong> A completely transparent, mathematically precise, and real-time democratic system where every vote is counted accurately and every delegation relationship is honored exactly as intended.
                   </p>
                 </div>
               </div>
               
               <!-- FAQ 4 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-security" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-security" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   How secure is CrowdVote?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     CrowdVote employs multiple layers of security, combining standard web application security practices with revolutionary transparency features that make fraud virtually impossible.
                   </p>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Technical Security Measures</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Technical Security Measures</h4>
                   <ul class="list-disc list-inside ml-4 space-y-1">
                     <li><strong>SSL/TLS Encryption:</strong> All data transmission is secured with industry-standard SSL certificates</li>
                     <li><strong>Railway Cloud Security:</strong> Hosted on Railway's secure cloud infrastructure with enterprise-grade protection</li>
@@ -405,14 +451,14 @@
                     <li><strong>Regular Updates:</strong> Automatic security updates and dependency monitoring</li>
                   </ul>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Transparency-Based Security</h4>
-                  <p class="font-medium text-blue-800">
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Transparency-Based Security</h4>
+                  <p class="font-medium text-blue-800 dark:text-blue-300">
                     CrowdVote's most powerful security feature is complete transparency, making fraud practically impossible.
                   </p>
                   
-                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 my-4">
-                    <h5 class="font-semibold text-blue-900 mb-2">Real-Time Verification</h5>
-                    <ul class="list-disc list-inside text-blue-800 space-y-1">
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500 my-4">
+                    <h5 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">Real-Time Verification</h5>
+                    <ul class="list-disc list-inside text-blue-800 dark:text-blue-300 space-y-1">
                       <li>Every community member can see their own vote reflected in real-time</li>
                       <li>Vote tallies update instantly as the community participates</li>
                       <li>Delegation chains are visible, showing exactly how votes flow through the network</li>
@@ -420,7 +466,7 @@
                     </ul>
                   </div>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Audit Trail & Verification</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Audit Trail & Verification</h4>
                   <p>
                     For ultimate transparency and security verification:
                   </p>
@@ -431,9 +477,9 @@
                     <li><strong>Open Source Transparency:</strong> The calculation algorithms are open source and verifiable</li>
                   </ul>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Why Fraud is Nearly Impossible</h4>
-                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                    <p class="text-green-800">
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Why Fraud is Nearly Impossible</h4>
+                  <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500">
+                    <p class="text-green-800 dark:text-green-300">
                       <strong>Traditional voting systems</strong> rely on secrecy and trust in institutions. <strong>CrowdVote</strong> relies on transparency and real-time verification by the community itself.
                     </p>
                   </div>
@@ -442,8 +488,8 @@
                     Since every member can verify their own participation and see results update in real-time, any attempt to manipulate votes would be immediately detected by the affected parties. This creates a self-auditing system where the community itself is the best security mechanism.
                   </p>
                   
-                  <div class="mt-4 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
-                    <p class="text-yellow-800">
+                  <div class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-l-4 border-yellow-400 dark:border-yellow-500">
+                    <p class="text-yellow-800 dark:text-yellow-300">
                       <strong>Security Tip:</strong> We encourage community members to download data snapshots regularly during important decisions for their own records and peace of mind.
                     </p>
                   </div>
@@ -451,11 +497,11 @@
               </div>
               
               <!-- FAQ 5 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-publish-decisions" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-publish-decisions" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   Who gets to publish decisions?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     <strong>Community Managers</strong> have the authority to publish decisions for voting. This ensures that decisions are properly formatted, clearly presented, and appropriate for community consideration.
                   </p>
@@ -464,9 +510,9 @@
                     However, many managers welcome suggestions from community members about topics that should be put to a vote. The collaborative approach often leads to better decisions that truly reflect community interests.
                   </p>
                   
-                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-4">
-                    <h4 class="font-semibold text-blue-900 mb-2">How to Suggest a Decision</h4>
-                    <p class="text-blue-800">
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500 mt-4">
+                    <h4 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">How to Suggest a Decision</h4>
+                    <p class="text-blue-800 dark:text-blue-300">
                       If you have an idea for a community decision, reach out to your community managers. Most are happy to work with members to craft well-structured decisions that benefit everyone.
                     </p>
                   </div>
@@ -474,16 +520,16 @@
               </div>
               
               <!-- FAQ 6 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-influence-score" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-influence-score" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   What does the influence score mean?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     Just like followers on social media or stars on GitHub projects, CrowdVote displays an <strong>influence score</strong> next to each member's avatar showing their total reach within the community.
                   </p>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">How Influence is Calculated</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">How Influence is Calculated</h4>
                   <p>
                     Your influence score represents the total number of people whose votes you can potentially influence through delegation chains:
                   </p>
@@ -493,14 +539,14 @@
                     <li><strong>Tag-specific influence:</strong> Your influence on particular topics like "budget" or "environment"</li>
                   </ul>
                   
-                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 my-4">
-                    <h5 class="font-semibold text-blue-900 mb-2">Example: Cascade Influence</h5>
-                    <p class="text-blue-800">
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500 my-4">
+                    <h5 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">Example: Cascade Influence</h5>
+                    <p class="text-blue-800 dark:text-blue-300">
                       If Alice follows you, and Bob follows Alice, and Carol follows Bob, then your influence score includes Alice, Bob, and Carol – even though you only have one direct follower (Alice). Your voice reaches all three through the delegation network.
                     </p>
                   </div>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Detailed Influence Breakdown</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Detailed Influence Breakdown</h4>
                   <p>
                     On each member's profile page, you can see comprehensive influence analytics:
                   </p>
@@ -511,30 +557,30 @@
                     <li><strong>Trending influence:</strong> How your influence is growing or changing over time</li>
                   </ul>
                   
-                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 mt-4">
-                    <h5 class="font-semibold text-green-900 mb-2">Building Influence</h5>
-                    <p class="text-green-800">
+                  <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500 mt-4">
+                    <h5 class="font-semibold text-green-900 dark:text-green-300 mb-2">Building Influence</h5>
+                    <p class="text-green-800 dark:text-green-300">
                       High influence scores are earned through thoughtful participation, expertise demonstration, and building trust within your community. It's a meritocracy based on the value you provide to fellow members.
                     </p>
                   </div>
                   
-                  <p class="mt-4 text-sm text-gray-600 italic">
+                  <p class="mt-4 text-sm text-gray-600 dark:text-gray-400 italic">
                     This creates a natural incentive for members to participate constructively and build expertise in areas they care about.
                   </p>
                 </div>
               </div>
               
               <!-- FAQ 7 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-representatives-role" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-representatives-role" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   But don't elected representatives do more than just vote?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     <strong>Absolutely!</strong> CrowdVote doesn't necessarily eliminate representatives or change most of what they do. Elections, campaigns, legislative drafting, constituent services, and advocacy all continue exactly as before.
                   </p>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">What Representatives Continue To Do</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">What Representatives Continue To Do</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Draft Legislation:</strong> Research, write, and propose bills and policies</li>
                     <li><strong>Advocate for Districts:</strong> Champion local interests and priorities</li>
@@ -544,7 +590,7 @@
                     <li><strong>Public Communication:</strong> Educate constituents about complex issues</li>
                   </ul>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">What Changes: Accountability and Transparency</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">What Changes: Accountability and Transparency</h4>
                   <p>
                     The key difference is that representatives now work <em>knowing their constituents will cast the actual votes</em>. This transforms the incentive structure:
                   </p>
@@ -555,17 +601,17 @@
                     <li><strong>Enhanced Transparency:</strong> The entire process becomes more open and verifiable</li>
                   </ul>
 
-                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-6">
-                    <h5 class="font-semibold text-blue-900 mb-2">The Supreme Court Analogy</h5>
-                    <p class="text-blue-800">
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500 mt-6">
+                    <h5 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">The Supreme Court Analogy</h5>
+                    <p class="text-blue-800 dark:text-blue-300">
                       Consider the Supreme Court: Justices continue to review petitions, hear oral arguments, write opinions, and shape legal precedent through their reasoning. These remain enormously impactful lifetime appointments with tremendous influence over American law.
                     </p>
-                    <p class="text-blue-800 mt-2">
+                    <p class="text-blue-800 dark:text-blue-300 mt-2">
                       <strong>The only difference would be that when it comes time for the final vote</strong> – the moment that determines whether a case is decided 5-4 or 6-3 – <em>that vote is too important and impactful to trust to anyone but the People.</em>
                     </p>
                   </div>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Enhanced Democratic Governance</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Enhanced Democratic Governance</h4>
                   <p>
                     Rather than diminishing the role of elected officials, CrowdVote enhances democratic governance by:
                   </p>
@@ -583,16 +629,16 @@
               </div>
 
               <!-- FAQ 8 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-why-switch" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-why-switch" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   Why should my community switch to CrowdVote?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     CrowdVote transforms community decision-making by creating a more engaged, responsive, and representative democratic process. Here are the key benefits your community will experience:
                   </p>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🏘️ Community Engagement Benefits</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🏘️ Community Engagement Benefits</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Gets Neighbors Talking Again:</strong> CrowdVote naturally encourages community members to discuss issues, share expertise, and build relationships as they decide whom to follow on different topics</li>
                     <li><strong>Increases Participation:</strong> Members who might not vote directly can still participate by delegating to trusted neighbors, dramatically increasing community engagement</li>
@@ -600,7 +646,7 @@
                     <li><strong>Reduces Apathy:</strong> When people can see their vote matters and can change their mind anytime, democratic participation becomes more meaningful</li>
                   </ul>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🗳️ Electoral Advantages</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🗳️ Electoral Advantages</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Unbeatable Campaign Promise:</strong> Candidates who pledge to CrowdVote their decisions create an irresistible value proposition – voters get the best of both worlds</li>
                     <li><strong>Reduced Electoral Risk:</strong> Why vote for someone's opponent when you can follow that opponent on CrowdVote but retain the ability to change your mind without waiting for the next election?</li>
@@ -608,17 +654,17 @@
                     <li><strong>Eliminates "Lesser of Two Evils":</strong> Voters can support candidates while maintaining direct control over actual decisions</li>
                   </ul>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🌍 Reflects How Influence Actually Works</h4>
-                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                    <p class="text-green-800">
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🌍 Reflects How Influence Actually Works</h4>
+                  <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500">
+                    <p class="text-green-800 dark:text-green-300">
                       <strong>CrowdVote mirrors real life:</strong> We're constantly influenced by people who are influenced by other people. You might buy a book because Oprah recommended it. You might see a movie your friend suggested after they read a review. You trust your mechanic's advice because they've built expertise over years.
                     </p>
-                    <p class="text-green-800 mt-2">
+                    <p class="text-green-800 dark:text-green-300 mt-2">
                       <strong>We all live in one great free market of influence</strong> – CrowdVote simply extends this natural system to democratic representation, letting the best ideas and most trusted voices rise organically.
                     </p>
                   </div>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">⚡ Practical Advantages</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">⚡ Practical Advantages</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Real-Time Democracy:</strong> Make decisions when they need to be made, not when elections happen to be scheduled</li>
                     <li><strong>Issue-Specific Expertise:</strong> Follow different people for different topics – your neighbor for budget issues, the local environmentalist for green initiatives</li>
@@ -627,7 +673,7 @@
                     <li><strong>Eliminates Voter Regret:</strong> Made a mistake? Change your delegation or vote directly – no need to wait years for the next election</li>
                   </ul>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🚀 Future-Proof Governance</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🚀 Future-Proof Governance</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Scalable Democracy:</strong> Works for small condo associations and large municipalities alike</li>
                     <li><strong>Digital Native:</strong> Meets communities where they are in the 21st century</li>
@@ -635,9 +681,9 @@
                     <li><strong>Attracts Young Talent:</strong> Tech-savvy community members see governance as accessible and engaging</li>
                   </ul>
 
-                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-6">
-                    <h5 class="font-semibold text-blue-900 mb-2">The Network Effect</h5>
-                    <p class="text-blue-800">
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500 mt-6">
+                    <h5 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">The Network Effect</h5>
+                    <p class="text-blue-800 dark:text-blue-300">
                       <strong>Just like social media transformed communication</strong>, CrowdVote transforms representation. Early adopting communities become centers of democratic innovation, attracting engaged residents and forward-thinking leaders who want to be part of the future of governance.
                     </p>
                   </div>
@@ -649,33 +695,33 @@
               </div>
 
               <!-- FAQ 9 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-finding-people" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-finding-people" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   I'm new to the community. How do I find people to follow?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     Great question! CrowdVote provides several tools to help new members discover trustworthy people to follow based on shared values and expertise.
                   </p>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🔍 Followee Finder Tool</h4>
-                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
-                    <p class="text-blue-800">
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🔍 Followee Finder Tool</h4>
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500">
+                    <p class="text-blue-800 dark:text-blue-300">
                       <strong>Use the Followee Finder on your profile page!</strong> This intelligent matching system shows you how previous community decisions were decided and asks how you would have voted.
                     </p>
-                    <p class="text-blue-800 mt-2">
+                    <p class="text-blue-800 dark:text-blue-300 mt-2">
                       Based on your responses, CrowdVote will suggest other members who voted similarly to you on those issues. This helps you find people whose judgment aligns with your values and priorities.
                     </p>
                   </div>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">📊 Community Directory & Influence Rankings</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">📊 Community Directory & Influence Rankings</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Browse by Influence Score:</strong> Sort the community directory by influence count to see who other members trust most</li>
                     <li><strong>Topic-Specific Leaders:</strong> Look for members with high influence on specific topics that matter to you (budget, environment, maintenance, etc.)</li>
                     <li><strong>Recent Activity:</strong> See who's been actively voting and tagging decisions to identify engaged community members</li>
                   </ul>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🏘️ Organic Discovery Methods</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🏘️ Organic Discovery Methods</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Attend Community Meetings:</strong> Get to know members in person and understand their expertise areas</li>
                     <li><strong>Read Decision Comments:</strong> See who provides thoughtful analysis on community issues</li>
@@ -683,10 +729,10 @@
                     <li><strong>Start Small:</strong> Begin by following 1-2 people you know well, then gradually expand your network</li>
                   </ul>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🎯 Smart Following Strategy</h4>
-                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                    <h5 class="font-semibold text-green-900 mb-2">Pro Tips for New Members:</h5>
-                    <ul class="list-disc list-inside space-y-1 text-green-800">
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🎯 Smart Following Strategy</h4>
+                  <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500">
+                    <h5 class="font-semibold text-green-900 dark:text-green-300 mb-2">Pro Tips for New Members:</h5>
+                    <ul class="list-disc list-inside space-y-1 text-green-800 dark:text-green-300">
                       <li><strong>Follow different people for different topics</strong> – your neighbor for maintenance issues, the local teacher for education matters</li>
                       <li><strong>Quality over quantity</strong> – better to follow 3-5 people you really trust than 20 random members</li>
                       <li><strong>You can always change</strong> – following someone isn't permanent; adjust as you learn more about the community</li>
@@ -694,7 +740,7 @@
                     </ul>
                   </div>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">⚡ Getting Started Quickly</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">⚡ Getting Started Quickly</h4>
                   <ol class="list-decimal list-inside space-y-2 ml-4">
                     <li><strong>Complete the Followee Finder</strong> for initial recommendations</li>
                     <li><strong>Follow 2-3 high-influence members</strong> who align with your values</li>
@@ -710,47 +756,47 @@
               </div>
 
               <!-- FAQ 10 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-how-to-get" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-how-to-get" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   How can I get CrowdVote for my community?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     CrowdVote is <strong>completely free and open source</strong> under the GNU Affero General Public License v3.0 (AGPL-3.0). This means you can download, modify, and use it however you'd like while keeping it open for everyone.
                   </p>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🚀 Three Ways to Get CrowdVote</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🚀 Three Ways to Get CrowdVote</h4>
 
                   <div class="space-y-4">
-                    <div class="bg-white p-4 rounded-lg border border-gray-200">
-                      <h5 class="font-semibold text-gray-900 mb-2">1. 📥 Self-Host (Free)</h5>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                      <h5 class="font-semibold text-gray-900 dark:text-white mb-2">1. 📥 Self-Host (Free)</h5>
                       <p>Download the source code from GitHub and deploy it yourself using Docker. Perfect for tech-savvy communities who want complete control.</p>
                       <p class="mt-2 text-sm">
-                        <a href="https://github.com/jasonblum/crowdvote" class="text-blue-600 hover:text-blue-800 font-medium">→ View on GitHub</a>
+                        <a href="https://github.com/jasonblum/crowdvote" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">→ View on GitHub</a>
                       </p>
                     </div>
 
-                    <div class="bg-white p-4 rounded-lg border border-gray-200">
-                      <h5 class="font-semibold text-gray-900 mb-2">2. ☁️ Managed Hosting (Coming Soon)</h5>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                      <h5 class="font-semibold text-gray-900 dark:text-white mb-2">2. ☁️ Managed Hosting (Coming Soon)</h5>
                       <p>We'll handle all the technical details - setup, updates, backups, and security. Just focus on your community decisions.</p>
-                      <p class="mt-2 text-sm text-gray-600">Plans starting at $29/month for communities up to 500 members.</p>
+                      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Plans starting at $29/month for communities up to 500 members.</p>
                     </div>
 
-                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border-2 border-purple-200">
-                      <h5 class="font-semibold text-purple-900 mb-2">3. 🎉 Launch Partner Program (FREE for 1 Year!)</h5>
-                      <p class="text-purple-800">
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 rounded-lg border-2 border-purple-200 dark:border-purple-600">
+                      <h5 class="font-semibold text-purple-900 dark:text-purple-300 mb-2">3. 🎉 Launch Partner Program (FREE for 1 Year!)</h5>
+                      <p class="text-purple-800 dark:text-purple-300">
                         <strong>If you're reading this, it means I've just launched CrowdVote and I'm eager to host it for a community for free for the first year!</strong>
                       </p>
-                      <p class="text-purple-800 mt-2">
+                      <p class="text-purple-800 dark:text-purple-300 mt-2">
                         The only condition: community managers should actively communicate bugs, feature requests, and feedback to help make CrowdVote better for everyone.
                       </p>
                       <p class="mt-3">
-                        <strong>Let's talk!</strong> <a href="mailto:support@crowdvote.com" class="text-purple-600 hover:text-purple-800 font-medium underline">support@crowdvote.com</a>
+                        <strong>Let's talk!</strong> <a href="mailto:support@crowdvote.com" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">support@crowdvote.com</a>
                       </p>
                     </div>
                   </div>
 
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">🤝 What You Get</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🤝 What You Get</h4>
                   <ul class="list-disc list-inside space-y-2 ml-4">
                     <li><strong>Complete Democratic Platform:</strong> STAR voting, delegative democracy, community management</li>
                     <li><strong>Professional Setup:</strong> Custom domain, SSL certificates, email integration</li>
@@ -759,33 +805,33 @@
                     <li><strong>Open Source Benefits:</strong> No vendor lock-in, transparent algorithms, community-driven development</li>
                   </ul>
 
-                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 mt-6">
-                    <h5 class="font-semibold text-green-900 mb-2">Ready to Transform Your Community?</h5>
-                    <p class="text-green-800">
+                  <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500 mt-6">
+                    <h5 class="font-semibold text-green-900 dark:text-green-300 mb-2">Ready to Transform Your Community?</h5>
+                    <p class="text-green-800 dark:text-green-300">
                       Whether you're a condo association tired of low turnout, a town council wanting more engagement, or any group that makes decisions together - CrowdVote can help you build stronger, more democratic communities.
                     </p>
-                    <p class="text-green-800 mt-2">
-                      <strong>Reach out today:</strong> <a href="mailto:support@crowdvote.com" class="text-green-600 hover:text-green-800 font-medium underline">support@crowdvote.com</a>
+                    <p class="text-green-800 dark:text-green-300 mt-2">
+                      <strong>Reach out today:</strong> <a href="mailto:support@crowdvote.com" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium underline">support@crowdvote.com</a>
                     </p>
                   </div>
                 </div>
               </div>
 
               <!-- FAQ 11 -->
-              <div class="bg-gray-50 p-6 rounded-lg pt-8">
-                <h3 id="faq-mob-rule" class="text-xl font-semibold text-gray-900 mb-4">
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-mob-rule" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   Isn't this just mob rule?
                 </h3>
-                <div class="text-gray-700 leading-relaxed space-y-4">
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
                     This is a thoughtful concern that highlights key differences between CrowdVote and traditional "mob rule" scenarios. CrowdVote actually includes several built-in safeguards that distinguish it from impulsive crowd decision-making.
                   </p>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">How CrowdVote Prevents Mob Rule</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">How CrowdVote Prevents Mob Rule</h4>
                   
-                  <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400 mb-4">
-                    <h5 class="font-semibold text-red-900 mb-2">Traditional Mob Rule Problems:</h5>
-                    <ul class="list-disc list-inside text-red-800 space-y-1">
+                  <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border-l-4 border-red-400 dark:border-red-500 mb-4">
+                    <h5 class="font-semibold text-red-900 dark:text-red-300 mb-2">Traditional Mob Rule Problems:</h5>
+                    <ul class="list-disc list-inside text-red-800 dark:text-red-300 space-y-1">
                       <li>Impulsive, emotional decisions made in the heat of the moment</li>
                       <li>Loudest voices dominate rational discussion</li>
                       <li>No time for reflection or consideration of consequences</li>
@@ -793,9 +839,9 @@
                     </ul>
                   </div>
                   
-                  <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 mb-4">
-                    <h5 class="font-semibold text-green-900 mb-2">CrowdVote's Safeguards:</h5>
-                    <ul class="list-disc list-inside text-green-800 space-y-1">
+                  <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500 mb-4">
+                    <h5 class="font-semibold text-green-900 dark:text-green-300 mb-2">CrowdVote's Safeguards:</h5>
+                    <ul class="list-disc list-inside text-green-800 dark:text-green-300 space-y-1">
                       <li><strong>Structured deliberation:</strong> Decisions have set timeframes allowing for thoughtful consideration</li>
                       <li><strong>Expertise elevation:</strong> Delegation allows knowledgeable voices to carry more weight</li>
                       <li><strong>Nuanced scoring:</strong> STAR voting captures degrees of preference, not just yes/no</li>
@@ -804,12 +850,12 @@
                     </ul>
                   </div>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">The Expertise Factor</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">The Expertise Factor</h4>
                   <p>
                     Unlike pure majority rule, CrowdVote's delegation system naturally elevates expertise and thoughtful analysis. When people delegate to those they trust on specific topics, it creates a meritocracy where influence is earned through demonstrated knowledge and sound judgment, not just popularity.
                   </p>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 mt-6 mb-3">Community Standards and Management</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Community Standards and Management</h4>
                   <p>
                     Community managers retain important gatekeeping functions:
                   </p>
@@ -820,9 +866,9 @@
                     <li>Maintaining community standards and preventing abuse</li>
                   </ul>
                   
-                  <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mt-4">
-                    <h5 class="font-semibold text-blue-900 mb-2">The Key Difference</h5>
-                    <p class="text-blue-800">
+                  <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-400 dark:border-blue-500 mt-4">
+                    <h5 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">The Key Difference</h5>
+                    <p class="text-blue-800 dark:text-blue-300">
                       <strong>Mob rule</strong> happens when crowds make impulsive decisions without structure or safeguards. <strong>CrowdVote</strong> creates structured, deliberative democracy where expertise matters, minorities have voice through delegation, and transparency prevents manipulation.
                     </p>
                   </div>
