@@ -22,6 +22,9 @@ RUN uv pip install --system --no-cache -r requirements.txt
 # Copy project
 COPY . .
 
+# Create logs directory for Django logging
+RUN mkdir -p /app/logs
+
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
