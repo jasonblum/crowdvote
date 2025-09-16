@@ -35,6 +35,9 @@
                 <a href="#documentation" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
                     🔧 Technical Docs
                 </a>
+                <a href="#documentation" class="flex items-center px-3 py-2 ml-4 text-xs font-medium text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 rounded-md">
+                    • Database Architecture
+                </a>
                 <a href="#faqs" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
                     ❓ FAQs
                 </a>
@@ -250,15 +253,90 @@
             <section id="documentation" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
                 <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">🔧 Technical Documentation</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Installation and development guides</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Database architecture and development guides</p>
                 </div>
                 <div class="px-6 py-6">
-                    <div class="max-w-none space-y-4">
-                        <p class="text-gray-600 dark:text-gray-400">
-                            Technical documentation is coming soon. For now, check out our 
-                            <a href="https://github.com/jasonblum/crowdvote" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">GitHub repository</a> 
-                            for installation instructions and technical details.
-                        </p>
+                    <div class="max-w-none space-y-8">
+                        
+                        <!-- Database Architecture Section -->
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                                🗄️ Database Architecture
+                            </h3>
+                            <div class="space-y-4">
+                                <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    CrowdVote's database architecture is designed around three core Django apps that work together to enable delegative democracy with STAR voting:
+                                </p>
+                                
+                                <ul class="list-disc list-inside ml-4 space-y-2 text-gray-700 dark:text-gray-300">
+                                    <li><strong>accounts</strong> - User management, profiles, following relationships, and magic link authentication</li>
+                                    <li><strong>democracy</strong> - Communities, decisions, voting, STAR calculations, and results</li>
+                                    <li><strong>shared</strong> - Common utilities and base models with UUID primary keys</li>
+                                </ul>
+                                
+                                <!-- Model Diagram -->
+                                <div class="mt-6">
+                                    <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Complete Model Relationship Diagram</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                        Generated using <a href="https://django-extensions.readthedocs.io/en/latest/graph_models.html" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">django-extensions graph_models</a> 
+                                        with app grouping, color-coded deletion relationships, and verbose field names.
+                                    </p>
+                                    
+                                    <!-- Model diagram with responsive sizing -->
+                                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 overflow-auto">
+                                        <img src="{% static 'crowdvote_models.png' %}" 
+                                             alt="CrowdVote Database Model Diagram" 
+                                             class="max-w-full h-auto mx-auto"
+                                             style="max-height: 800px;">
+                                    </div>
+                                    
+                                    <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                                        <p><strong>Legend:</strong></p>
+                                        <ul class="list-disc list-inside ml-4 space-y-1">
+                                            <li><strong>Red arrows:</strong> CASCADE deletion (deleting parent deletes children)</li>
+                                            <li><strong>Blue arrows:</strong> PROTECT deletion (cannot delete parent if children exist)</li>
+                                            <li><strong>Orange arrows:</strong> SET_NULL deletion (sets foreign key to null)</li>
+                                            <li><strong>Grouped boxes:</strong> Models organized by Django app</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <!-- Key Relationships -->
+                                <div class="mt-6">
+                                    <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Key Model Relationships</h4>
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <h5 class="font-semibold text-gray-900 dark:text-white mb-2">Democratic Process</h5>
+                                            <ul class="text-sm space-y-1 text-gray-700 dark:text-gray-300">
+                                                <li>Community → Decision → Choice</li>
+                                                <li>User → Ballot → Vote</li>
+                                                <li>Decision → Result (STAR calculations)</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <h5 class="font-semibold text-gray-900 dark:text-white mb-2">Delegation System</h5>
+                                            <ul class="text-sm space-y-1 text-gray-700 dark:text-gray-300">
+                                                <li>User → Following → User (delegation chains)</li>
+                                                <li>Community → Membership (roles & permissions)</li>
+                                                <li>Tag-based following for topic expertise</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Technical Resources -->
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                                📚 Additional Resources
+                            </h3>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                For installation instructions, API documentation, and development guides, check out our 
+                                <a href="https://github.com/jasonblum/crowdvote" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">GitHub repository</a>.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>

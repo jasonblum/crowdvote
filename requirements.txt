@@ -21,6 +21,7 @@ django-htmx==1.19.0
 # Development Dependencies
 django-debug-toolbar>=4.2.0
 django-extensions>=3.2.3
+pydot>=4.0.1
 
 # Testing Dependencies
 pytest>=7.4.0
