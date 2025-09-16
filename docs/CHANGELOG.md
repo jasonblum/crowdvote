@@ -2,6 +2,64 @@
 
 This file documents the development history of the CrowdVote project, capturing key milestones, decisions, and progress made during development sessions.
 
+## 2025-09-16 - Database Model Diagram & Documentation Enhancement
+
+### Session Overview
+**DOCUMENTATION IMPROVEMENT**: Added comprehensive database model diagram to the technical documentation using django-extensions graph_models tool. This visual enhancement helps developers and users understand CrowdVote's data architecture at a glance.
+
+### Key Accomplishments
+
+**📊 VISUAL DATABASE ARCHITECTURE**:
+- **Generated comprehensive model diagram** using django-extensions graph_models with all advanced features
+- **Color-coded relationship arrows** showing CASCADE (red), PROTECT (blue), and SET_NULL (orange) deletion behaviors
+- **App-grouped layout** clearly separating accounts, democracy, and shared models
+- **Verbose field names** and relationship visualization for complete understanding
+
+**📚 ENHANCED TECHNICAL DOCUMENTATION**:
+- **Added Database Architecture section** to docs.html with embedded model diagram
+- **Included relationship legend** explaining color coding and arrow meanings
+- **Added key model relationship explanations** for democratic process and delegation system
+- **Referenced django-extensions documentation** for transparency about diagram generation
+- **Responsive image sizing** with proper accessibility attributes
+
+**🔧 DEVELOPMENT INFRASTRUCTURE**:
+- **Added pydot>=4.0.1** to requirements.txt for model graph generation capability
+- **Installed Graphviz system dependencies** in Docker container for diagram rendering
+- **Created reusable model generation workflow** for future documentation updates
+
+### Technical Implementation
+
+**Model Diagram Features**:
+```bash
+# Command used to generate the diagram
+python manage.py graph_models --pydot -a -g --color-code-deletions --verbose-names --theme django2018 -o static/crowdvote_models.png
+```
+
+**Key Visual Elements**:
+- **768KB comprehensive diagram** showing all models and relationships
+- **Three app groupings**: accounts (user management), democracy (voting system), shared (utilities)
+- **Color-coded deletion relationships** for immediate understanding of data dependencies
+- **Complete field listings** with verbose names for clarity
+
+**Documentation Integration**:
+- **Embedded in technical documentation** section with proper context
+- **Responsive design** with max-height constraints and overflow handling
+- **Accessibility features** including alt text and descriptive legends
+- **Reference links** to django-extensions documentation for transparency
+
+### Files Modified
+
+**New Files**:
+- `static/crowdvote_models.png` - Comprehensive database model diagram
+
+**Modified Files**:
+- `crowdvote/templates/docs.html` - Added Database Architecture section with model diagram
+- `requirements.txt` - Added pydot>=4.0.1 for model graph generation
+
+**Impact**: Significantly improves developer onboarding and system understanding by providing visual database schema overview. Makes CrowdVote's sophisticated data architecture immediately comprehensible to new contributors and users.
+
+---
+
 ## 2025-09-16 - Plan #23: Simplified Anonymity System Implementation
 
 ### Session Overview
