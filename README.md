@@ -58,7 +58,7 @@ People seeking to expand their influence in the community, like Jack above, will
 
 Now, CrowdVote won't be able to enforce being used in any particular way. If you run for office on the pledge to CrowdVote all your decisions and then neglect to do so, or if your community decides to use CrowdVote itself in lieu of electing representatives at all, CrowdVote has no way to follow up on what happens after a decision's voting period closes. What CrowdVote can do, however, is make all data completely transparent and easily queried and audited through a friendly REST-ful API. Anyone can re-run the numbers anytime they like. And the calculation and tallying of every ballot is easily delineated in verbose tally reports. Finally, CrowdVote also provides a mechanism to verify everyone's membership in the community, while preserving the anonymity of the relationship between their identity and their voting record, thereby allowing voters to remain anonymous, if they like.
 
-…I really appreciate any feedback or words of encouragement at jason@CrowdVote.com, @CrowdVote or Facebook/CrowdVote! Beyond just being Open Sourced, I'd love to see this built such that any non-technical community leader could just deploy their own instance to the cloud with a simple click of a button. For now, I'm slowly building this thing between work and family, but figured I oughta get the idea out there and protected for everyone under:
+…I really appreciate any feedback or words of encouragement at support@CrowdVote.com, @CrowdVote or Facebook/CrowdVote! Beyond just being Open Sourced, I'd love to see this built such that any non-technical community leader could just deploy their own instance to the cloud with a simple click of a button. For now, I'm slowly building this thing between work and family, but figured I oughta get the idea out there and protected for everyone under:
 
 CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU Affero General Public License v3.0.
 
@@ -70,7 +70,7 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU
 - **Tag-Based Following**: Follow different people for different topics (e.g., follow Alice on "budget", Bob on "environment")
 - **Transitive Voting**: Inherit votes through chains of trust
 - **Vote Override**: Always maintain the ability to cast your own vote directly
-- **Anonymous Voting**: Optional anonymity while maintaining verifiable membership
+- **Anonymous Voting**: Optional anonymity while maintaining verifiable membership (enhanced system coming soon)
 
 ### Technical Features
 - **Multi-Community Support**: Host multiple communities on a single instance
@@ -82,7 +82,7 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU
 ## Tech Stack
 
 ### Core Technologies
-- **Backend**: Django 5.0+
+- **Backend**: Django 5.2.6
 - **Database**: PostgreSQL
 - **Styling**: Tailwind CSS
 - **Container**: Docker
@@ -168,7 +168,7 @@ docker-compose restart web
 
 ### Testing
 
-CrowdVote has a comprehensive test suite with **498 tests** covering all core functionality. The test suite maintains **100% reliability** with excellent coverage of critical components.
+CrowdVote has a comprehensive test suite with **525 tests** covering all core functionality. The test suite maintains **100% reliability** with excellent coverage of critical components.
 
 #### Running Tests
 
@@ -192,7 +192,7 @@ open htmlcov/index.html
 
 #### What to Expect
 
-- **498 passing tests, 0 failing** (100% success rate)
+- **525 passing tests, 0 failing** (100% success rate)
 - **Test execution time**: ~12 seconds for full suite
 - **Overall coverage**: 67% with excellent coverage in core areas:
   - Follow/Unfollow UI: 98% coverage
@@ -307,14 +307,14 @@ We're actively seeking communities to collaborate with for real-world testing an
 - Want more democratic participation
 - Are open to trying new approaches
 
-If this sounds like your community, please reach out to support@CrowdVote.com
+If this sounds like your community, please reach out to support@crowdvote.com
 
 ## Support
 
-- **Email**: jason@CrowdVote.com
+- **Email**: support@crowdvote.com
 - **Twitter**: [@CrowdVote](https://twitter.com/CrowdVote)
 - **Facebook**: [Facebook/CrowdVote](https://facebook.com/CrowdVote)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/crowdvote/issues)
+- **Issues**: [GitHub Issues](https://github.com/jasonblum/crowdvote/issues)
 
 ## License
 
