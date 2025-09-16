@@ -29,6 +29,9 @@ env = environ.Env(
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-q^8ify5*n5rsh3e4rkcx@amd58zuj*2b3bdenaqa$uj@94fjwj')
 
+# Anonymity salt for hashing usernames in anonymous votes
+ANONYMITY_SALT = env('ANONYMITY_SALT', default='development-salt-change-in-production')
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 

@@ -273,7 +273,7 @@ class DelegationTreeService:
             # Handle anonymous voters
             ballot = data.get('ballot')
             if ballot and ballot.is_anonymous:
-                username = f"Anonymous Voter #{str(voter.id)[:8]}"
+                username = "Anonymous"
                 return f"{username} ({vote_type}: {stars}) [Tags: {tags}]"
             
             # Format username with optional link and avatar

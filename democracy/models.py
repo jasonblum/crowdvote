@@ -622,6 +622,10 @@ class Ballot(BaseModel):
         default=True,
         help_text="Whether this ballot should be kept anonymous"
     )
+    hashed_username = models.CharField(
+        max_length=64,
+        help_text="One-way hash of the voter's username for verification"
+    )
     tags = models.CharField(
         max_length=500,
         blank=True,
@@ -686,15 +690,29 @@ class Ballot(BaseModel):
 
     def get_display_name(self):
         """
-        Get the display name for this ballot's voter (real name or anonymous GUID).
+        Get the display name for this ballot's voter.
         
-        This method determines whether to show the voter's real username or an
-        anonymous GUID based on their anonymity preference for this decision.
+        Returns either the real username or "Anonymous" based on
+        the ballot's anonymity setting.
         
         Returns:
-            str: Either the real username or an anonymous GUID
+            str: Either the actual username or "Anonymous"
         """
-        return AnonymousVoteMapping.get_display_name(self.decision, self.voter)
+        if self.is_anonymous:
+            return "Anonymous"
+        else:
+            return self.voter.username
+    
+    def get_display_username(self):
+        """
+        Get the username to display for this ballot.
+        
+        Alias for get_display_name() for consistency with plan documentation.
+        
+        Returns:
+            str: Either the actual username or "Anonymous"
+        """
+        return self.get_display_name()
 
     def set_anonymity_preference(self, is_anonymous=None):
         """
@@ -886,134 +904,6 @@ class Result(BaseModel):
         if 'participation' in self.stats:
             return self.stats['participation']
         return {}
-
-
-class AnonymousVoteMapping(BaseModel):
-    """
-    Secure mapping between anonymous GUIDs and actual users for specific decisions.
-    
-    CORE CONCEPT: Solves the tension between transparency and privacy through count verification.
-    - Community page shows "100 real usernames" (establishes total legitimate membership)  
-    - Decision page shows "100 mixed names + GUIDs" (same count = trust maintained)
-    - Anonymous users get different GUIDs per decision for privacy
-    - Follow paths work seamlessly: "Alice → Bob → 9d01fbb1-3fa7-499b-81b0-706d4d11ffb0"
-    
-    This model enables anonymous voting while maintaining verifiable community membership.
-    When a user chooses to vote anonymously on a decision, a GUID is generated and 
-    displayed in public reports instead of their username. This table maintains the 
-    secure mapping between the GUID and the actual user.
-    
-    Key Security Features:
-    - One GUID per user per decision (users get different GUIDs for different decisions)
-    - Only the system can access this mapping (not even superusers in production)
-    - Enables verification that anonymous voters are legitimate community members
-    - Supports the "100 real names vs. 100 mixed names+GUIDs" verification system
-    
-    Privacy Architecture:
-    - Community page: Shows 100 real usernames (establishes total membership)
-    - Decision page: Shows mix of real names + GUIDs (same count = trust)
-    - Follow paths: Work with both real names and GUIDs (e.g., "Alice → Bob → 9d01fbb1...")
-    - Audit trails: Complete transparency while preserving individual privacy
-    
-    Attributes:
-        decision (ForeignKey): The specific decision this anonymity applies to
-        user (ForeignKey): The actual user who is voting anonymously
-        anonymous_guid (UUIDField): The GUID displayed in public reports
-        created_at (DateTimeField): When this anonymous mapping was created
-    """
-    
-    decision = models.ForeignKey(
-        Decision,
-        on_delete=models.CASCADE,
-        related_name='anonymous_mappings',
-        help_text="The decision this anonymous mapping applies to"
-    )
-    
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='anonymous_mappings',
-        help_text="The actual user who is voting anonymously"
-    )
-    
-    anonymous_guid = models.UUIDField(
-        default=uuid.uuid4,
-        help_text="The GUID displayed in public reports instead of the username"
-    )
-
-    class Meta:
-        ordering = ['-created']
-        verbose_name = "Anonymous Vote Mapping"
-        verbose_name_plural = "Anonymous Vote Mappings"
-        # Ensure one anonymous GUID per user per decision
-        unique_together = ['decision', 'user']
-        # In production, this table should be heavily secured/encrypted
-        db_table = 'democracy_anonymous_vote_mapping'
-
-    def __str__(self):
-        """Return string representation of the mapping."""
-        return f"Anonymous mapping for {self.user.username} on {self.decision.title}"
-
-    @classmethod
-    def get_or_create_guid(cls, decision, user):
-        """
-        Get existing GUID or create new one for user on this decision.
-        
-        Args:
-            decision (Decision): The decision being voted on
-            user (CustomUser): The user voting anonymously
-            
-        Returns:
-            str: The anonymous GUID for this user on this decision
-        """
-        mapping, created = cls.objects.get_or_create(
-            decision=decision,
-            user=user
-        )
-        return str(mapping.anonymous_guid)
-
-    @classmethod
-    def get_display_name(cls, decision, user):
-        """
-        Get the display name for a user on a specific decision.
-        
-        This is the core method that determines whether to show the real username
-        or an anonymous GUID based on the user's anonymity preference and ballot settings.
-        
-        Args:
-            decision (Decision): The decision being reported on
-            user (CustomUser): The user whose name to display
-            
-        Returns:
-            str: Either the real username or an anonymous GUID
-        """
-        try:
-            # Check if user has a ballot for this decision
-            ballot = decision.ballots.get(voter=user)
-            
-            if ballot.is_anonymous:
-                # User chose to be anonymous - return user-friendly anonymous name
-                guid = cls.get_or_create_guid(decision, user)
-                return f"Anonymous Voter #{guid[:8]}"
-            else:
-                # User chose to be public - return real username
-                return user.username
-                
-        except Ballot.DoesNotExist:
-            # No ballot exists - return real username (for community member lists)
-            return user.username
-
-    def get_real_user(self):
-        """
-        Get the real user behind this anonymous GUID.
-        
-        WARNING: This method should only be used by system processes,
-        never exposed to end users or even administrators.
-        
-        Returns:
-            CustomUser: The actual user behind the anonymous GUID
-        """
-        return self.user
 
 
 class DecisionSnapshot(BaseModel):

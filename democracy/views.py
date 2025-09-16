@@ -22,6 +22,7 @@ import logging
 from .models import Community, Decision, Membership, Ballot, Choice, Vote
 from accounts.models import Following
 from .signals import recalculate_community_decisions_async
+from .utils import generate_username_hash
 
 User = get_user_model()
 
@@ -1052,6 +1053,7 @@ def vote_submit(request, community_id, decision_id):
                 'is_calculated': False,
                 'is_anonymous': form.cleaned_data.get('is_anonymous', True),
                 'tags': form.cleaned_data.get('tags', ''),
+                'hashed_username': generate_username_hash(request.user.username),
             }
         )
         
@@ -1059,6 +1061,7 @@ def vote_submit(request, community_id, decision_id):
         if not created:
             ballot.is_anonymous = form.cleaned_data.get('is_anonymous', True)
             ballot.tags = form.cleaned_data.get('tags', '')
+            ballot.hashed_username = generate_username_hash(request.user.username)
             ballot.save()
         
         # Clear existing votes and create new ones

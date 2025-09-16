@@ -10,6 +10,7 @@ from service_objects.services import Service
 
 from .models import Ballot, Community, Decision, DecisionSnapshot
 from crowdvote.utilities import get_object_or_None, normal_round
+from .utils import generate_username_hash
 
 
 class StageBallots(Service):
@@ -213,7 +214,8 @@ class StageBallots(Service):
         ballot, created = Ballot.objects.get_or_create(
             decision=decision, voter=voter,
             defaults={
-                'is_anonymous': voter.id % 3 == 0  # Mix of anonymous (every 3rd user) and non-anonymous
+                'is_anonymous': voter.id % 3 == 0,  # Mix of anonymous (every 3rd user) and non-anonymous
+                'hashed_username': generate_username_hash(voter.username),
             }
         )
 

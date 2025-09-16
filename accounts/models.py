@@ -76,6 +76,12 @@ class CustomUser(AbstractUser):
         help_text="Whether your social media links are visible to other community members"
     )
     
+    # Voting preferences
+    vote_anonymously_by_default = models.BooleanField(
+        default=False,
+        help_text="Default anonymity preference for new votes across all communities"
+    )
+    
     class Meta:
         ordering = ["username"]
         verbose_name = "User"
