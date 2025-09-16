@@ -21,6 +21,7 @@ import logging
 
 from .models import Community, Decision, Membership, Ballot, Choice, Vote
 from accounts.models import Following
+from .signals import recalculate_community_decisions_async
 
 User = get_user_model()
 
@@ -894,6 +895,7 @@ def decision_detail(request, community_id, decision_id):
         'user_ballot': user_ballot,
         'status': status,
         'can_vote': status == 'active' and user_membership.is_voting_community_member,
+        'can_manage': user_membership.is_community_manager,
         'can_edit': (user_membership.is_community_manager and 
                     not decision.ballots.exists() and 
                     status in ['draft', 'active']),
@@ -1309,10 +1311,11 @@ def manual_recalculation(request, community_id, decision_id):
     """
     logger = logging.getLogger('democracy.views')
     
+    # Get community and decision (let Http404 bubble up for nonexistent objects)
+    community = get_object_or_404(Community, id=community_id)
+    decision = get_object_or_404(Decision, id=decision_id, community=community)
+    
     try:
-        # Get community and decision
-        community = get_object_or_404(Community, id=community_id)
-        decision = get_object_or_404(Decision, id=decision_id, community=community)
         
         # Check if user is a community manager
         try:
@@ -1331,7 +1334,7 @@ def manual_recalculation(request, community_id, decision_id):
             }, status=403)
         
         # Check if decision is open
-        if not decision.is_open():
+        if not decision.is_open:
             logger.info(f"[MANUAL_RECALC_DENIED] [{request.user.username}] - Attempted manual recalculation for closed decision '{decision.title}'")
             return JsonResponse({
                 'success': False,
@@ -1345,9 +1348,6 @@ def manual_recalculation(request, community_id, decision_id):
                 'success': False,
                 'error': 'Calculation already in progress for this decision'
             }, status=400)
-        
-        # Import the recalculation function
-        from democracy.signals import recalculate_community_decisions_async
         
         # Log the manual trigger
         logger.info(f"[MANUAL_RECALC] [{request.user.username}] - Manual recalculation triggered for decision '{decision.title}'")

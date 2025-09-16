@@ -362,6 +362,7 @@
 }
 </style>
 <script>
+{% if can_manage and status == 'active' %}
 // Manual Recalculation Function
 function triggerManualRecalculation() {
     const btn = document.getElementById('manual-recalc-btn');
@@ -495,6 +496,7 @@ function pollCalculationStatus() {
         
     }, 5000); // Poll every 5 seconds
 }
+{% endif %}
 
 console.log('JavaScript file loading...');
 console.log('User authenticated:', {{ user.is_authenticated|yesno:"true,false" }});

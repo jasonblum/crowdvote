@@ -329,15 +329,15 @@ class TestDecisionCreateView(TestCase):
             'description': 'This is a test decision with sufficient description length to meet validation requirements.',
             'dt_close': (timezone.now() + timedelta(days=7)).strftime('%Y-%m-%dT%H:%M'),
             
-            # Choice formset data
-            'form-TOTAL_FORMS': '2',
-            'form-INITIAL_FORMS': '0',
-            'form-MIN_NUM_FORMS': '2',
-            'form-MAX_NUM_FORMS': '10',
-            'form-0-title': 'Choice 1',
-            'form-0-description': 'Description for choice 1 with sufficient length.',
-            'form-1-title': 'Choice 2',
-            'form-1-description': 'Description for choice 2 with sufficient length.',
+            # Choice formset data - using correct prefix 'choices'
+            'choices-TOTAL_FORMS': '2',
+            'choices-INITIAL_FORMS': '0',
+            'choices-MIN_NUM_FORMS': '2',
+            'choices-MAX_NUM_FORMS': '10',
+            'choices-0-title': 'Choice 1',
+            'choices-0-description': 'Description for choice 1 with sufficient length.',
+            'choices-1-title': 'Choice 2',
+            'choices-1-description': 'Description for choice 2 with sufficient length.',
         }
         
         response = self.client.post(
@@ -345,12 +345,37 @@ class TestDecisionCreateView(TestCase):
             data=form_data
         )
         
-        # Decision creation form is complex, just check if decision was created
-        # (The view might return 200 due to formset validation issues but still create the decision)
-        pass
+        # Debug: Print response details if decision creation failed
+        decision = Decision.objects.filter(title='Test Decision').first()
+        if decision is None:
+            print(f"Response status: {response.status_code}")
+            response_content = response.content.decode()
+            
+            # Look for Django messages (errors)
+            import re
+            message_matches = re.findall(r'<div[^>]*class="[^"]*(?:alert|message|error)[^"]*"[^>]*>([^<]+)', response_content, re.IGNORECASE)
+            if message_matches:
+                print("Django messages found:")
+                for msg in message_matches[:3]:
+                    print(f"  - {msg.strip()}")
+            
+            # Look for form field errors
+            field_error_matches = re.findall(r'<ul[^>]*class="[^"]*errorlist[^"]*"[^>]*>(.*?)</ul>', response_content, re.DOTALL)
+            if field_error_matches:
+                print("Form field errors found:")
+                for error_list in field_error_matches[:2]:
+                    # Extract individual error messages
+                    errors = re.findall(r'<li[^>]*>([^<]+)</li>', error_list)
+                    for error in errors:
+                        print(f"  - {error.strip()}")
+            
+            if not message_matches and not field_error_matches:
+                print("No error messages found. Form might be failing silently.")
+                # Check if the form is being re-rendered (indicates validation failure)
+                if 'Create Decision' in response_content:
+                    print("Form is being re-rendered - validation likely failed")
         
         # Verify decision was created
-        decision = Decision.objects.filter(title='Test Decision').first()
         self.assertIsNotNone(decision)
         self.assertEqual(decision.community, self.community)
         

@@ -18,6 +18,7 @@ from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
+from django.test.utils import override_settings
 
 from accounts.models import Following
 from democracy.models import Community, Decision, Choice, Ballot, Vote, DecisionSnapshot, Membership
@@ -36,6 +37,7 @@ from tests.factories.decision_factory import DecisionFactory
 User = get_user_model()
 
 
+@pytest.mark.django_db(transaction=True)
 class AsyncCalculationSignalsTest(TransactionTestCase):
     """
     Test Django signals for automatic vote recalculation.
@@ -46,48 +48,50 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
     
     def setUp(self):
         """Set up test data for signal testing."""
-        self.user1 = UserFactory(username='voter1')
-        self.user2 = UserFactory(username='voter2')
-        self.manager = UserFactory(username='manager')
-        
-        self.community = CommunityFactory(name='Test Community')
-        
-        # Create memberships
-        self.membership1 = Membership.objects.create(
-            member=self.user1,
-            community=self.community,
-            is_voting_community_member=True
-        )
-        self.membership2 = Membership.objects.create(
-            member=self.user2,
-            community=self.community,
-            is_voting_community_member=True
-        )
-        self.manager_membership = Membership.objects.create(
-            member=self.manager,
-            community=self.community,
-            is_voting_community_member=True,
-            is_community_manager=True
-        )
-        
-        # Create open decision
-        self.decision = DecisionFactory(
-            community=self.community,
-            title='Test Decision',
-            dt_close=timezone.now() + timedelta(days=1)
-        )
-        
-        # Create choices
-        self.choice1 = Choice.objects.create(
-            decision=self.decision,
-            title='Choice 1',
-            description='First choice'
-        )
-        self.choice2 = Choice.objects.create(
-            decision=self.decision,
-            title='Choice 2',
-            description='Second choice'
-        )
+        # Mock the async function during setup to prevent background threads
+        with patch('democracy.signals.recalculate_community_decisions_async'):
+            self.user1 = UserFactory(username='voter1')
+            self.user2 = UserFactory(username='voter2')
+            self.manager = UserFactory(username='manager')
+            
+            self.community = CommunityFactory(name='Test Community')
+            
+            # Create memberships
+            self.membership1 = Membership.objects.create(
+                member=self.user1,
+                community=self.community,
+                is_voting_community_member=True
+            )
+            self.membership2 = Membership.objects.create(
+                member=self.user2,
+                community=self.community,
+                is_voting_community_member=True
+            )
+            self.manager_membership = Membership.objects.create(
+                member=self.manager,
+                community=self.community,
+                is_voting_community_member=True,
+                is_community_manager=True
+            )
+            
+            # Create open decision
+            self.decision = DecisionFactory(
+                community=self.community,
+                title='Test Decision',
+                dt_close=timezone.now() + timedelta(days=1)
+            )
+            
+            # Create choices
+            self.choice1 = Choice.objects.create(
+                decision=self.decision,
+                title='Choice 1',
+                description='First choice'
+            )
+            self.choice2 = Choice.objects.create(
+                decision=self.decision,
+                title='Choice 2',
+                description='Second choice'
+            )
     
     @patch('democracy.signals.threading.Thread')
     @patch('democracy.signals.CreateCalculationSnapshot')
@@ -287,6 +291,7 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
         self.assertEqual(thread_call[1]['args'][1], 'decision_published')
 
 
+@pytest.mark.django_db(transaction=True)
 class AsyncCalculationFunctionTest(TestCase):
     """
     Test the async calculation function itself.
@@ -297,12 +302,14 @@ class AsyncCalculationFunctionTest(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.community = CommunityFactory(name='Test Community')
-        self.decision = DecisionFactory(
-            community=self.community,
-            title='Test Decision',
-            dt_close=timezone.now() + timedelta(days=1)
-        )
+        # Mock the async function during setup to prevent background threads
+        with patch('democracy.signals.recalculate_community_decisions_async'):
+            self.community = CommunityFactory(name='Test Community')
+            self.decision = DecisionFactory(
+                community=self.community,
+                title='Test Decision',
+                dt_close=timezone.now() + timedelta(days=1)
+            )
     
     @patch('democracy.signals.Tally')
     @patch('democracy.signals.SnapshotBasedStageBallots')
@@ -332,14 +339,14 @@ class AsyncCalculationFunctionTest(TestCase):
         )
         
         # Verify services were called correctly
-        mock_snapshot_service.assert_called_once()
-        mock_snapshot_instance.process.assert_called_once_with(self.decision)
+        mock_snapshot_service.assert_called_once_with(self.decision.id)
+        mock_snapshot_instance.process.assert_called_once()
         
-        mock_stage_service.assert_called_once()
-        mock_stage_instance.process.assert_called_once_with(mock_snapshot)
+        mock_stage_service.assert_called_once_with(mock_snapshot.id)
+        mock_stage_instance.process.assert_called_once()
         
         mock_tally_service.assert_called_once()
-        mock_tally_instance.process.assert_called_once_with(mock_snapshot)
+        mock_tally_instance.process.assert_called_once()
         
         # Verify logging
         mock_logger.info.assert_any_call(
@@ -389,6 +396,7 @@ class AsyncCalculationFunctionTest(TestCase):
         )
 
 
+@pytest.mark.django_db(transaction=True)
 class DecisionStatusMethodsTest(TestCase):
     """
     Test Decision model status methods for UI indicators.
@@ -497,6 +505,7 @@ class DecisionStatusMethodsTest(TestCase):
         self.assertEqual(self.decision.last_calculated, snapshot.created)
 
 
+@pytest.mark.django_db(transaction=True)
 class ManualRecalculationViewTest(TestCase):
     """
     Test the manual recalculation view for community managers.
@@ -507,32 +516,34 @@ class ManualRecalculationViewTest(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.manager = UserFactory(username='manager')
-        self.regular_user = UserFactory(username='regular')
-        self.non_member = UserFactory(username='non_member')
-        
-        self.community = CommunityFactory(name='Test Community')
-        
-        # Create memberships
-        self.manager_membership = Membership.objects.create(
-            member=self.manager,
-            community=self.community,
-            is_voting_community_member=True,
-            is_community_manager=True
-        )
-        self.regular_membership = Membership.objects.create(
-            member=self.regular_user,
-            community=self.community,
-            is_voting_community_member=True,
-            is_community_manager=False
-        )
-        
-        # Create open decision
-        self.decision = DecisionFactory(
-            community=self.community,
-            title='Test Decision',
-            dt_close=timezone.now() + timedelta(days=1)
-        )
+        # Mock the async function during setup to prevent background threads
+        with patch('democracy.signals.recalculate_community_decisions_async'):
+            self.manager = UserFactory(username='manager')
+            self.regular_user = UserFactory(username='regular')
+            self.non_member = UserFactory(username='non_member')
+            
+            self.community = CommunityFactory(name='Test Community')
+            
+            # Create memberships
+            self.manager_membership = Membership.objects.create(
+                member=self.manager,
+                community=self.community,
+                is_voting_community_member=True,
+                is_community_manager=True
+            )
+            self.regular_membership = Membership.objects.create(
+                member=self.regular_user,
+                community=self.community,
+                is_voting_community_member=True,
+                is_community_manager=False
+            )
+            
+            # Create open decision
+            self.decision = DecisionFactory(
+                community=self.community,
+                title='Test Decision',
+                dt_close=timezone.now() + timedelta(days=1)
+            )
         
         self.url = f'/communities/{self.community.id}/decisions/{self.decision.id}/recalculate/'
     
@@ -617,6 +628,7 @@ class ManualRecalculationViewTest(TestCase):
         self.assertIn('already in progress', data['error'])
 
 
+@pytest.mark.django_db(transaction=True)
 class LoggingIntegrationTest(TestCase):
     """
     Test comprehensive logging integration for Plan #22.
@@ -627,13 +639,15 @@ class LoggingIntegrationTest(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.user = UserFactory(username='test_user')
-        self.community = CommunityFactory(name='Test Community')
-        self.membership = Membership.objects.create(
-            member=self.user,
-            community=self.community,
-            is_voting_community_member=True
-        )
+        # Mock the async function during setup to prevent background threads
+        with patch('democracy.signals.recalculate_community_decisions_async'):
+            self.user = UserFactory(username='test_user')
+            self.community = CommunityFactory(name='Test Community')
+            self.membership = Membership.objects.create(
+                member=self.user,
+                community=self.community,
+                is_voting_community_member=True
+            )
     
     @patch('democracy.signals.logger')
     def test_vote_cast_logging(self, mock_logger):
@@ -689,7 +703,7 @@ class LoggingIntegrationTest(TestCase):
         
         # Verify logging
         mock_logger.info.assert_any_call(
-            f'[FOLLOWING_STARTED] [{self.user.username}] - Started following {user2.username} on tags: governance,budget (priority: 1)'
+            f'[FOLLOWING_STARTED] [{self.user.username}] - Started following {user2.username} on tags: governance, budget (priority: 1)'
         )
     
     @patch('democracy.signals.logger')

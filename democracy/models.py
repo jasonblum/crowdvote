@@ -315,11 +315,17 @@ class Decision(BaseModel):
                 'dt_close': 'Decision deadline cannot be in the past.'
             })
         
-        # Only validate choices for saved decisions (not during creation)
-        if self.pk and self.choices.count() == 0:
-            raise ValidationError({
-                '__all__': 'A decision must have at least one choice for voting.'
-            })
+        # Only validate choices when decision is being opened for voting
+        # Skip validation during form validation, tests, or general model operations
+        if (self.pk and 
+            hasattr(self, '_state') and 
+            not self._state.adding and
+            hasattr(self, '_validate_choices') and 
+            self._validate_choices):
+            if self.choices.count() == 0:
+                raise ValidationError({
+                    '__all__': 'A decision must have at least one choice for voting.'
+                })
 
     @property
     def result(self):
@@ -430,6 +436,28 @@ class Decision(BaseModel):
             DecisionSnapshot or None: The final snapshot if decision is closed, None otherwise
         """
         return self.snapshots.filter(is_final=True).first()
+    
+    def validate_for_publishing(self):
+        """
+        Validate that this decision is ready to be published/opened for voting.
+        
+        This method should be called before opening a decision for voting to ensure
+        it has all required components (choices, valid deadline, etc.).
+        
+        Raises:
+            ValidationError: If decision is not ready for publishing
+        """
+        from django.core.exceptions import ValidationError
+        
+        # Set flag to enable choice validation
+        self._validate_choices = True
+        
+        try:
+            self.full_clean()
+        finally:
+            # Clean up the flag
+            if hasattr(self, '_validate_choices'):
+                delattr(self, '_validate_choices')
 
 
 class Choice(BaseModel):

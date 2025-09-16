@@ -27,6 +27,7 @@ from tests.factories.decision_factory import DecisionFactory
 User = get_user_model()
 
 
+@pytest.mark.django_db(transaction=True)
 class ManualRecalculationViewTest(TestCase):
     """
     Test manual recalculation view functionality.
@@ -39,50 +40,57 @@ class ManualRecalculationViewTest(TestCase):
         """Set up test data."""
         self.client = Client()
         
-        # Create users with different roles
-        self.manager = UserFactory(username='manager_user')
-        self.regular_member = UserFactory(username='regular_member')
-        self.non_member = UserFactory(username='non_member')
-        self.other_manager = UserFactory(username='other_manager')
-        
-        # Create communities
-        self.community = CommunityFactory(name='Test Community')
-        self.other_community = CommunityFactory(name='Other Community')
-        
-        # Create memberships
-        self.manager_membership = Membership.objects.create(
-            member=self.manager,
-            community=self.community,
-            is_voting_community_member=True,
-            is_community_manager=True
-        )
-        
-        self.regular_membership = Membership.objects.create(
-            member=self.regular_member,
-            community=self.community,
-            is_voting_community_member=True,
-            is_community_manager=False
-        )
-        
-        self.other_manager_membership = Membership.objects.create(
-            member=self.other_manager,
-            community=self.other_community,
-            is_voting_community_member=True,
-            is_community_manager=True
-        )
-        
-        # Create decisions
-        self.open_decision = DecisionFactory(
-            community=self.community,
-            title='Open Decision',
-            dt_close=timezone.now() + timedelta(days=1)
-        )
-        
-        self.closed_decision = DecisionFactory(
-            community=self.community,
-            title='Closed Decision',
-            dt_close=timezone.now() - timedelta(hours=1)
-        )
+        # Mock all signal handlers during setup to prevent background threads
+        with patch('democracy.signals.recalculate_community_decisions_async'), \
+             patch('democracy.signals.vote_changed'), \
+             patch('democracy.signals.following_changed'), \
+             patch('democracy.signals.membership_changed'), \
+             patch('democracy.signals.ballot_tags_changed'), \
+             patch('democracy.signals.decision_status_changed'):
+            # Create users with different roles
+            self.manager = UserFactory(username='manager_user')
+            self.regular_member = UserFactory(username='regular_member')
+            self.non_member = UserFactory(username='non_member')
+            self.other_manager = UserFactory(username='other_manager')
+            
+            # Create communities
+            self.community = CommunityFactory(name='Test Community')
+            self.other_community = CommunityFactory(name='Other Community')
+            
+            # Create memberships
+            self.manager_membership = Membership.objects.create(
+                member=self.manager,
+                community=self.community,
+                is_voting_community_member=True,
+                is_community_manager=True
+            )
+            
+            self.regular_membership = Membership.objects.create(
+                member=self.regular_member,
+                community=self.community,
+                is_voting_community_member=True,
+                is_community_manager=False
+            )
+            
+            self.other_manager_membership = Membership.objects.create(
+                member=self.other_manager,
+                community=self.other_community,
+                is_voting_community_member=True,
+                is_community_manager=True
+            )
+            
+            # Create decisions
+            self.open_decision = DecisionFactory(
+                community=self.community,
+                title='Open Decision',
+                dt_close=timezone.now() + timedelta(days=1)
+            )
+            
+            self.closed_decision = DecisionFactory(
+                community=self.community,
+                title='Closed Decision',
+                dt_close=timezone.now() - timedelta(hours=1)
+            )
         
         # Create choices
         Choice.objects.create(
@@ -128,9 +136,10 @@ class ManualRecalculationViewTest(TestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 405)  # Method Not Allowed
     
+    @patch('democracy.signals.recalculate_community_decisions_async')
     @patch('democracy.views.threading.Thread')
     @patch('democracy.views.logging.getLogger')
-    def test_successful_manual_recalculation_by_manager(self, mock_logger, mock_thread):
+    def test_successful_manual_recalculation_by_manager(self, mock_logger, mock_thread, mock_recalc_func):
         """Test successful manual recalculation by community manager."""
         self.client.force_login(self.manager)
         url = self.get_recalc_url()
@@ -366,7 +375,7 @@ class ManualRecalculationViewTest(TestCase):
                 mock_thread.assert_called_once()
                 mock_thread.reset_mock()
     
-    @patch('democracy.views.recalculate_community_decisions_async')
+    @patch('democracy.signals.recalculate_community_decisions_async')
     @patch('democracy.views.logging.getLogger')
     def test_manual_recalculation_exception_handling(self, mock_logger, mock_recalc_func):
         """Test exception handling in manual recalculation view."""
@@ -396,6 +405,7 @@ class ManualRecalculationViewTest(TestCase):
         mock_logger_instance.error.assert_called()
 
 
+@pytest.mark.django_db(transaction=True)
 class ManualRecalculationUIIntegrationTest(TestCase):
     """
     Test UI integration for manual recalculation functionality.
@@ -406,21 +416,23 @@ class ManualRecalculationUIIntegrationTest(TestCase):
     
     def setUp(self):
         """Set up test data."""
-        self.manager = UserFactory(username='manager')
-        self.community = CommunityFactory(name='Test Community')
-        
-        self.manager_membership = Membership.objects.create(
-            member=self.manager,
-            community=self.community,
-            is_voting_community_member=True,
-            is_community_manager=True
-        )
-        
-        self.decision = DecisionFactory(
-            community=self.community,
-            title='Test Decision',
-            dt_close=timezone.now() + timedelta(days=1)
-        )
+        # Mock the async function during setup to prevent background threads
+        with patch('democracy.signals.recalculate_community_decisions_async'):
+            self.manager = UserFactory(username='manager')
+            self.community = CommunityFactory(name='Test Community')
+            
+            self.manager_membership = Membership.objects.create(
+                member=self.manager,
+                community=self.community,
+                is_voting_community_member=True,
+                is_community_manager=True
+            )
+            
+            self.decision = DecisionFactory(
+                community=self.community,
+                title='Test Decision',
+                dt_close=timezone.now() + timedelta(days=1)
+            )
         
         Choice.objects.create(
             decision=self.decision,
@@ -506,7 +518,7 @@ class ManualRecalculationUIIntegrationTest(TestCase):
         
         # Check for AJAX setup
         self.assertContains(response, 'X-CSRFToken')
-        self.assertContains(response, 'manual_recalculation')
+        self.assertContains(response, '/recalculate/')
         
         # Check for UI update elements
         self.assertContains(response, 'recalc-message')
