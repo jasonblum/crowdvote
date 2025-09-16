@@ -257,9 +257,10 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'crowdvote_file': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': 'logs/crowdvote.log',
-            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'when': 'midnight',  # Rotate daily at midnight
+            'interval': 1,  # Every 1 day
             'backupCount': 30,  # Keep 30 days of logs
             'formatter': 'crowdvote_events',
         },
