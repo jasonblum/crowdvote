@@ -643,13 +643,21 @@ def magic_link_login(request, token):
         if magic_link.is_expired:
             logger.warning(f"Magic link expired for {magic_link.email}. Expired at: {magic_link.expires_at}, current time: {timezone.now()}")
             messages.error(request, "This magic link has expired. Please request a new one.")
-        else:
-            logger.warning(f"Magic link already used for {magic_link.email}. Used at: {magic_link.used_at}")
-            messages.error(request, "Email service issue This magic link has already been used please request a new one")
-        return redirect('home')
+            return redirect('home')
+        elif magic_link.used_at:
+            # Allow reuse within 5 minutes to handle corporate email scanners
+            time_since_use = timezone.now() - magic_link.used_at
+            if time_since_use.total_seconds() < 300:  # 5 minutes
+                logger.info(f"Magic link reused within 5 minutes for {magic_link.email}. Original use: {magic_link.used_at}")
+                # Don't update used_at again, just proceed with login
+            else:
+                logger.warning(f"Magic link used too long ago for {magic_link.email}. Used at: {magic_link.used_at}")
+                messages.error(request, "This magic link has already been used. Please request a new one.")
+                return redirect('home')
     
-    # Mark magic link as used
-    magic_link.use()
+    # Mark magic link as used (only if not already used)
+    if not magic_link.used_at:
+        magic_link.use()
     
     # Check if user already exists
     try:
