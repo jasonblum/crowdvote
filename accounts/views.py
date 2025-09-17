@@ -12,6 +12,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.core.mail import send_mail
+from django.utils import timezone
 import logging
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -580,7 +581,7 @@ Questions? Contact support@crowdvote.com
         logger.info(f"Email sent successfully to: {email}")
         messages.success(
             request, 
-            f"✨ Magic link sent to {email}! Check your email and click the link to sign in. (Limit: 3 requests per hour)"
+            f"✨ Magic link sent to {email}! Check your email and click the link to sign in. (Limit: 1 request every 5 minutes)"
         )
         
         # Update rate limit counters after successful email send
@@ -627,18 +628,24 @@ def magic_link_login(request, token):
     3. For new users: creates account and redirects to profile setup
     4. Marks the magic link as used
     """
+    logger.info(f"Magic link login attempt with token: {token[:8]}...")
+    
     try:
         magic_link = MagicLink.objects.get(token=token)
+        logger.info(f"Magic link found for email: {magic_link.email}, created: {magic_link.created}, expires: {magic_link.expires_at}, used: {magic_link.used_at}")
     except MagicLink.DoesNotExist:
+        logger.warning(f"Magic link not found for token: {token[:8]}...")
         messages.error(request, "Invalid magic link. Please request a new one.")
         return redirect('home')
     
     # Check if magic link is still valid
     if not magic_link.is_valid:
         if magic_link.is_expired:
+            logger.warning(f"Magic link expired for {magic_link.email}. Expired at: {magic_link.expires_at}, current time: {timezone.now()}")
             messages.error(request, "This magic link has expired. Please request a new one.")
         else:
-            messages.error(request, "This magic link has already been used. Please request a new one.")
+            logger.warning(f"Magic link already used for {magic_link.email}. Used at: {magic_link.used_at}")
+            messages.error(request, "Email service issue This magic link has already been used please request a new one")
         return redirect('home')
     
     # Mark magic link as used

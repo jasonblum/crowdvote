@@ -54,6 +54,10 @@ EMAIL_HOST_PASSWORD=your-aws-ses-secret-access-key
 2. **For SendGrid**: Sign up at sendgrid.com, create API key, use 'apikey' as username
 3. **For Amazon SES**: Set up AWS account, verify domain in SES, create SMTP credentials
 
+## Magic Link Configuration
+
+Magic links are automatically configured to use `crowdvote.com` in production and `localhost:8000` in development. No additional configuration needed.
+
 ## Testing Email in Production
 
 Once configured, magic links will be sent to real email addresses instead of console output.

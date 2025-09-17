@@ -604,13 +604,41 @@ class MagicLink(BaseModel):
         """
         from django.urls import reverse
         from django.contrib.sites.models import Site
+        from django.conf import settings
+        import logging
         
+        logger = logging.getLogger(__name__)
         path = reverse('accounts:magic_link_login', kwargs={'token': self.token})
         
         if request:
-            return request.build_absolute_uri(path)
+            url = request.build_absolute_uri(path)
+            logger.info(f"Magic link URL generated from request: {url}")
+            return url
         else:
-            # Fallback to site domain
-            site = Site.objects.get_current()
-            protocol = 'https' if site.domain != 'localhost:8000' else 'http'
-            return f"{protocol}://{site.domain}{path}"
+            # Fallback to configured domain or site domain
+            try:
+                # First try to get domain from settings or environment
+                domain = getattr(settings, 'SITE_DOMAIN', None)
+                if not domain:
+                    # Try to get from ALLOWED_HOSTS (use first non-localhost entry)
+                    allowed_hosts = getattr(settings, 'ALLOWED_HOSTS', [])
+                    for host in allowed_hosts:
+                        if host not in ['localhost', '127.0.0.1', 'testserver'] and not host.startswith('.'):
+                            domain = host
+                            break
+                
+                if not domain:
+                    # Final fallback to Django Sites framework
+                    site = Site.objects.get_current()
+                    domain = site.domain
+                
+                # Determine protocol
+                protocol = 'https' if domain not in ['localhost:8000', '127.0.0.1:8000'] else 'http'
+                url = f"{protocol}://{domain}{path}"
+                logger.info(f"Magic link URL generated from fallback (domain: {domain}): {url}")
+                return url
+                
+            except Exception as e:
+                logger.error(f"Error generating magic link URL: {e}")
+                # Emergency fallback
+                return f"https://crowdvote.com{path}"

@@ -12,7 +12,7 @@ Your term is up when I say it's up!
 
 Artisan, locally-crafted, free-range, small-batch representation!
 
-Democracy *democratized*
+Democracy *Democratized*
 
 Power to the People!
 
@@ -48,4 +48,6 @@ Astroturf is tacky!
 
 ~~K Street~~<br/>Main Street!
 
-Democracy shouldn't be a spectator sport.
+Democracy isn't a spectator sport.
+
+Finally!<br/>**an actual Democracy**! <br/>It only took 2500 years.

@@ -6,15 +6,16 @@
 {% block sidebar %}
     <!-- Documentation sidebar - always show regardless of authentication -->
     <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
-        <!-- CrowdVote Logo Header -->
-        <div class="px-6 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-center h-16">
-                {% load static %}
-                <a href="{% url 'home' %}" class="block">
-                    <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-14 w-auto">
-                </a>
+        {% block sidebar_content %}
+            <!-- CrowdVote Logo Header -->
+            <div class="px-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-center h-16">
+                    {% load static %}
+                    <a href="{% url 'home' %}" class="block">
+                        <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-14 w-auto">
+                    </a>
+                </div>
             </div>
-        </div>
         
         <!-- Support Section -->
         <div class="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
@@ -61,15 +62,45 @@
                 <a href="#faq-anonymous-voting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How do I vote anonymously?</a>
                 <a href="#faq-mob-rule" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Isn't this just mob rule?</a>
             </div>
-        </div>
+        {% endblock sidebar_content %}
     </nav>
 {% endblock sidebar %}
 
-{% block header_left %}
-    <div class="flex items-center">
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Documentation</h1>
-    </div>
-{% endblock header_left %}
+{% block header %}
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-6">
+            <div class="flex justify-between items-center h-16">
+                <!-- Left side - Page Title -->
+                {% block header_left %}
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Documentation</h1>
+                </div>
+                {% endblock header_left %}
+                
+                <!-- Right side - Theme toggle (always show on docs page) -->
+                <div class="flex items-center space-x-4">
+                    <!-- Django Admin Style Theme Toggle -->
+                    <button id="theme-toggle" 
+                            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            title="Toggle theme">
+                        <!-- Sun icon (light mode) -->
+                        <svg id="theme-icon-light" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <!-- Moon icon (dark mode) -->
+                        <svg id="theme-icon-dark" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                        <!-- Half circle icon (system mode) -->
+                        <svg id="theme-icon-system" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8V2z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+{% endblock header %}
 
 {% block content %}
     <!-- Page Content -->
@@ -107,8 +138,7 @@
                         <p>
                             <strong>CrowdVote</strong> brings a process I've been calling <strong>Social Democracy</strong> 
                             (as in "Social Media" …not <a href="https://en.wikipedia.org/wiki/Social_democracy">the political ideology</a>) to local communities such as condo associations, 
-                            town councils, student governments, and anywhere else you might want to "crowdsource" decisions to 
-                            a community of people.
+                            town councils, student governments, and anywhere else you might want to free Representation from the tyranny of electoral cycles.
                         </p>
 
                         <p>
@@ -186,12 +216,19 @@
               People seeking to expand their influence in the community, like Jack above, will <strong>compete</strong> 
               for followers by voting and tagging decisions thoughtfully, perhaps in conjunction with blogging and 
               tweeting or otherwise promoting a reputation for expertise in the issues they care about. Lobbyists 
-              will turn their attention to those members with the most followers at any given time. Nobody has to 
+              will turn their attention to those members with more followers. Nobody has to 
               wait until the next election to be heard. And all of this happens right out of the gate, because when 
               you first fire CrowdVote up and begin publishing decisions to be voted on, your constituents will all 
               effectively default to inheriting your vote, leaving you in a position of voting in accordance with 
               the wishes of people who are all just inheriting your vote…but who are all free now to cast their own 
               vote, or to follow someone else. They're not stuck with you until the next election!
+            </p>
+
+            <p>
+              How could you lose? Who is going to vote for your opponent, when they can just as easily delegate their
+              vote to your opponent (through you on CrowdVote) and retain the option to change their mind before the 
+              next election?  Moreover, CrowdVote allows everyone to compile their perfect agent of representation,
+              someone who agrees with them on all the issues they care about.
             </p>
 
             <p>
