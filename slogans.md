@@ -40,9 +40,9 @@ Pack the Court<br/>...with all of us!
 
 Nullify gerrymandering!
 
-Free politics!
+**Free** politics!
 
-Astroturf is tacky!
+Astroturf is kinda tacky, right?
 
 "*Representation*" is the problem.
 
@@ -50,4 +50,4 @@ Astroturf is tacky!
 
 Democracy isn't a spectator sport.
 
-Finally!<br/>**an actual Democracy**! <br/>It only took 2500 years.
+Finally!<br/>**an actual Democracy**!<br/>...and it only took 2500 years lol!
