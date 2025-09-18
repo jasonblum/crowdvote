@@ -13,7 +13,7 @@ from collections import OrderedDict
 from democracy.services import StageBallots
 from democracy.models import Decision, Choice, Ballot, Vote
 from tests.factories import (
-    TestCommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
+    CommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
     BallotFactory, VoteFactory, UserFactory, MembershipFactory
 )
 
@@ -24,7 +24,7 @@ class TestSTARVotingEdgeCases:
     
     def test_perfect_tie_in_score_phase(self):
         """Test STAR voting when all choices have identical average scores."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create 3 voters
         voters = []
@@ -78,7 +78,7 @@ class TestSTARVotingEdgeCases:
     
     def test_extreme_score_distributions(self):
         """Test with extreme score distributions (all 0s vs all 5s)."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create voters with extreme preferences
         extreme_voters = []
@@ -126,7 +126,7 @@ class TestSTARVotingEdgeCases:
     
     def test_single_voter_decision(self):
         """Test STAR voting with only one voter."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         voter = UserFactory(username="solo_voter")
         MembershipFactory(community=community, member=voter)
@@ -162,7 +162,7 @@ class TestSTARVotingEdgeCases:
     
     def test_large_number_of_choices(self):
         """Test STAR voting with many choices (boundary testing)."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create 5 voters
         voters = []
@@ -207,7 +207,7 @@ class TestSTARVotingEdgeCases:
     
     def test_precision_in_score_calculations(self):
         """Test mathematical precision in score calculations."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create scenario designed to test floating point precision
         voters = []
@@ -256,7 +256,7 @@ class TestSTARVotingEdgeCases:
     
     def test_runoff_with_identical_preferences(self):
         """Test runoff phase when voters have identical preferences for top 2."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create 4 voters
         voters = []
@@ -300,7 +300,7 @@ class TestSTARVotingEdgeCases:
     
     def test_zero_votes_scenario(self):
         """Test STAR voting with no votes cast."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create decision but no votes
         decision = DecisionFactory(community=community, with_choices=False)
@@ -317,7 +317,7 @@ class TestSTARVotingEdgeCases:
     
     def test_all_zero_ratings(self):
         """Test when all voters give 0 stars to all choices."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create 3 voters
         voters = []
@@ -361,7 +361,7 @@ class TestSTARVotingEdgeCases:
     
     def test_missing_votes_for_some_choices(self):
         """Test when some voters don't rate all choices."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create 2 voters
         voter1 = UserFactory(username="partial_voter_1")
@@ -429,7 +429,7 @@ class TestSTARVotingComplexScenarios:
     
     def test_realistic_community_vote(self):
         """Test STAR voting with realistic community voting patterns."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create 15 community members with varied preferences
         voters = []
@@ -513,7 +513,7 @@ class TestSTARVotingComplexScenarios:
     
     def test_strategic_voting_detection(self):
         """Test scenario that might reveal strategic voting patterns."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create scenario where strategic voting might occur
         # 2 popular choices, 1 unpopular choice
@@ -574,7 +574,7 @@ class TestSTARVotingComplexScenarios:
     
     def test_delegation_integration_with_star_voting(self):
         """Test STAR voting with both manual and calculated (delegated) ballots."""
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create decision

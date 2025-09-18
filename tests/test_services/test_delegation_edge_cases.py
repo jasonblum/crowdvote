@@ -14,7 +14,7 @@ from democracy.models import Decision, Choice, Ballot, Vote
 from accounts.models import Following
 from democracy.models import Membership
 from tests.factories import (
-    TestCommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
+    CommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
     BallotFactory, VoteFactory, UserFactory, MembershipFactory
 )
 
@@ -25,7 +25,7 @@ class TestDelegationEdgeCases:
     
     def test_complex_multi_level_delegation_chain(self):
         """Test deep delegation chain: E→D→C→B→A (5 levels)."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create 5 users for deep chain
         users = []
@@ -75,7 +75,7 @@ class TestDelegationEdgeCases:
     
     def test_multiple_inheritance_sources_with_priorities(self):
         """Test voter following multiple people with different priorities."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create users
         follower = UserFactory(username="multi_follower")
@@ -127,7 +127,7 @@ class TestDelegationEdgeCases:
     
     def test_mixed_tag_inheritance(self):
         """Test inheritance from multiple sources with different tags."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         voter = UserFactory(username="mixed_tag_voter")
         budget_expert = UserFactory(username="budget_expert")
@@ -186,7 +186,7 @@ class TestDelegationEdgeCases:
     
     def test_partial_delegation_with_manual_override(self):
         """Test case where voter has some delegated votes and some manual votes."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         voter = UserFactory(username="partial_delegator")
         expert = UserFactory(username="domain_expert")
@@ -232,7 +232,7 @@ class TestDelegationEdgeCases:
     
     def test_circular_reference_detection_and_prevention(self):
         """Test comprehensive circular reference detection."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create users for circular scenarios
         users = {}
@@ -279,7 +279,7 @@ class TestDelegationEdgeCases:
     
     def test_delegation_with_inactive_users(self):
         """Test delegation when followed users are inactive or have no votes."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         active_voter = UserFactory(username="active_voter")
         inactive_leader = UserFactory(username="inactive_leader")
@@ -327,7 +327,7 @@ class TestDelegationEdgeCases:
     
     def test_tag_mismatch_scenarios(self):
         """Test various tag mismatch scenarios."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         follower = UserFactory(username="tag_follower")
         leader = UserFactory(username="tag_leader")
@@ -383,7 +383,7 @@ class TestDelegationEdgeCases:
     
     def test_performance_with_large_delegation_network(self):
         """Test performance with large numbers of delegation relationships."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create a hub-and-spoke delegation network
         hub_user = UserFactory(username="delegation_hub")
@@ -440,7 +440,7 @@ class TestDelegationEdgeCases:
     
     def test_delegation_tree_data_accuracy(self):
         """Test that delegation tree data captures complex relationships accurately."""
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create decision
@@ -502,7 +502,7 @@ class TestDelegationErrorHandling:
     
     def test_delegation_with_invalid_users(self):
         """Test delegation calculations with invalid or deleted users."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         valid_user = UserFactory(username="valid_user")
         MembershipFactory(community=community, member=valid_user)
@@ -528,7 +528,7 @@ class TestDelegationErrorHandling:
     
     def test_delegation_with_future_decision(self):
         """Test delegation for decisions that haven't started yet."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         voter = UserFactory(username="early_voter")
         MembershipFactory(community=community, member=voter)
@@ -555,7 +555,7 @@ class TestDelegationErrorHandling:
     
     def test_delegation_with_closed_decision(self):
         """Test delegation for decisions that have already closed."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         voter = UserFactory(username="late_voter")
         MembershipFactory(community=community, member=voter)

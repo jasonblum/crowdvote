@@ -513,14 +513,14 @@ class TestMagicLinkAuthenticationViews(TestCase):
         magic_link = MagicLink.create_for_email(self.user.email)
         magic_link.created_user = self.user
         magic_link.save()
-        # Manually mark as used to simulate expired token
+        # Manually mark as used to simulate expired token - but allow reuse within 5 minutes
         magic_link.use()
         
         response = self.client.get(f'/magic-login/{magic_link.token}/')
         
-        # Should redirect to home with error
+        # Should redirect to dashboard since reuse is allowed within 5 minutes
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, '/')
+        self.assertEqual(response.url, '/dashboard/')
 
 
 @pytest.mark.views

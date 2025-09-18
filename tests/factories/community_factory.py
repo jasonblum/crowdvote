@@ -120,7 +120,7 @@ class SpringfieldCommunityFactory(CommunityFactory):
             )
 
 
-class TestCommunityWithDelegationFactory(CommunityFactory):
+class CommunityWithDelegationFactory(CommunityFactory):
     """Factory for creating communities with A-H delegation pattern."""
     
     name = "Test Delegation Community"

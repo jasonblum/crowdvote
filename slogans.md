@@ -48,6 +48,6 @@ Astroturf is kinda tacky, right?
 
 ~~K Street~~<br/>Main Street!
 
-Democracy isn't a spectator sport.
+Democracy can't be a spectator sport.
 
 Finally!<br/>**an actual Democracy**!<br/>...and it only took 2500 years lol!

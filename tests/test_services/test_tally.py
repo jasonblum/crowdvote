@@ -14,7 +14,7 @@ from democracy.models import Decision, Choice, Ballot, Vote, Community
 from accounts.models import Following
 from democracy.models import Membership
 from tests.factories import (
-    TestCommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
+    CommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
     BallotFactory, VoteFactory, UserFactory, MembershipFactory
 )
 
@@ -27,7 +27,7 @@ class TestCompleteTallyProcess:
     def test_end_to_end_delegation_and_star_voting(self):
         """Test complete process: delegation → inheritance → STAR voting."""
         # Create community with A-H delegation pattern
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create active decision
@@ -87,7 +87,7 @@ class TestCompleteTallyProcess:
     
     def test_mixed_manual_and_calculated_votes(self):
         """Test scenario with both manual voters and delegation inheritance."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create additional manual voters
         manual_voter1 = UserFactory(username="manual1")
@@ -165,7 +165,7 @@ class TestCompleteTallyProcess:
     def test_tally_service_complete_process(self):
         """Test the Tally service with complete delegation scenario."""
         # Create community
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create active decision
@@ -232,7 +232,7 @@ class TestCompleteTallyProcess:
     
     def test_delegation_tree_data_in_tally(self):
         """Test that delegation tree data is captured during tally."""
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create decision
@@ -283,8 +283,8 @@ class TestCompleteTallyProcess:
     def test_complex_multi_community_scenario(self):
         """Test tally service with multiple communities."""
         # Create two communities
-        community1 = TestCommunityWithDelegationFactory(name="Community Alpha")
-        community2 = TestCommunityWithDelegationFactory(name="Community Beta")
+        community1 = CommunityWithDelegationFactory(name="Community Alpha")
+        community2 = CommunityWithDelegationFactory(name="Community Beta")
         
         # Create decisions in both communities
         decision1 = DecisionFactory(
@@ -330,7 +330,7 @@ class TestCompleteTallyProcess:
     
     def test_performance_with_large_delegation_chains(self):
         """Test performance with complex delegation scenarios."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create a larger set of users with complex delegation
         users = []

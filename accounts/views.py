@@ -581,7 +581,7 @@ Questions? Contact support@crowdvote.com
         logger.info(f"Email sent successfully to: {email}")
         messages.success(
             request, 
-            f"✨ Magic link sent to {email}! Check your email and click the link to sign in. (Limit: 1 request every 5 minutes)"
+            f"✨ Magic link sent to {email}! Check your email and click the link to sign in. (Limit: 3 requests per hour)"
         )
         
         # Update rate limit counters after successful email send
@@ -855,11 +855,11 @@ def _check_magic_link_rate_limits(ip, email):
         
         if time_since_last < min_interval_seconds:
             minutes_remaining = math.ceil((min_interval_seconds - time_since_last) / 60)
-            return f"Too many requests from your location. Please wait {minutes_remaining} minutes before requesting another magic link. (Limit: {rate_limit_per_hour} per hour)"
+            return f"Too many requests from your location. Please wait {minutes_remaining} minutes before requesting another magic link. (Limit: 3 per hour)"
     
     # Check hourly limit for IP
     if ip_data['count'] >= rate_limit_per_hour:
-        return f"Too many requests from your location. Please wait up to 60 minutes before requesting another magic link. (Limit: {rate_limit_per_hour} per hour)"
+        return f"Too many requests from your location. Please wait up to 60 minutes before requesting another magic link. (Limit: 3 per hour)"
     
     # Check email rate limit
     email_key = f'magic_link_email:{email}'

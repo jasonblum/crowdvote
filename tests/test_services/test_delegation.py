@@ -14,7 +14,7 @@ from democracy.models import Decision, Choice, Ballot, Vote
 from accounts.models import Following
 from democracy.models import Membership
 from tests.factories import (
-    TestCommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
+    CommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,
     BallotFactory, VoteFactory, UserFactory, MembershipFactory,
     SpecificFollowingFactory
 )
@@ -35,7 +35,7 @@ class TestStageBallotsDelegation:
     def test_single_level_delegation(self):
         """Test B→A delegation inheritance."""
         # Create community with A-H delegation pattern
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create decision and choices
@@ -78,7 +78,7 @@ class TestStageBallotsDelegation:
     def test_multi_level_delegation_chain(self):
         """Test D→C→A and E→C→A delegation chains."""
         # Create community with delegation setup
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create decision
@@ -133,7 +133,7 @@ class TestStageBallotsDelegation:
     def test_duplicate_inheritance_prevention(self):
         """Test that F inherits from A only once despite multiple paths."""
         # F should inherit from A only once despite F→A and F→D→C→A paths
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create decision
@@ -168,7 +168,7 @@ class TestStageBallotsDelegation:
     
     def test_circular_reference_prevention(self):
         """Test that circular references are prevented."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         user_a = UserFactory(username="circular_a")
         user_b = UserFactory(username="circular_b")
         user_c = UserFactory(username="circular_c")
@@ -208,7 +208,7 @@ class TestStageBallotsDelegation:
     
     def test_tag_specific_delegation(self):
         """Test that delegation only works for matching tags."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         user_follower = UserFactory(username="tag_follower")
         user_leader = UserFactory(username="tag_leader")
         
@@ -259,7 +259,7 @@ class TestStageBallotsDelegation:
     
     def test_tag_inheritance_with_votes(self):
         """Test that tags are inherited along with votes."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         user_follower = UserFactory(username="tag_inheritor")
         user_leader = UserFactory(username="tag_source")
         
@@ -311,7 +311,7 @@ class TestStageBallotsDelegation:
     
     def test_lobbyist_exclusion(self):
         """Test that lobbyists can be followed but don't count in tallies."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         lobbyist = UserFactory(username="lobbyist_expert")
         voter = UserFactory(username="regular_voter")
         
@@ -378,7 +378,7 @@ class TestStageBallotsDelegation:
     
     def test_delegation_tree_data_capture(self):
         """Test that delegation tree data is properly captured."""
-        community = TestCommunityWithDelegationFactory(create_delegation_users=True)
+        community = CommunityWithDelegationFactory(create_delegation_users=True)
         delegation_users = community._delegation_users
         
         # Create decision
@@ -437,7 +437,7 @@ class TestDelegationEdgeCases:
     
     def test_self_following_prevention(self):
         """Test that users cannot follow themselves."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         user = UserFactory(username="self_follower")
         MembershipFactory(community=community, member=user)
         
@@ -452,7 +452,7 @@ class TestDelegationEdgeCases:
     
     def test_delegation_with_no_votes(self):
         """Test delegation when the followed user has no votes."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         user_follower = UserFactory(username="follower_no_votes")
         user_leader = UserFactory(username="leader_no_votes")
         
@@ -485,7 +485,7 @@ class TestDelegationEdgeCases:
     
     def test_delegation_depth_limit(self):
         """Test that delegation depth is tracked and could be limited."""
-        community = TestCommunityWithDelegationFactory()
+        community = CommunityWithDelegationFactory()
         
         # Create a long chain: E→D→C→B→A
         users = []

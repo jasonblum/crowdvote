@@ -6,7 +6,7 @@ for all CrowdVote models.
 """
 
 from .user_factory import UserFactory, FollowingFactory, MembershipFactory, SpecificFollowingFactory
-from .community_factory import CommunityFactory, TestCommunityWithDelegationFactory
+from .community_factory import CommunityFactory, CommunityWithDelegationFactory
 from .decision_factory import DecisionFactory, ChoiceFactory, BallotFactory, VoteFactory
 
 __all__ = [
@@ -15,7 +15,7 @@ __all__ = [
     'MembershipFactory',
     'SpecificFollowingFactory',
     'CommunityFactory',
-    'TestCommunityWithDelegationFactory',
+    'CommunityWithDelegationFactory',
     'DecisionFactory',
     'ChoiceFactory',
     'BallotFactory',

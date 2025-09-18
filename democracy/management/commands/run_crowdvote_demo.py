@@ -50,6 +50,20 @@ class Command(BaseCommand):
         # Show system overview
         self.show_system_overview()
 
+        # Check if Alphabet Delegation Test community exists and highlight it
+        alphabet_community = Community.objects.filter(name="Alphabet Delegation Test").first()
+        if alphabet_community:
+            self.stdout.write(
+                self.style.SUCCESS('📊 ALPHABET DELEGATION TEST COMMUNITY DETECTED')
+            )
+            self.stdout.write(
+                '   This systematic test community validates complex delegation inheritance'
+            )
+            self.stdout.write(
+                '   with 12 users (AAAAAAAAAAA-LLLLLLLLLLL) and realistic cross-level following.'
+            )
+            self.stdout.write('')
+
         # Get open decisions
         decisions = Decision.objects.filter(dt_close__gt=timezone.now())
         
