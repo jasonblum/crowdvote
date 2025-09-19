@@ -402,12 +402,12 @@
                     isPolling = false;
                     
                     if (data.has_active_calculations) {
-                        // Continue polling every 500ms for active processing
+                        // Continue polling every 3 seconds for active processing
                         consecutiveInactivePolls = 0;
                         pollingTimeout = setTimeout(() => {
                             pollingTimeout = null;
                             pollGlobalStatus();
-                        }, 500);
+                        }, 3000);
                     } else if (data.has_recent_activity) {
                         // Poll less frequently for recent activity only (every 30 seconds)
                         consecutiveInactivePolls++;
@@ -594,12 +594,12 @@
             // Start initial poll
             pollGlobalStatus();
             
-            // Poll frequently to catch user actions immediately
+            // Poll regularly to catch user actions
             const constantPollInterval = setInterval(() => {
                 if (!isPolling && !pollingTimeout) {
                     pollGlobalStatus();
                 }
-            }, 500); // Poll every 500ms continuously
+            }, 5000); // Poll every 5 seconds
             
             // Enhanced tooltip hover management
             const indicator = document.getElementById('global-processing-indicator');

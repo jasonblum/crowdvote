@@ -830,7 +830,7 @@ class CreateCalculationSnapshot(Service):
             
             # Add visible delay for user feedback (shows processing is happening)
             import time
-            time.sleep(2)  # 2 second delay to ensure spinner visibility
+            time.sleep(5)  # 5 second delay to ensure spinner visibility
             
             # Capture all data in a single transaction for consistency
             with transaction.atomic():
@@ -968,13 +968,13 @@ class SnapshotBasedStageBallots(Service):
             
             # Add visible delay for staging process
             import time
-            time.sleep(1)  # 1 second delay during staging
+            time.sleep(2)  # 2 second delay during staging
             
             # Process using snapshot data only
             results = self._process_snapshot_ballots(snapshot)
             
             # Add extended delay to ensure spinner visibility
-            time.sleep(3)  # 3 second delay to guarantee user sees spinner activity
+            time.sleep(10)  # 10 second delay to guarantee user sees spinner activity
             
             # Update snapshot with results
             snapshot.calculation_status = 'completed'
