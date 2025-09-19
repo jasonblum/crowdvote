@@ -22,6 +22,11 @@ env = environ.Env(
     DEBUG=(bool, False)  # Default to False for production safety
 )
 
+# Read environment variables from .env.local file
+env_file = BASE_DIR / '.env.local'
+if env_file.exists():
+    environ.Env.read_env(env_file)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -219,6 +224,10 @@ MAGIC_LINK_MIN_INTERVAL_MINUTES = 5   # Minimum 5 minutes between requests
 # Site Domain Configuration for Magic Links
 # This ensures magic links work correctly in production
 SITE_DOMAIN = 'crowdvote.com' if not DEBUG else 'localhost:8000'
+
+# Turnstile CAPTCHA Configuration
+TURNSTILE_SITE_KEY = env('TURNSTILE_SITE_KEY', default='')
+TURNSTILE_SECRET_KEY = env('TURNSTILE_SECRET_KEY', default='')
 
 
 # Static files (CSS, JavaScript, Images)

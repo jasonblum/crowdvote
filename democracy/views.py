@@ -1223,9 +1223,30 @@ def decision_results(request, community_id, decision_id):
     # Get all ballots for display (including those with 0 votes)
     ballots_with_votes = decision.ballots.select_related('voter').prefetch_related('votes__choice').order_by('voter__username')
     
-    # Get choices with basic stats
+    # Get choices with basic stats and STAR voting results
     choices = decision.choices.all()
     choice_stats = {}
+    star_results = None
+    winner_choice_id = None
+    
+    # Calculate STAR voting results if there are ballots
+    voting_member_ids = list(community.get_voting_members().values_list('id', flat=True))
+    voting_ballots = decision.ballots.filter(voter_id__in=voting_member_ids)
+    
+    if voting_ballots.exists():
+        from .services import StageBallots
+        stage_service = StageBallots()
+        
+        # Run STAR voting calculation
+        try:
+            star_results = stage_service.automatic_runoff(voting_ballots)
+            if star_results and star_results.get('winner'):
+                winner_choice_id = star_results['winner'].id
+        except Exception as e:
+            # Fallback to basic stats if STAR calculation fails
+            pass
+    
+    # Calculate basic stats for all choices
     for choice in choices:
         votes = Vote.objects.filter(choice=choice)
         total_votes = votes.count()
@@ -1260,6 +1281,8 @@ def decision_results(request, community_id, decision_id):
         'can_manage': user_membership.is_community_manager,
         'delegation_tree_data': delegation_tree_data,
         'decision_delegation_tree': decision_delegation_tree,
+        'star_results': star_results,
+        'winner_choice_id': winner_choice_id,
     }
     
     return render(request, 'democracy/decision_results.html', context)

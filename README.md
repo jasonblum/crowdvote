@@ -77,6 +77,7 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU
 - **Transparent API**: RESTful API for complete data transparency and auditability
 - **Detailed Tally Reports**: Verbose logging of all vote calculations
 - **Member Verification**: Secure membership verification system
+- **Bot Protection**: Cloudflare Turnstile CAPTCHA prevents automated signups while remaining invisible to legitimate users
 - **One-Click Deploy**: Simple deployment for non-technical users (coming soon)
 
 ## Tech Stack

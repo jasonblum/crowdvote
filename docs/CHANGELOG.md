@@ -2,6 +2,28 @@
 
 This file documents the development history of the CrowdVote project, capturing key milestones, decisions, and progress made during development sessions.
 
+## 2025-09-19 - Plan #25: Turnstile CAPTCHA Bot Protection - COMPLETED
+
+### Implementation Summary
+**CAPTCHA PROTECTION SUCCESSFULLY DEPLOYED**: Implemented Cloudflare Turnstile CAPTCHA on magic link requests to block bot signups while maintaining invisible UX for legitimate users.
+
+### Key Accomplishments
+- **Turnstile Integration**: Added invisible CAPTCHA widget to home page magic link form
+- **Server-Side Verification**: Created `verify_turnstile_token()` utility with proper IP handling
+- **Form Protection**: Built `CaptchaProtectedMagicLinkForm` with token validation
+- **Environment Configuration**: Fixed `.env.local` loading issue in Django settings
+- **Error Handling**: Added support fallback (support@crowdvote.com) for verification failures
+- **Documentation**: Updated README.md with bot protection feature
+
+### Technical Details
+- **Files Modified**: `settings.py`, `utils.py`, `forms.py`, `views.py`, `home.html`
+- **New Dependencies**: Uses existing `requests` library for Turnstile API calls
+- **Testing**: Created comprehensive test suite for CAPTCHA functionality
+- **Configuration**: Supports both development (localhost) and production (crowdvote.com) domains
+
+### Environment Setup Lesson
+**Critical Discovery**: Docker Compose loads `.env.local` variables but Django requires explicit file reading code in settings.py to access them. Added `environ.Env.read_env(env_file)` to resolve this.
+
 ## 2025-09-18 - Plan #24: Alphabet Test Community & Delegation Validation System - COMPLETED
 
 ### Session Overview

@@ -140,7 +140,7 @@
               </div>
           {% endif %}
           
-          <form method="post" action="{% url 'accounts:request_magic_link' %}" class="space-y-4">
+          <form method="post" action="{% url 'accounts:request_magic_link' %}" class="space-y-4" id="magic-link-form">
               {% csrf_token %}
               <div>
                   <input type="email" 
@@ -149,15 +149,35 @@
                          required
                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg bg-white bg-opacity-95">
               </div>
+              
+              <!-- Turnstile CAPTCHA Widget -->
+              {% if TURNSTILE_SITE_KEY %}
+              <div class="cf-turnstile" 
+                   data-sitekey="{{ TURNSTILE_SITE_KEY }}" 
+                   data-callback="onTurnstileSuccess"
+                   data-error-callback="onTurnstileError"
+                   data-theme="light"
+                   data-size="normal">
+              </div>
+              <input type="hidden" name="captcha_token" id="captcha-token">
+              {% endif %}
+              
               <button type="submit" 
                       class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
                   Send Magic Link ✨
               </button>
           </form>
           
+          
           <p class="text-xs text-gray-600 mt-4 whitespace-nowrap">
               No passwords required. We'll send you a secure link to get started.
           </p>
+          
+          {% if TURNSTILE_SITE_KEY %}
+          <p class="text-xs text-gray-500 mt-2 text-center">
+              Protected by Cloudflare Turnstile. Having trouble? Email <a href="mailto:support@crowdvote.com" class="text-blue-600 hover:text-blue-800">support@crowdvote.com</a>
+          </p>
+          {% endif %}
         </div>
         </div>
       </div>
@@ -305,7 +325,24 @@
 }
 </style>
 
+<!-- Turnstile CAPTCHA Script -->
+{% if TURNSTILE_SITE_KEY %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+
 <script>
+// Turnstile CAPTCHA callbacks
+{% if TURNSTILE_SITE_KEY %}
+function onTurnstileSuccess(token) {
+    document.getElementById('captcha-token').value = token;
+}
+
+function onTurnstileError() {
+    console.error('Turnstile CAPTCHA error');
+    document.getElementById('captcha-token').value = '';
+}
+{% endif %}
+
 // Get slogans from Django context
 const slogans = [
   {% for slogan in slogans %}

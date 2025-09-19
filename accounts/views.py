@@ -18,7 +18,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from .utils import generate_safe_username, validate_username
 from .models import MagicLink, Following
-from .forms import FollowForm
+from .forms import FollowForm, CaptchaProtectedMagicLinkForm
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -502,29 +502,33 @@ def edit_profile(request):
 @require_POST
 def request_magic_link(request):
     """
-    Handle magic link requests for any email address with rate limiting.
+    Handle magic link requests with CAPTCHA protection and rate limiting.
     
     This view:
-    1. Checks rate limits (3 per hour per IP and per email, 15min minimum interval)
-    2. Creates a magic link token
-    3. Sends an email with a clickable link (not a code)
-    4. Works for both new and existing users
-    5. Returns a success message regardless of user existence (security)
+    1. Verifies Turnstile CAPTCHA to prevent bot abuse
+    2. Checks rate limits (3 per hour per IP and per email, 15min minimum interval)
+    3. Creates a magic link token
+    4. Sends an email with a clickable link (not a code)
+    5. Works for both new and existing users
+    6. Returns a success message regardless of user existence (security)
     """
+    # Create form with request context for CAPTCHA verification
+    form = CaptchaProtectedMagicLinkForm(request.POST, request=request)
+    
+    if not form.is_valid():
+        # Display form errors (including CAPTCHA failures)
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, error)
+        return redirect('home')
+    
     try:
-        email = request.POST.get('email', '').strip().lower()
-        logger.info(f"Magic link requested for email: {email}")
+        email = form.cleaned_data['email'].strip().lower()
+        logger.info(f"Magic link requested for email: {email} (CAPTCHA verified)")
         
-        if not email:
-            messages.error(request, "Please enter a valid email address")
-            return redirect('home')
-        
-        # Get client IP address
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR')
+        # Get client IP address (using utility function)
+        from .utils import get_client_ip
+        ip = get_client_ip(request)
         
         # Rate limiting checks
         rate_limit_error = _check_magic_link_rate_limits(ip, email)

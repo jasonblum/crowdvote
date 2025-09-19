@@ -2,12 +2,16 @@
 Utility functions for the accounts app.
 
 This module contains helper functions for user account management, including
-safe username generation and validation utilities.
+safe username generation, validation utilities, and CAPTCHA verification.
 """
 
+import requests
 from wonderwords import RandomWord
 from django.contrib.auth import get_user_model
+from django.conf import settings
+import logging
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
@@ -136,3 +140,73 @@ def validate_username(username, exclude_user=None):
         return False, "Username is already taken"
     
     return True, None
+
+
+def get_client_ip(request):
+    """
+    Extract the real client IP address from the request.
+    
+    Handles X-Forwarded-For headers for production proxy environments.
+    
+    Args:
+        request: Django HttpRequest object
+        
+    Returns:
+        str: Client IP address
+    """
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # Take the first IP in the chain (original client)
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+def verify_turnstile_token(token, user_ip):
+    """
+    Verify Turnstile token with Cloudflare API.
+    
+    Args:
+        token (str): The Turnstile response token from the client
+        user_ip (str): The client's IP address
+        
+    Returns:
+        bool: True if verification successful, False otherwise
+    """
+    if not token:
+        logger.warning("Turnstile verification failed: No token provided")
+        return False
+        
+    if not settings.TURNSTILE_SECRET_KEY:
+        logger.warning("Turnstile verification skipped: No secret key configured")
+        return True  # Allow requests when CAPTCHA is not configured
+    
+    try:
+        response = requests.post(
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            data={
+                'secret': settings.TURNSTILE_SECRET_KEY,
+                'response': token,
+                'remoteip': user_ip,
+            },
+            timeout=10  # 10 second timeout
+        )
+        
+        result = response.json()
+        success = result.get('success', False)
+        
+        if success:
+            logger.info(f"Turnstile verification successful for IP {user_ip}")
+        else:
+            error_codes = result.get('error-codes', [])
+            logger.warning(f"Turnstile verification failed for IP {user_ip}: {error_codes}")
+            
+        return success
+        
+    except requests.RequestException as e:
+        logger.error(f"Turnstile verification network error for IP {user_ip}: {e}")
+        return False  # Fail closed on network errors
+    except Exception as e:
+        logger.error(f"Turnstile verification unexpected error for IP {user_ip}: {e}")
+        return False

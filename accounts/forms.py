@@ -8,6 +8,7 @@ and account-related functionality in CrowdVote.
 from django import forms
 from django.contrib.auth import get_user_model
 from .models import Following
+from .utils import verify_turnstile_token, get_client_ip
 
 User = get_user_model()
 
@@ -183,3 +184,47 @@ class FollowForm(forms.Form):
             raise forms.ValidationError("Maximum 10 tags allowed.")
         
         return ', '.join(tag_list)
+
+
+class CaptchaProtectedMagicLinkForm(forms.Form):
+    """
+    Form for requesting magic links with Turnstile CAPTCHA protection.
+    
+    Protects against automated bot signups while maintaining excellent
+    user experience for legitimate users.
+    """
+    
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg',
+            'placeholder': 'Enter your email address',
+            'autocomplete': 'email'
+        }),
+        help_text="We'll send you a magic link to sign in instantly"
+    )
+    
+    captcha_token = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False  # Will be populated by JavaScript
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+    
+    def clean_captcha_token(self):
+        """Verify the Turnstile CAPTCHA token."""
+        token = self.cleaned_data.get('captcha_token')
+        
+        if not self.request:
+            raise forms.ValidationError("Request context required for CAPTCHA verification.")
+        
+        user_ip = get_client_ip(self.request)
+        
+        if not verify_turnstile_token(token, user_ip):
+            raise forms.ValidationError(
+                "CAPTCHA verification failed. Please try again. "
+                "Having trouble? Email support@crowdvote.com"
+            )
+        
+        return token

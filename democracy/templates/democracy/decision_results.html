@@ -385,10 +385,17 @@
                         <div class="px-6 py-6">
                             <div class="space-y-6">
                                 {% for choice in choices %}
-                                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                    <div class="border {% if winner_choice_id and choice.id == winner_choice_id %}border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 dark:border-yellow-500{% else %}border-gray-200 dark:border-gray-700{% endif %} rounded-lg p-4">
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1">
-                                                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ choice.title }}</h3>
+                                                <div class="flex items-center gap-2">
+                                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ choice.title }}</h3>
+                                                    {% if winner_choice_id and choice.id == winner_choice_id %}
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                                                            🏆 Winner
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
                                                 {% if choice.description %}
                                                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ choice.description }}</p>
                                                 {% endif %}
@@ -410,7 +417,7 @@
                                         <div class="mt-3">
                                             <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                                 {% widthratio choice.get_average_stars|default:0 5 100 as bar_width %}
-                                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ bar_width }}%"></div>
+                                                <div class="{% if winner_choice_id and choice.id == winner_choice_id %}bg-gradient-to-r from-yellow-400 to-amber-500{% else %}bg-blue-600{% endif %} h-2 rounded-full" style="width: {{ bar_width }}%"></div>
                                             </div>
                                         </div>
                                     </div>

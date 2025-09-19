@@ -52,7 +52,8 @@ def home(request):
         return redirect('accounts:member_profile', username=request.user.username)
     
     context = {
-        'slogans': get_slogans()
+        'slogans': get_slogans(),
+        'TURNSTILE_SITE_KEY': settings.TURNSTILE_SITE_KEY
     }
     return render(request, 'home.html', context)
 
