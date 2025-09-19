@@ -80,6 +80,17 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
         # Process each decision with snapshot isolation
         for decision in open_decisions:
             try:
+                # Check if there's already an active calculation for this decision
+                from democracy.models import DecisionSnapshot
+                active_snapshot = DecisionSnapshot.objects.filter(
+                    decision=decision,
+                    calculation_status__in=['creating', 'ready', 'staging', 'tallying']
+                ).first()
+                
+                if active_snapshot:
+                    logger.info(f"[SNAPSHOT_SKIP] [system] - Skipping '{decision.title}' - already has active calculation: {active_snapshot.id}")
+                    continue
+                
                 # Create calculation snapshot (Plan #21 integration)
                 logger.info(f"[SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision '{decision.title}'")
                 snapshot_service = CreateCalculationSnapshot(decision.id)
@@ -103,6 +114,10 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
                 # Note: Using existing Tally service - TODO: Implement snapshot-based tally
                 tally_service = Tally()
                 tally_service.process()
+                
+                # Add extended delay to ensure spinner visibility for tally phase
+                import time
+                time.sleep(3)  # Additional 3 second delay during tally
                 
                 tally_duration = (timezone.now() - tally_start_time).total_seconds()
                 logger.info(f"[TALLY_COMPLETE] [system] - Tally completed in {tally_duration:.1f} seconds")

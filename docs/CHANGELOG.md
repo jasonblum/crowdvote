@@ -2,6 +2,47 @@
 
 This file documents the development history of the CrowdVote project, capturing key milestones, decisions, and progress made during development sessions.
 
+## 2025-09-19 - Plan #26: Global Processing Indicator in Header - COMPLETED
+
+### Implementation Summary
+**GLOBAL PROCESSING INDICATOR SUCCESSFULLY DEPLOYED**: Implemented a real-time processing indicator in the header that shows users when decisions are being calculated in the background. The indicator provides immediate visual feedback for follow/unfollow actions and includes an interactive tooltip with direct links to processing decisions.
+
+### Key Accomplishments
+- **Real-time Visual Feedback**: Blue spinning indicator appears immediately when users follow/unfollow members
+- **Interactive Hover Tooltip**: Shows currently processing decisions with clickable links to results pages
+- **Community-Scoped Activity**: Only displays calculations for communities where user is a member
+- **Race Condition Prevention**: Fixed stuck snapshots that caused endless spinning
+- **Reliable Hover UX**: JavaScript-managed tooltips that don't disappear when clicking links
+
+### Technical Implementation
+- **Global Status API**: `/status/global-calculations/` endpoint returns JSON of active/recent calculations
+- **500ms Polling**: Aggressive polling ensures immediate response to user actions
+- **9-Second Visibility**: Calculation timing (2s + 4s + 3s) ensures spinner is always visible
+- **State Management**: Proper cleanup prevents stuck polling states
+- **Error Recovery**: Automatic detection and cleanup of stuck calculation snapshots
+
+### Files Modified
+- `crowdvote/views.py` - Added `global_calculation_status` view with community filtering
+- `crowdvote/urls.py` - Added URL pattern for status endpoint
+- `crowdvote/templates/base.html` - Added indicator HTML, CSS animations, and JavaScript polling
+- `democracy/signals.py` - Added race condition prevention and calculation delays
+- `democracy/services.py` - Added temporary delays for testing visibility
+- `tests/test_views/test_global_status.py` - Comprehensive endpoint testing
+- `tests/test_integration/test_global_indicator.py` - End-to-end behavior testing
+
+### Key Technical Challenges Solved
+1. **Stuck Polling**: JavaScript state management was getting stuck - fixed with proper timeout cleanup
+2. **Race Conditions**: Multiple concurrent calculations caused stuck snapshots - added decision-level locking
+3. **Hover UX**: Tooltip disappeared when moving mouse to links - implemented JavaScript hover management
+4. **Timing Issues**: Calculations completed too fast to see - added strategic delays for visibility
+
+### Success Metrics Achieved
+✅ **Immediate Response**: Spinner appears within 500ms of follow/unfollow actions  
+✅ **Reliable Links**: Users can successfully click decision links in tooltip  
+✅ **No Stuck States**: Eliminated endless spinning through proper state management  
+✅ **Community Scoped**: Only shows relevant activity for user's communities  
+✅ **Cross-Page Consistency**: Indicator works on all authenticated pages except landing  
+
 ## 2025-09-19 - Plan #25: Turnstile CAPTCHA Bot Protection - COMPLETED
 
 ### Implementation Summary

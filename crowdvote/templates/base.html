@@ -37,6 +37,51 @@
             }
         }
     </script>
+    
+    <!-- Global Processing Indicator Styles -->
+    <style>
+        /* Simple div spinner - guaranteed to work */
+        #processing-spinner.processing-active {
+            animation: spin-simple 1s linear infinite !important;
+            border-color: #2563eb !important; /* blue-600 */
+            border-top-color: transparent !important;
+        }
+
+        #processing-spinner.processing-inactive {
+            border-color: #9ca3af !important; /* gray-400 */
+            border-top-color: transparent !important;
+            animation: none !important;
+        }
+
+        @keyframes spin-simple {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Test class for debugging */
+        .force-spin {
+            animation: spin-simple 0.5s linear infinite !important;
+            border-color: #ef4444 !important; /* red for testing */
+            border-top-color: transparent !important;
+        }
+        
+        /* Tooltip hover behavior - keep visible when hovering tooltip itself */
+        #global-processing-indicator:hover #processing-tooltip,
+        #processing-tooltip:hover {
+            display: block !important;
+        }
+        
+        /* Ensure tooltip stays visible during transition and has no gap */
+        #processing-tooltip {
+            transition: none !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Ensure the invisible bridge works */
+        #processing-tooltip .hover-bridge {
+            pointer-events: auto;
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-gray-50 dark:bg-gray-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     {% block page_layout %}
@@ -153,6 +198,30 @@
                                                 </div>
                                             </div>
                                         </div>
+                        
+                        <!-- Global Processing Indicator -->
+                        {% if user.is_authenticated and request.resolver_match.url_name != 'home' %}
+                        <div class="relative" id="global-processing-indicator">
+                            <!-- Always-present icon (grayed out when inactive) -->
+                            <div class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-help"
+                                 id="processing-icon-container">
+                                <!-- Simple spinning div that will definitely work -->
+                                <div class="w-5 h-5 rounded-full border-2 border-gray-400 border-t-transparent processing-inactive" id="processing-spinner"></div>
+                            </div>
+                            
+                            <!-- Hover tooltip (positioned absolutely with no gap) -->
+                            <div class="absolute right-0 top-full w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-50 hidden"
+                                 id="processing-tooltip">
+                                <!-- Invisible bridge to prevent hover gaps -->
+                                <div class="absolute -top-1 right-0 w-full h-1 bg-transparent"></div>
+                                
+                                <!-- Tooltip content populated by JavaScript -->
+                                <div class="p-3 text-sm text-gray-600 dark:text-gray-400" id="tooltip-content">
+                                    No calculations running. When decisions are being processed, you'll see an active spinner here with links to those decisions and recent activity.
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <!-- Django Admin Style Theme Toggle -->
                         <button id="theme-toggle" 
@@ -302,6 +371,289 @@
             });
         }
     </script>
+    
+    <!-- Global Processing Indicator JavaScript -->
+    {% if user.is_authenticated and request.resolver_match.url_name != 'home' %}
+    <script>
+        // Global Processing Indicator Management
+        let pollingTimeout = null;
+        let isPolling = false;
+        let consecutiveInactivePolls = 0;
+        
+        function pollGlobalStatus() {
+            if (isPolling) {
+                return; // Prevent multiple simultaneous polls
+            }
+            
+            isPolling = true;
+            
+            // Clear any existing timeout
+            if (pollingTimeout) {
+                clearTimeout(pollingTimeout);
+                pollingTimeout = null;
+            }
+            
+            fetch('/status/global-calculations/')
+                .then(response => response.json())
+                .then(data => {
+                    updateProcessingIndicator(data);
+                    
+                    // Always reset polling state first
+                    isPolling = false;
+                    
+                    if (data.has_active_calculations) {
+                        // Continue polling every 500ms for active processing
+                        consecutiveInactivePolls = 0;
+                        pollingTimeout = setTimeout(() => {
+                            pollingTimeout = null;
+                            pollGlobalStatus();
+                        }, 500);
+                    } else if (data.has_recent_activity) {
+                        // Poll less frequently for recent activity only (every 30 seconds)
+                        consecutiveInactivePolls++;
+                        if (consecutiveInactivePolls < 3) { // Poll for up to 90 seconds after activity stops
+                            pollingTimeout = setTimeout(() => {
+                                pollingTimeout = null;
+                                pollGlobalStatus();
+                            }, 30000);
+                        } else {
+                            // Stop polling, but resume on user activity
+                            setupActivityListener();
+                        }
+                    } else {
+                        // Stop polling, but resume on user activity
+                        setupActivityListener();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching global status:', error);
+                    // Always reset polling state on error
+                    isPolling = false;
+                    // Retry after 5 seconds on error (shorter retry)
+                    pollingTimeout = setTimeout(() => {
+                        pollingTimeout = null;
+                        pollGlobalStatus();
+                    }, 5000);
+                });
+        }
+        
+        function updateProcessingIndicator(data) {
+            const spinner = document.getElementById('processing-spinner');
+            const tooltipContent = document.getElementById('tooltip-content');
+            
+            if (!spinner || !tooltipContent) return;
+            
+            if (data.has_active_calculations) {
+                // Blue spinning icon for active processing
+                spinner.className = 'w-5 h-5 rounded-full border-2 processing-active';
+                // Force inline styles as backup
+                spinner.style.borderColor = '#2563eb';
+                spinner.style.borderTopColor = 'transparent';
+                spinner.style.animation = 'spin-simple 1s linear infinite';
+                populateActiveTooltip(data.decisions, tooltipContent);
+            } else if (data.has_recent_activity) {
+                // Gray static icon for recent activity only
+                spinner.className = 'w-5 h-5 rounded-full border-2 processing-inactive';
+                // Force inline styles as backup
+                spinner.style.borderColor = '#9ca3af';
+                spinner.style.borderTopColor = 'transparent';
+                spinner.style.animation = 'none';
+                populateRecentActivityTooltip(data.decisions, tooltipContent);
+            } else {
+                // Gray static icon for completely inactive
+                spinner.className = 'w-5 h-5 rounded-full border-2 processing-inactive';
+                // Force inline styles as backup
+                spinner.style.borderColor = '#9ca3af';
+                spinner.style.borderTopColor = 'transparent';
+                spinner.style.animation = 'none';
+                populateInactiveTooltip(tooltipContent);
+            }
+        }
+        
+        function populateActiveTooltip(decisions, tooltipContent) {
+            const activeDecisions = decisions.filter(d => d.status_type === 'active');
+            const recentDecisions = decisions.filter(d => d.status_type !== 'active');
+            
+            let html = '<div class="p-3">';
+            
+            // Active Processing Section
+            if (activeDecisions.length > 0) {
+                html += '<div class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">🔄 Currently Processing:</div>';
+                html += '<div class="space-y-2 mb-4">';
+                
+                activeDecisions.forEach(decision => {
+                    html += `
+                        <a href="${decision.url}" 
+                           class="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div class="text-sm font-medium text-blue-600 dark:text-blue-400">
+                                ${escapeHtml(decision.title)}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                ${escapeHtml(decision.community_name)} • ${escapeHtml(decision.status)}
+                            </div>
+                        </a>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Recent Activity Section
+            if (recentDecisions.length > 0) {
+                html += '<div class="border-t border-gray-200 dark:border-gray-600 pt-3">';
+                html += '<div class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">📋 Recent Activity (24h):</div>';
+                html += '<div class="space-y-2">';
+                
+                recentDecisions.forEach(decision => {
+                    const colorClass = decision.status_type === 'completed' ? 
+                        'text-green-600 dark:text-green-400' : 
+                        'text-red-600 dark:text-red-400';
+                    
+                    html += `
+                        <a href="${decision.url}" 
+                           class="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div class="text-sm font-medium ${colorClass}">
+                                ${escapeHtml(decision.title)}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                ${escapeHtml(decision.community_name)} • ${escapeHtml(decision.status)}
+                            </div>
+                        </a>
+                    `;
+                });
+                
+                html += '</div></div>';
+            }
+            
+            html += '</div>';
+            tooltipContent.innerHTML = html;
+        }
+        
+        function populateRecentActivityTooltip(decisions, tooltipContent) {
+            let html = '<div class="p-3">';
+            html += '<div class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">📋 Recent Activity (24h):</div>';
+            html += '<div class="space-y-2">';
+            
+            decisions.forEach(decision => {
+                const colorClass = decision.status_type === 'completed' ? 
+                    'text-green-600 dark:text-green-400' : 
+                    'text-red-600 dark:text-red-400';
+                
+                html += `
+                    <a href="${decision.url}" 
+                       class="block p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <div class="text-sm font-medium ${colorClass}">
+                            ${escapeHtml(decision.title)}
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            ${escapeHtml(decision.community_name)} • ${escapeHtml(decision.status)}
+                        </div>
+                    </a>
+                `;
+            });
+            
+            html += '</div></div>';
+            tooltipContent.innerHTML = html;
+        }
+        
+        function populateInactiveTooltip(tooltipContent) {
+            tooltipContent.innerHTML = `
+                <div class="p-3 text-sm text-gray-600 dark:text-gray-400">
+                    No calculations running. When decisions are being processed, you'll see an active spinner here with links to those decisions and recent activity.
+                </div>
+            `;
+        }
+        
+        function setupActivityListener() {
+            let activityTimer = null;
+            
+            function onUserActivity() {
+                if (activityTimer) clearTimeout(activityTimer);
+                
+                activityTimer = setTimeout(() => {
+                    if (!isPolling && !pollingTimeout) {
+                        pollGlobalStatus();
+                    }
+                }, 1000); // Debounce activity detection
+            }
+            
+            // Listen for user activity
+            ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+                document.addEventListener(event, onUserActivity, { once: true, passive: true });
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize polling when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start initial poll
+            pollGlobalStatus();
+            
+            // Poll frequently to catch user actions immediately
+            const constantPollInterval = setInterval(() => {
+                if (!isPolling && !pollingTimeout) {
+                    pollGlobalStatus();
+                }
+            }, 500); // Poll every 500ms continuously
+            
+            // Enhanced tooltip hover management
+            const indicator = document.getElementById('global-processing-indicator');
+            const tooltip = document.getElementById('processing-tooltip');
+            let hoverTimeout = null;
+            
+            if (indicator && tooltip) {
+                // Show tooltip on hover
+                indicator.addEventListener('mouseenter', function() {
+                    if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                        hoverTimeout = null;
+                    }
+                    tooltip.classList.remove('hidden');
+                });
+                
+                // Keep tooltip visible when hovering over tooltip itself
+                tooltip.addEventListener('mouseenter', function() {
+                    if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                        hoverTimeout = null;
+                    }
+                    tooltip.classList.remove('hidden');
+                });
+                
+                // Hide tooltip with delay when leaving indicator
+                indicator.addEventListener('mouseleave', function() {
+                    hoverTimeout = setTimeout(() => {
+                        tooltip.classList.add('hidden');
+                    }, 100); // 100ms delay to allow moving to tooltip
+                });
+                
+                // Hide tooltip when leaving tooltip
+                tooltip.addEventListener('mouseleave', function() {
+                    hoverTimeout = setTimeout(() => {
+                        tooltip.classList.add('hidden');
+                    }, 100); // 100ms delay
+                });
+            }
+            
+            // Clean up interval on page unload
+            window.addEventListener('beforeunload', function() {
+                clearInterval(constantPollInterval);
+            });
+        });
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (pollingTimeout) {
+                clearTimeout(pollingTimeout);
+            }
+        });
+    </script>
+    {% endif %}
     
     <!-- Page-specific scripts -->
     {% block scripts %}
