@@ -16,7 +16,7 @@ Democracy *Democratized*
 
 Power to the People!
 
-Representative Democracy *isn't*.
+Representative Democracy *finally is!*
 
 Let's *Democracy* Together!
 
@@ -51,3 +51,41 @@ Astroturf is kinda tacky, right?
 Democracy can't be a spectator sport.
 
 Finally!<br/>**an actual Democracy**!<br/>...and it only took 2500 years lol!
+
+Custom-tailored Representation!
+
+Watz fo lunch?
+
+~~Election~~<br/>**Every** Day Democracy!
+
+Freedom of Speech = Freedom to Delegate!
+
+Democracy that never sleeps
+
+Responsive Representation
+
+STAR-Spangled Democracy!
+
+No more lesser of two evils!
+
+24/7 Democracy for a 24/7 World
+
+Back to the Public Square!
+
+~~Taxation Without Representation~~<br/>**Delegation With Precision**
+
+~~Vote and Wait~~<br/>Engage and Shape!
+
+Vote Smart, Delegate Smarter
+
+A voice when you want, expertise when you need it.
+
+21st Century Democracy
+
+Post-Electoral Governance
+
+Democracy Without Downtime
+
+Always-On Accountability
+
+Transparent, Accountable, Revocable
