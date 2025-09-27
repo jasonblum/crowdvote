@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CrowdVote Slogans{% endblock %}
+
+{% block sidebar %}
+    <!-- Slogans sidebar -->
+    <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
+        {% block sidebar_content %}
+            <!-- CrowdVote Logo Header -->
+            <div class="px-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-center h-16">
+                    {% load static %}
+                    <a href="{% url 'home' %}" class="block">
+                        <img src="{% static 'logo.png' %}" alt="CrowdVote" class="h-14 w-auto">
+                    </a>
+                </div>
+            </div>
+        
+        <!-- Support Section -->
+        <div class="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
+            <div class="text-center">
+                <p class="text-sm text-gray-600 dark:text-gray-300">
+                    Need help? Email <a href="mailto:support@crowdvote.com" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">support@crowdvote.com</a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="px-6 py-4">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Navigation</h2>
+            <nav class="space-y-2">
+                <a href="{% url 'home' %}" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                    🏠 Home
+                </a>
+                <a href="{% url 'docs' %}" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                    📖 Documentation
+                </a>
+                <a href="{% url 'slogans' %}" class="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                    💬 Slogans
+                </a>
+            </nav>
+            
+            <!-- Slogan Stats -->
+            <div class="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                <h3 class="text-sm font-semibold text-green-900 dark:text-green-300 mb-2">Collection Stats</h3>
+                <p class="text-xs text-green-800 dark:text-green-300">
+                    <strong>{{ total_count }} slogans</strong> and counting!
+                </p>
+                <p class="text-xs text-green-700 dark:text-green-400 mt-1">
+                    From serious democratic reform to playful political commentary
+                </p>
+            </div>
+            
+            <!-- Contribute Section -->
+            <div class="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                <h3 class="text-sm font-semibold text-purple-900 dark:text-purple-300 mb-2">Got Ideas?</h3>
+                <p class="text-xs text-purple-800 dark:text-purple-300 mb-2">
+                    Send your slogan suggestions to:
+                </p>
+                <a href="mailto:support@crowdvote.com" class="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">
+                    support@crowdvote.com
+                </a>
+            </div>
+        {% endblock sidebar_content %}
+    </nav>
+{% endblock sidebar %}
+
+{% block header %}
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="px-6">
+            <div class="flex justify-between items-center h-16">
+                <!-- Left side - Page Title -->
+                {% block header_left %}
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">CrowdVote Slogans</h1>
+                </div>
+                {% endblock header_left %}
+                
+                <!-- Right side - Theme toggle -->
+                <div class="flex items-center space-x-4">
+                    <!-- Django Admin Style Theme Toggle -->
+                    <button id="theme-toggle" 
+                            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            title="Toggle theme">
+                        <!-- Sun icon (light mode) -->
+                        <svg id="theme-icon-light" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <!-- Moon icon (dark mode) -->
+                        <svg id="theme-icon-dark" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                        <!-- Half circle icon (system mode) -->
+                        <svg id="theme-icon-system" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2C5.58 2 2 5.58 2 10s3.58 8 8 8V2z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+{% endblock header %}
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="py-8 px-6">
+        <div class="space-y-8">
+        
+            <!-- Introduction Section -->
+            <section class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">💬 The Complete Collection</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Years of thinking about democracy, distilled into memorable phrases</p>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 dark:border-blue-500 p-6 mb-8 rounded-r-lg">
+                        <p class="text-gray-700 dark:text-gray-300">
+                            These slogans capture the spirit of what CrowdVote is trying to achieve - making democracy more direct, transparent, and accountable. They range from serious calls for democratic reform to playful takes on political representation.
+                        </p>
+                        <p class="text-gray-600 dark:text-gray-400 mt-3 text-sm">
+                            <strong>Got ideas for more?</strong> Send your suggestions to <a href="mailto:support@crowdvote.com" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium">support@crowdvote.com</a>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slogans Grid -->
+            <section class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">All {{ total_count }} Slogans</h2>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {% for slogan_data in slogans_with_colors %}
+                        <div class="bg-gradient-to-br p-4 rounded-lg border {{ slogan_data.color_class }}">
+                            <p class="text-gray-800 dark:text-gray-200 font-medium">{{ slogan_data.text|safe }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock %}

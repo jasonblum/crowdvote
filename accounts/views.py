@@ -550,22 +550,84 @@ def request_magic_link(request):
         return redirect('home')
     
     # Email content
-    subject = 'Your CrowdVote Magic Link 🪄'
-    message = f"""
+    subject = 'Sign in to CrowdVote - Your secure login link'
+    
+    # Create both plain text and HTML versions
+    text_message = f"""
 Hello!
 
-Click the link below to sign into CrowdVote:
+You requested a secure login link for CrowdVote. Click the link below to sign in:
 
 {login_url}
 
-This link will expire in 15 minutes and can only be used once.
+This link will expire in 15 minutes and can only be used once for security.
 
-If you didn't request this, you can safely ignore this email.
+If you didn't request this login link, you can safely ignore this email.
 
-Happy voting!
+Best regards,
 The CrowdVote Team
 
-Questions? Contact support@crowdvote.com
+Questions or need help? Reply to this email or contact support@crowdvote.com
+"""
+
+    html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in to CrowdVote</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; border: 1px solid #e9ecef;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 24px;">CrowdVote</h1>
+            <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">A Platform for Free Market Representation</p>
+        </div>
+        
+        <h2 style="color: #1f2937; margin-bottom: 20px;">Your Secure Login Link</h2>
+        
+        <p style="margin-bottom: 20px;">Hello!</p>
+        
+        <p style="margin-bottom: 25px;">You requested a secure login link for CrowdVote. Click the button below to sign in:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{login_url}" 
+               style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                Sign In to CrowdVote
+            </a>
+        </div>
+        
+        <p style="margin-bottom: 15px; font-size: 14px; color: #6b7280;">
+            Or copy and paste this link into your browser:<br>
+            <a href="{login_url}" style="color: #2563eb; word-break: break-all;">{login_url}</a>
+        </p>
+        
+        <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <p style="margin: 0; font-size: 14px; color: #92400e;">
+                <strong>Security Notice:</strong> This link will expire in 15 minutes and can only be used once.
+            </p>
+        </div>
+        
+        <p style="margin-bottom: 20px; font-size: 14px; color: #6b7280;">
+            If you didn't request this login link, you can safely ignore this email.
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        
+        <div style="text-align: center;">
+            <p style="margin: 0; font-size: 14px; color: #6b7280;">
+                Best regards,<br>
+                <strong>The CrowdVote Team</strong>
+            </p>
+            <p style="margin: 10px 0 0 0; font-size: 12px; color: #9ca3af;">
+                Questions or need help? Reply to this email or contact 
+                <a href="mailto:support@crowdvote.com" style="color: #2563eb;">support@crowdvote.com</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
 """
     
     try:
@@ -574,18 +636,22 @@ Questions? Contact support@crowdvote.com
         logger.info(f"Using from_email: {settings.DEFAULT_FROM_EMAIL}")
         logger.info(f"Email backend: {getattr(settings, 'EMAIL_BACKEND', 'default')}")
         
-        send_mail(
+        # Use EmailMultiAlternatives to send both HTML and plain text
+        from django.core.mail import EmailMultiAlternatives
+        
+        msg = EmailMultiAlternatives(
             subject=subject,
-            message=message,
+            body=text_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
+            to=[email],
         )
+        msg.attach_alternative(html_message, "text/html")
+        msg.send(fail_silently=False)
         
         logger.info(f"Email sent successfully to: {email}")
         messages.success(
             request, 
-            f"✨ Magic link sent to {email}! Check your email and click the link to sign in. (Limit: 3 requests per hour)"
+            f"✨ Magic link sent to {email}! Check your email (including spam/junk folder) and click the link to sign in. (Limit: 3 requests per hour)"
         )
         
         # Update rate limit counters after successful email send

@@ -7,7 +7,6 @@ import requests
 import logging
 from django.core.mail.backends.base import BaseEmailBackend
 from django.conf import settings
-from django.core.mail import EmailMessage
 
 logger = logging.getLogger(__name__)
 
@@ -110,16 +109,29 @@ class SendPulseEmailBackend(BaseEmailBackend):
                     "text": message.body if message.content_subtype == 'plain' else None,
                     "subject": message.subject,
                     "from": {
-                        "name": getattr(settings, 'SENDPULSE_FROM_NAME', 'CrowdVote'),
+                        "name": getattr(settings, 'SENDPULSE_FROM_NAME', 'CrowdVote Team'),
                         "email": message.from_email or getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@crowdvote.com')
                     },
-                    "to": [{"email": email} for email in message.to]
+                    "to": [{"email": email} for email in message.to],
+                    # Add headers to improve deliverability
+                    "headers": {
+                        "X-Mailer": "CrowdVote Platform",
+                        "X-Priority": "3",
+                        "List-Unsubscribe": "<mailto:unsubscribe@crowdvote.com>",
+                        "Reply-To": getattr(settings, 'DEFAULT_FROM_EMAIL', 'support@crowdvote.com')
+                    }
                 }
             }
             
-            # Add plain text version if HTML is provided
-            if message.content_subtype == 'html' and not email_data["email"]["text"]:
-                # Basic HTML to text conversion
+            # Handle EmailMultiAlternatives with both HTML and text content
+            if hasattr(message, 'alternatives') and message.alternatives:
+                for content, content_type in message.alternatives:
+                    if content_type == 'text/html':
+                        email_data["email"]["html"] = content
+                        # Keep the main body as plain text
+                        email_data["email"]["text"] = message.body
+            elif message.content_subtype == 'html' and not email_data["email"]["text"]:
+                # Basic HTML to text conversion for single HTML messages
                 import re
                 text_body = re.sub(r'<[^>]+>', '', message.body)
                 email_data["email"]["text"] = text_body.strip()
