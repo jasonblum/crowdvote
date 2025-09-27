@@ -9,7 +9,7 @@
 
 {% block content %}
 <!-- Beta Alert Banner -->
-<div class="bg-blue-600">
+<div id="beta-banner" class="bg-blue-600 transition-opacity duration-1000">
   <div class="mx-auto max-w-7xl px-3 py-3 sm:px-6 lg:px-8">
     <div class="flex flex-wrap items-center justify-between">
       <div class="flex w-0 flex-1 items-center">
@@ -65,16 +65,13 @@
     <div class="mx-auto max-w-2xl w-full">
       <div class="text-center">
         <!-- White Background Container -->
-        <div class="bg-white/85 backdrop-blur-sm rounded-2xl shadow-2xl px-8 py-10 sm:px-12 sm:py-12 mx-auto max-w-lg">
+        <div class="bg-green-50/80 backdrop-blur-sm rounded-2xl shadow-2xl px-6 py-6 sm:px-9 sm:py-8 mx-auto max-w-lg">
           <!-- CrowdVote Logo -->
           <div class="mb-2">
             <img src="{% static 'logo.png' %}" alt="CrowdVote" class="mx-auto h-20 sm:h-24 lg:h-28 w-auto">
           </div>
           <p class="mt-2 text-lg font-medium text-pretty text-gray-800 sm:text-xl/8">
-            A platform for Free Market Representation
-          </p>
-          <p class="mt-2 text-xs font-medium text-pretty text-gray-700 sm:text-sm/5">
-            (Because <i>Real</i> Democracy happens between elections!)
+            <i>Real</i> Democracy happens between elections
           </p>
           
           <!-- Email Signup Form -->
@@ -90,7 +87,7 @@
                                   <div>
                                       <p class="font-medium">{{ message }}</p>
                                       <p class="text-sm text-green-600 mt-1">
-                                          Check your email and click the link to sign in instantly!
+                                          Check your email (including spam/junk folder) and click the link to sign in instantly!
                                       </p>
                                   </div>
                               </div>
@@ -164,20 +161,10 @@
               
               <button type="submit" 
                       class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
-                  Send Magic Link ✨
+                  Send Magic Link to log in! ✨
               </button>
           </form>
           
-          
-          <p class="text-xs text-gray-600 mt-4 whitespace-nowrap">
-              No passwords required. We'll send you a secure link to get started.
-          </p>
-          
-          {% if TURNSTILE_SITE_KEY %}
-          <p class="text-xs text-gray-500 mt-2 text-center">
-              Protected by Cloudflare Turnstile. Having trouble? Email <a href="mailto:support@crowdvote.com" class="text-blue-600 hover:text-blue-800">support@crowdvote.com</a>
-          </p>
-          {% endif %}
         </div>
         </div>
       </div>
@@ -444,6 +431,20 @@ function startSpeechBubbles() {
 
 // Start when page loads
 document.addEventListener('DOMContentLoaded', startSpeechBubbles);
+
+// Auto-hide beta banner after 20 seconds
+document.addEventListener('DOMContentLoaded', function() {
+  const banner = document.getElementById('beta-banner');
+  if (banner) {
+    setTimeout(function() {
+      // Simulate clicking the X button
+      const closeButton = banner.querySelector('button[onclick*="display=\'none\'"]');
+      if (closeButton) {
+        closeButton.click();
+      }
+    }, 30000); // 30 seconds
+  }
+});
 </script>
 
 {% endblock %}
