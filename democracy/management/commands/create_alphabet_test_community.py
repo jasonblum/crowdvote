@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 f'\n- Test decision "Test Delegation Inheritance" with 3 choices'
                 f'\n- Manual votes from 4 users with different star ratings'
                 f'\n\nNext steps:'
-                f'\n1. Run: python manage.py run_crowdvote_demo'
+                f'\n1. Run: python manage.py stage_and_tally_ballots'
                 f'\n2. Visit the community to see delegation trees'
                 f'\n3. Run: pytest tests/test_services/test_alphabet_delegation_validation.py'
             )

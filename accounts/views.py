@@ -651,7 +651,7 @@ Questions or need help? Reply to this email or contact support@crowdvote.com
         logger.info(f"Email sent successfully to: {email}")
         messages.success(
             request, 
-            f"✨ Magic link sent to {email}! Check your email (including spam/junk folder) and click the link to sign in. (Limit: 3 requests per hour)"
+            f"✨ Magic link sent to {email}! (Check your spam/junk folder, Limit: 3 requests per hour)"
         )
         
         # Update rate limit counters after successful email send

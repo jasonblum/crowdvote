@@ -81,7 +81,7 @@ Create a clean, systematic test community with alphabetically-named members (A, 
 - `democracy/templates/democracy/decision_results.html` - Verify fractional star display works correctly
 
 **Testing Integration**:
-- Update existing `democracy/management/commands/run_crowdvote_demo.py` to include alphabet community
+- Update existing `democracy/management/commands/stage_and_tally_ballots.py` to include alphabet community
 - Ensure `StageBallots` and `Tally` services process the complex delegation correctly
 
 ### Validation Points
@@ -188,7 +188,7 @@ Create a clean, systematic test community with alphabetically-named members (A, 
 
 **Development Workflow**:
 1. Run `python manage.py create_alphabet_test_community --clear-existing`
-2. Run `python manage.py run_crowdvote_demo` to calculate inheritance
+2. Run `python manage.py stage_and_tally_ballots` to calculate inheritance
 3. Visit decision results page for "Test Delegation Inheritance" 
 4. Verify delegation trees show 3-4 level inheritance chains
 5. Run `python -m pytest tests/test_services/test_alphabet_delegation_validation.py -v`

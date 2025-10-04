@@ -89,7 +89,7 @@ This file documents the development history of the CrowdVote project, capturing 
 - **Service Integration**: Tests `StageBallots` and `Tally` services with alphabet community data
 
 **✅ INTEGRATION WITH DEMO SYSTEM**:
-- **Demo Command Enhancement**: Updated `run_crowdvote_demo.py` to detect and highlight alphabet community
+- **Demo Command Enhancement**: Updated `stage_and_tally_ballots.py` to detect and highlight alphabet community
 - **Systematic Validation**: Alphabet community serves as both explorable UI and automated test validation
 - **Clean Data Management**: `--clear-existing` option properly handles PROTECT constraints and cascading deletion
 - **Production Ready**: All tests pass (9/9) with mathematical precision validation
@@ -145,7 +145,7 @@ This file documents the development history of the CrowdVote project, capturing 
 - `docs/features/0024_PLAN-alphabet_test_community_delegation_validation.md` - Complete plan documentation
 
 **Enhanced Files**:
-- `democracy/management/commands/run_crowdvote_demo.py` - Added alphabet community detection and highlighting
+- `democracy/management/commands/stage_and_tally_ballots.py` - Added alphabet community detection and highlighting
 - `docs/CHANGELOG.md` - Updated with Plan #24 achievements and technical details
 
 **Critical Bug Fixes Applied**:
@@ -3796,7 +3796,7 @@ This session represents the transformation of CrowdVote from a sophisticated bac
 ### Files Created/Modified
 - **Enhanced**: `democracy/services.py` - Complete tag inheritance and STAR voting implementation
 - **Enhanced**: `democracy/management/commands/generate_dummy_data.py` - Realistic tag-based following and decisions
-- **Created**: `democracy/management/commands/run_crowdvote_demo.py` - Full system demonstration
+- **Created**: `democracy/management/commands/stage_and_tally_ballots.py` - Full system demonstration
 - **Enhanced**: `accounts/models.py` - Following model with tags and order fields
 - **Enhanced**: `democracy/models.py` - Ballot model with tag support
 - **Created**: `accounts/migrations/0004_add_tags_and_order_to_following.py`
@@ -3833,7 +3833,7 @@ The Audubon Society example from the original vision is now possible: they could
 - **Tag-Based Democracy**: Fully functional with real outcomes ✅  
 - **STAR Voting**: Complete implementation with runoffs ✅
 - **Audit Trails**: Complete transparency and verifiability ✅
-- **Demo Command**: `python manage.py run_crowdvote_demo` ✅
+- **Demo Command**: `python manage.py stage_and_tally_ballots` ✅
 - **Database**: 454 users, 4 active decisions, 457 ballots cast ✅
 
 ### Development Philosophy Realized

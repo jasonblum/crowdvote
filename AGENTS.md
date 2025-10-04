@@ -286,7 +286,7 @@ docker-compose exec web python manage.py createsuperuser # Create admin user
 
 # Generate realistic test data with delegation trees
 docker-compose exec web python manage.py generate_dummy_data_new --clear-data # Generate test communities and users
-docker-compose exec web python manage.py run_crowdvote_demo # Calculate votes and test delegation
+docker-compose exec web python manage.py stage_and_tally_ballots # Stage ballots and tally votes
 
 # Testing
 docker-compose exec web pytest -v
@@ -327,7 +327,7 @@ Each community must include these test users for delegation validation:
 ```bash
 # Generate complete test environment
 docker-compose exec web python manage.py generate_dummy_data_new --clear-data
-docker-compose exec web python manage.py run_crowdvote_demo
+docker-compose exec web python manage.py stage_and_tally_ballots
 
 # Verify delegation tree visualization
 # Visit: http://localhost:8000/communities/{uuid}/decisions/{uuid}/results/

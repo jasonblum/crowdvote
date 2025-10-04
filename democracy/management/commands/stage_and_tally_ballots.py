@@ -1,13 +1,19 @@
 """
-CrowdVote Democratic Process Demo Command
+Stage and Tally Ballots - CrowdVote's Democratic Process
 
-This command demonstrates the complete CrowdVote system:
-1. Tag-based delegative democracy
-2. Vote inheritance through trust networks  
-3. STAR voting (Score Then Automatic Runoff)
-4. Complete transparency and auditability
+This management command executes the two-phase democratic process:
 
-Run with: python manage.py run_crowdvote_demo
+STAGE PHASE:
+1. Collect manually-cast ballots from direct voters
+2. Calculate inherited ballots through delegation (tag-based following)
+3. Prepare the complete ballot set for tallying
+
+TALLY PHASE:
+1. Score all ballots (the 'S' in STAR voting)
+2. Run automatic runoff between top 2 choices (the 'AR' in STAR voting)
+3. Determine the winner with complete transparency
+
+Run with: python manage.py stage_and_tally_ballots
 """
 
 from django.core.management.base import BaseCommand
@@ -18,7 +24,7 @@ from democracy.models import Decision, Community
 
 
 class Command(BaseCommand):
-    help = 'Demonstrate the complete CrowdVote democratic process'
+    help = 'Stage ballots (collect + calculate delegated votes) and tally using STAR voting'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -115,7 +121,7 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write('='*80)
         self.stdout.write(
-            self.style.SUCCESS('✅ CROWDVOTE DEMO COMPLETE!')
+            self.style.SUCCESS('✅ STAGING AND TALLYING COMPLETE!')
         )
         self.stdout.write('')
         self.stdout.write('Your vision of democracy happening between the people is working!')

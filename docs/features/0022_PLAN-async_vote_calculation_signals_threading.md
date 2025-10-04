@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implement real-time vote calculation using Django signals and background threading to automatically recalculate results whenever system changes occur (votes, follows, community membership). This eliminates the need for manual `run_crowdvote_demo` commands and provides immediate user feedback with background processing for optimal user experience.
+Implement real-time vote calculation using Django signals and background threading to automatically recalculate results whenever system changes occur (votes, follows, community membership). This eliminates the need for manual `stage_and_tally_ballots` commands and provides immediate user feedback with background processing for optimal user experience.
 
 ## Context & Current State
 
@@ -17,7 +17,7 @@ Implement real-time vote calculation using Django signals and background threadi
 ✅ **Comprehensive Testing**: 29 tests covering snapshot functionality (Plan #21)
 ✅ **525 Total Tests**: 100% success rate with existing test infrastructure
 
-Currently, vote calculation still requires manually running `python manage.py run_crowdvote_demo` which calls the snapshot-based services. Users vote but don't see updated results until someone manually triggers recalculation. This creates a poor user experience and prevents real-time democracy.
+Currently, vote calculation still requires manually running `python manage.py stage_and_tally_ballots` which calls the snapshot-based services. Users vote but don't see updated results until someone manually triggers recalculation. This creates a poor user experience and prevents real-time democracy.
 
 The heavy lifting is complete in `democracy/services.py` with snapshot isolation - we now need to trigger these snapshot-based services automatically when system state changes.
 
