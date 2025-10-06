@@ -1,6 +1,7 @@
 asgiref==3.9.1
 django==5.2.6
 django-environ==0.12.0
+dj-database-url==2.1.0
 django-taggit==6.1.0
 requests==2.31.0
 gunicorn==23.0.0

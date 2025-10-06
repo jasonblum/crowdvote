@@ -153,23 +153,36 @@ WSGI_APPLICATION = 'crowdvote.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Set default values for the environment variables if they're not already set
-os.environ.setdefault("PGDATABASE", "crowdvote_dev")
-os.environ.setdefault("PGUSER", env.str('USER', default='jasonblum'))
-os.environ.setdefault("PGPASSWORD", "")
-os.environ.setdefault("PGHOST", "localhost")
-os.environ.setdefault("PGPORT", "5432")
+# Check for DATABASE_URL first (Railway/production), then fall back to individual variables (local Docker)
+import dj_database_url
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ["PGDATABASE"],
-        'USER': os.environ["PGUSER"],
-        'PASSWORD': os.environ["PGPASSWORD"],
-        'HOST': os.environ["PGHOST"],
-        'PORT': os.environ["PGPORT"],
+if 'DATABASE_URL' in os.environ:
+    # Production: Use DATABASE_URL from Railway
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ['DATABASE_URL'],
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Development: Use individual Postgres environment variables from Docker Compose
+    os.environ.setdefault("PGDATABASE", "crowdvote_dev")
+    os.environ.setdefault("PGUSER", env.str('USER', default='jasonblum'))
+    os.environ.setdefault("PGPASSWORD", "")
+    os.environ.setdefault("PGHOST", "localhost")
+    os.environ.setdefault("PGPORT", "5432")
+    
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ["PGDATABASE"],
+            'USER': os.environ["PGUSER"],
+            'PASSWORD': os.environ["PGPASSWORD"],
+            'HOST': os.environ["PGHOST"],
+            'PORT': os.environ["PGPORT"],
+        }
+    }
 
 
 # Password validation
