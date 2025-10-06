@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from accounts.models import Following
+from security.models import Following
 from democracy.models import Community, Membership, Decision, Choice, Ballot, Vote
 
 User = get_user_model()

@@ -8,7 +8,7 @@ consistent formatting, visual structure, and functionality across the applicatio
 
 from collections import defaultdict
 from django.urls import reverse
-from accounts.models import Following
+from security.models import Following
 
 
 class DelegationTreeService:

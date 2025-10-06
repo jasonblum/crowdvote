@@ -18,7 +18,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
-from accounts.models import Following
+from security.models import Following
 from democracy.models import Community, Decision, Choice, Ballot, Vote, Membership
 from decimal import Decimal
 import logging

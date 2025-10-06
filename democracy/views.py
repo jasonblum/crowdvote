@@ -20,7 +20,7 @@ import threading
 import logging
 
 from .models import Community, Decision, Membership, Ballot, Choice, Vote
-from accounts.models import Following
+from security.models import Following
 from .signals import recalculate_community_decisions_async
 from .utils import generate_username_hash
 
@@ -435,7 +435,7 @@ def community_detail(request, community_id):
         
         # Check for pending applications
         if not user_membership:
-            from accounts.models import CommunityApplication
+            from security.models import CommunityApplication
             user_application = CommunityApplication.objects.filter(
                 user=request.user,
                 community=community
@@ -488,7 +488,7 @@ def community_detail(request, community_id):
     # Get follow status for current user (for follow buttons)
     following_status = {}
     if request.user.is_authenticated:
-        from accounts.models import Following
+        from security.models import Following
         user_followings = Following.objects.filter(
             follower=request.user,
             followee__in=[m.member for m in memberships]
@@ -531,7 +531,7 @@ def community_manage(request, community_id):
         request: Django request object
         community_id: UUID of the community to manage
     """
-    from accounts.models import CommunityApplication
+    from security.models import CommunityApplication
     
     community = get_object_or_404(Community, id=community_id)
     
@@ -612,7 +612,7 @@ def manage_application(request, community_id, application_id):
     
     Only community managers can approve/reject applications.
     """
-    from accounts.models import CommunityApplication
+    from security.models import CommunityApplication
     
     community = get_object_or_404(Community, id=community_id)
     application = get_object_or_404(CommunityApplication, id=application_id, community=community)

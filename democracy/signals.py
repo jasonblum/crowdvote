@@ -28,7 +28,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.db import transaction
 
-from accounts.models import Following
+from security.models import Following
 from democracy.models import Vote, Ballot, Decision, Membership
 from democracy.services import CreateCalculationSnapshot, SnapshotBasedStageBallots, Tally
 

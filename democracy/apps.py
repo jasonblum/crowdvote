@@ -16,4 +16,6 @@ class DemocracyConfig(AppConfig):
         - Ballot tags modified
         - Decisions published/closed
         """
-        import democracy.signals  # noqa
+        # TODO (Change 0002): Re-enable after fixing Following model
+        # import democracy.signals  # noqa
+        pass

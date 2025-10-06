@@ -67,7 +67,7 @@ INSTALLED_APPS = [
     
     # CrowdVote apps
     'security.apps.SecurityConfig',
-    # 'democracy',  # TODO (Change 0002): Re-enable after fixing Following model
+    'democracy.apps.DemocracyConfig',  # Re-enabled: needed for CommunityApplication
 ]
 
 # Add development apps when in DEBUG mode (but not during testing)
@@ -104,7 +104,7 @@ ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
-ACCOUNT_ADAPTER = 'accounts.adapters.CrowdVoteAccountAdapter'
+ACCOUNT_ADAPTER = 'security.adapters.CrowdVoteAccountAdapter'
 
 # Redirect URLs
 LOGIN_REDIRECT_URL = '/profile/profile/setup/'
@@ -206,11 +206,11 @@ USE_TZ = True
 # Email Configuration
 if DEBUG:
     # Development: Use SendPulse for testing
-    EMAIL_BACKEND = 'accounts.sendpulse_backend.SendPulseEmailBackend'
+    EMAIL_BACKEND = 'security.sendpulse_backend.SendPulseEmailBackend'
     DEFAULT_FROM_EMAIL = 'noreply@crowdvote.com'
 else:
     # Production: Use SendPulse API
-    EMAIL_BACKEND = 'accounts.sendpulse_backend.SendPulseEmailBackend'
+    EMAIL_BACKEND = 'security.sendpulse_backend.SendPulseEmailBackend'
     DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@crowdvote.com')
 
 # SendPulse API Configuration
@@ -286,7 +286,7 @@ LOGGING = {
         'level': 'INFO',
     },
     'loggers': {
-        'accounts': {
+        'security': {
             'handlers': ['console', 'crowdvote_file'],
             'level': 'DEBUG',
             'propagate': False,

@@ -1,0 +1,41 @@
+[2025-09-22 12:14:57] [INFO] Turnstile verification successful for IP 192.168.65.1
+[2025-09-22 12:14:57] [INFO] Magic link requested for email: jason.blum@gmail.com (CAPTCHA verified)
+[2025-09-22 12:14:57] [INFO] Creating magic link for: jason.blum@gmail.com
+[2025-09-22 12:14:57] [INFO] Magic link created with token: 6Su2Wvg7...
+[2025-09-22 12:14:57] [INFO] Magic link URL generated from request: http://localhost:8000/magic-login/6Su2Wvg78cqgXOrWlmP7Gk57Q50S28i44CoQeGRl2ezkHinT/
+[2025-09-22 12:14:57] [INFO] Generated login URL for: jason.blum@gmail.com
+[2025-09-22 12:14:57] [INFO] Attempting to send email to: jason.blum@gmail.com
+[2025-09-22 12:14:57] [INFO] Using from_email: noreply@crowdvote.com
+[2025-09-22 12:14:57] [INFO] Email backend: accounts.sendpulse_backend.SendPulseEmailBackend
+[2025-09-22 12:14:58] [INFO] SendPulse: Successfully authenticated
+[2025-09-22 12:14:59] [INFO] SendPulse: Email sent successfully to ['jason.blum@gmail.com']
+[2025-09-22 12:14:59] [INFO] Email sent successfully to: jason.blum@gmail.com
+[2025-09-22 12:54:25] [INFO] Turnstile verification successful for IP 192.168.65.1
+[2025-09-22 12:54:25] [INFO] Magic link requested for email: jason.blum@gmail.com (CAPTCHA verified)
+[2025-09-22 12:54:26] [INFO] Creating magic link for: jason.blum@gmail.com
+[2025-09-22 12:54:26] [INFO] Magic link created with token: 9Fi7HYTt...
+[2025-09-22 12:54:26] [INFO] Magic link URL generated from request: http://localhost:8000/magic-login/9Fi7HYTtjgImTFC1kbQWS4vSnQmnCd7wOfR8GTZreYkT6Qps/
+[2025-09-22 12:54:26] [INFO] Generated login URL for: jason.blum@gmail.com
+[2025-09-22 12:54:26] [INFO] Attempting to send email to: jason.blum@gmail.com
+[2025-09-22 12:54:26] [INFO] Using from_email: noreply@crowdvote.com
+[2025-09-22 12:54:26] [INFO] Email backend: accounts.sendpulse_backend.SendPulseEmailBackend
+[2025-09-22 12:54:26] [INFO] SendPulse: Successfully authenticated
+[2025-09-22 12:54:27] [INFO] SendPulse: Email sent successfully to ['jason.blum@gmail.com']
+[2025-09-22 12:54:27] [INFO] Email sent successfully to: jason.blum@gmail.com
+[2025-09-22 12:54:59] [INFO] Magic link login attempt with token: 9Fi7HYTt...
+[2025-09-22 12:54:59] [INFO] Magic link found for email: jason.blum@gmail.com, created: 2025-09-22 12:54:26.006839+00:00, expires: 2025-09-22 13:09:26.001829+00:00, used: None
+[2025-09-22 12:55:14] [INFO] [FOLLOWING_DELETED] [jasonblum] - Stopped following BBBBBBBBBBB on tags: 30-second-test, five, four, two
+[2025-09-22 12:55:14] [INFO] [RECALC_START] [system] - Background recalculation triggered by following_deleted in community cfc1c80c-60ad-418e-9498-0f5feba71bcf
+[2025-09-22 12:55:14] [INFO] [ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for 1 shared communities
+[2025-09-22 12:55:14] [INFO] [RECALC_PROCESSING] [system] - Processing 1 open decisions in Alphabet Delegation Test
+[2025-09-22 12:55:14] [INFO] [SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision 'Test Delegation Inheritance'
+[2025-09-22 12:55:14] [INFO] Creating snapshot for decision: Test Delegation Inheritance
+[2025-09-22 12:55:19] [INFO] Snapshot created successfully: 3e1077f6-0390-4c33-996c-53b7e4205e81
+[2025-09-22 12:55:19] [INFO] [SNAPSHOT_CREATE_COMPLETE] [system] - Snapshot created successfully: 3e1077f6-0390-4c33-996c-53b7e4205e81
+[2025-09-22 12:55:19] [INFO] [STAGE_BALLOTS_START] [system] - Starting snapshot-based ballot staging for decision 'Test Delegation Inheritance'
+[2025-09-22 12:55:19] [INFO] Starting snapshot-based ballot staging for: Test Delegation Inheritance
+[2025-09-22 12:55:31] [INFO] Snapshot-based staging completed: {'total_members': 13, 'existing_ballots': 13, 'calculated_ballots': 0, 'processing_time': '2025-09-22T12:55:21.544410+00:00'}
+[2025-09-22 12:55:31] [INFO] [STAGE_BALLOTS_COMPLETE] [system] - Snapshot-based staging completed in 12.0 seconds
+[2025-09-22 12:55:31] [INFO] [TALLY_START] [system] - Starting tally for snapshot 3e1077f6-0390-4c33-996c-53b7e4205e81
+[2025-09-22 12:55:36] [INFO] [TALLY_COMPLETE] [system] - Tally completed in 5.1 seconds
+[2025-09-22 12:55:36] [INFO] [RECALC_COMPLETE] [system] - Community recalculation completed for Alphabet Delegation Test

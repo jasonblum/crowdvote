@@ -151,6 +151,8 @@ class CustomUser(AbstractUser):
         return self.username
 
 
+# TODO (Change 0002): Move CommunityApplication to democracy app
+# This model references Community which is in the democracy app
 class CommunityApplication(BaseModel):
     """
     Represents a user's application to join a community.
