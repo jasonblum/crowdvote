@@ -7,8 +7,8 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 ## 2025-01-06 - Add Interactive Delegation Network Visualization
 
 **Change**: docs/changes/0003_CHANGE-delegation-network-visualization.md  
-**Commit**: [pending]  
-**Summary**: Added D3.js interactive network visualization to community detail page showing delegation relationships. Nodes represent memberships, edges show Following relationships with tags. Includes force-directed layout, drag-and-drop, zoom/pan. Created site-wide CSS file (crowdvote.css) and component-specific network-visualization.css. Updated community_detail view to build network data structure for D3.js consumption.
+**Commit**: 397bda7  
+**Summary**: Added D3.js interactive network visualization to community detail page showing delegation relationships. Nodes represent memberships, edges show Following relationships with tags. Includes force-directed layout, drag-and-drop, zoom/pan, classic heat map colors (gray→light blue→blue→purple→red). Created site-wide CSS file (crowdvote.css) and component-specific network-visualization.css. Added timestamp display for network data currency.
 
 ---
 
