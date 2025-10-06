@@ -7,7 +7,7 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 ## 2025-01-06 - Add Follow/Unfollow UI with Tag Selection
 
 **Change**: docs/changes/0005_CHANGE-follow-unfollow-ui-with-tags.md  
-**Commit**: e6929e2  
+**Commit**: 5b0dfa1  
 **Summary**: Implemented community-specific follow/unfollow functionality with tag selection. Users can follow members within a community and specify which tags to follow them on. Modal dialog displays existing tags as pills with add/remove functionality, shows suggested tags from member's ballot history, and includes "All Tags" checkbox. Merged Following and Actions columns in Members table for cleaner UX. Following relationships are Membership→Membership (community-specific). HTMX handles dynamic table updates via out-of-band swaps without page reloads. JavaScript wrapped in IIFE to prevent variable redeclaration on modal reopening. Fixed tag trimming and modal closure bugs.
 
 ---
