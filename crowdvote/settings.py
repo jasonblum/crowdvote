@@ -66,8 +66,8 @@ INSTALLED_APPS = [
     'django_htmx',
     
     # CrowdVote apps
-    'accounts',
-    'democracy',
+    'security.apps.SecurityConfig',
+    # 'democracy',  # TODO (Change 0002): Re-enable after fixing Following model
 ]
 
 # Add development apps when in DEBUG mode (but not during testing)
@@ -246,7 +246,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom User Model
-AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTH_USER_MODEL = 'security.CustomUser'
 
 # Logging Configuration
 LOGGING = {

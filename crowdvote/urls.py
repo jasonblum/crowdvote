@@ -28,8 +28,8 @@ urlpatterns = [
     path('status/global-calculations/', views.global_calculation_status, name='global_calculation_status'),
     path(f'{settings.ADMIN_URL}/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
-    path('', include('accounts.urls')),
-    path('', include('democracy.urls')),
+    path('', include('security.urls')),
+    # path('', include('democracy.urls')),  # TODO (Change 0002): Re-enable after fixing Following model
     path('network-visualization/', TemplateView.as_view(template_name='network visualization.html'), name='network_visualization'),
     path('vote-inheritance/', TemplateView.as_view(template_name='vote-inheritance-tree.html'), name='vote_inheritance'),
 ]

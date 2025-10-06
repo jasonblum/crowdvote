@@ -1,5 +1,5 @@
 """
-URL configuration for the accounts app.
+URL configuration for the security app (authentication and user management).
 """
 
 from django.urls import path
@@ -26,9 +26,4 @@ urlpatterns = [
     # Member profiles
     path('member/<str:username>/', views.member_profile, name='member_profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
-    
-    # Follow/Unfollow Management
-    path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
-    path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
-    path('edit-follow/<int:user_id>/', views.edit_follow, name='edit_follow'),
 ]

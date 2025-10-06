@@ -1,8 +1,9 @@
 """
 User account models for the CrowdVote application.
 
-This module contains models related to user accounts, authentication, and the
-following/delegation system that enables CrowdVote's delegative democracy features.
+This module contains models related to user accounts and authentication for the
+security app. Community-specific models (Following, delegation) belong in the
+democracy app.
 """
 
 from django.contrib.auth.models import AbstractUser
@@ -19,12 +20,11 @@ class CustomUser(AbstractUser):
     Custom user model extending Django's AbstractUser.
     
     This model extends Django's built-in AbstractUser to provide CrowdVote-specific
-    functionality including member profiles, social links, and delegation-related
-    preferences. Starting with a custom user model is a Django best practice that 
-    prevents migration headaches later.
+    authentication and user profile functionality. Starting with a custom user model 
+    is a Django best practice that prevents migration headaches later.
     
-    Profile fields enable rich member profiles for better delegation decisions:
-    - Bio and location for member context
+    Profile fields enable rich user profiles:
+    - Bio and location for user context
     - Social media links for verification and transparency
     - Privacy controls for profile field visibility
     
@@ -74,12 +74,6 @@ class CustomUser(AbstractUser):
     social_links_public = models.BooleanField(
         default=True,
         help_text="Whether your social media links are visible to other community members"
-    )
-    
-    # Voting preferences
-    vote_anonymously_by_default = models.BooleanField(
-        default=False,
-        help_text="Default anonymity preference for new votes across all communities"
     )
     
     class Meta:
@@ -145,63 +139,6 @@ class CustomUser(AbstractUser):
         """
         return str(self.id)
 
-    def get_tag_usage_frequency(self):
-        """
-        Calculate frequency of tags used by this member in their manual votes.
-        
-        Returns:
-            list: List of tuples (tag, count) sorted by frequency (most used first)
-        """
-        from collections import Counter
-        from democracy.models import Ballot
-        
-        # Get all manual ballots by this member (not calculated/inherited)
-        manual_ballots = Ballot.objects.filter(
-            voter=self, 
-            is_calculated=False
-        ).exclude(tags='')
-        
-        # Count tag usage frequency
-        tag_counter = Counter()
-        for ballot in manual_ballots:
-            if ballot.tags:
-                tags = [tag.strip() for tag in ballot.tags.split(',')]
-                for tag in tags:
-                    if tag:  # Skip empty tags
-                        tag_counter[tag] += 1
-        
-        # Return sorted by frequency (most used first)
-        return tag_counter.most_common()
-
-    def get_delegation_network(self):
-        """
-        Get delegation network information for this user.
-        
-        Returns:
-            dict: Dictionary with 'following' and 'followers' lists
-        """
-        following = self.followings.select_related('followee').all()
-        followers = self.followers.select_related('follower').all()
-        
-        return {
-            'following': [
-                {
-                    'user': f.followee,
-                    'tags': [tag.strip() for tag in f.tags.split(',')] if f.tags else ['all topics'],
-                    'order': f.order
-                }
-                for f in following
-            ],
-            'followers': [
-                {
-                    'user': f.follower,
-                    'tags': [tag.strip() for tag in f.tags.split(',')] if f.tags else ['all topics'],
-                    'order': f.order
-                }
-                for f in followers
-            ]
-        }
-
     def get_full_name_or_username(self):
         """
         Return the user's full name if available, otherwise username.
@@ -212,100 +149,6 @@ class CustomUser(AbstractUser):
         if self.first_name and self.last_name:
             return f"{self.first_name} {self.last_name}"
         return self.username
-
-
-class Following(BaseModel):
-    """
-    Represents a user following another user for vote delegation.
-    
-    This model enables CrowdVote's delegative democracy system where users can
-    delegate their voting power to other users they trust. The delegation can
-    be topic-specific (when tagging is implemented) or general.
-    
-    Key concepts:
-    - Follower: The user who is delegating their vote
-    - Followee: The user who receives the delegated voting power
-    - Tags: Topics/categories for which the delegation applies (TODO: implement)
-    
-    The following relationship creates a delegation chain where:
-    1. If a follower doesn't vote directly, their vote is calculated based on
-       their followees' votes
-    2. Multiple levels of delegation are supported (A follows B, B follows C)
-    3. Circular references are prevented in the calculation algorithm
-    4. Users can always override delegation by voting directly
-    
-    Attributes:
-        follower (ForeignKey): User who is following/delegating
-        followee (ForeignKey): User who is being followed
-        tags (TaggableManager): Topics this following applies to (TODO: re-implement)
-    """
-    follower = models.ForeignKey(
-        CustomUser,
-        related_name="followings",
-        on_delete=models.PROTECT,
-        help_text="The user doing the following (delegating their vote)."
-    )
-    followee = models.ForeignKey(
-        CustomUser,
-        related_name="followers",
-        on_delete=models.PROTECT,
-        help_text="The user being followed (receiving delegated voting power)."
-    )
-    tags = models.CharField(
-        max_length=500,
-        blank=True,
-        help_text="Comma-separated tags to follow this user on (e.g., 'environmental,fiscal'). Empty = follow on all tags."
-    )
-    order = models.PositiveIntegerField(
-        default=1,
-        help_text="Priority order for tie-breaking (lower numbers = higher priority)"
-    )
-
-    class Meta:
-        ordering = [
-            "follower__username",
-            "order",
-            "followee__username",
-        ]
-        verbose_name = "Following Relationship"
-        verbose_name_plural = "Following Relationships"
-        constraints = [
-            models.UniqueConstraint(
-                fields=['follower', 'followee', 'tags'],
-                name='unique_following_relationship'
-            )
-        ]
-
-    def __str__(self):
-        """Return string representation of the following relationship."""
-        return f"{self.follower.username} follows {self.followee.username}"
-
-    def clean(self):
-        """
-        Validate the following relationship and clean tags.
-        
-        Raises:
-            ValidationError: If user tries to follow themselves or has invalid order
-        """
-        from django.core.exceptions import ValidationError
-        
-        if self.follower == self.followee:
-            raise ValidationError("Users cannot follow themselves.")
-        
-        # Validate order
-        if self.order is not None and self.order < 1:
-            raise ValidationError({'order': 'Order must be 1 or greater.'})
-        
-        # Clean tags - remove extra spaces and normalize
-        if self.tags:
-            # Split on commas, strip whitespace, and rejoin
-            cleaned_tags = [tag.strip() for tag in self.tags.split(',') if tag.strip()]
-            self.tags = ', '.join(cleaned_tags)
-
-    def save(self, *args, **kwargs):
-        """Override save to run validation."""
-        self.clean()
-        super().save(*args, **kwargs)
 
 
 class CommunityApplication(BaseModel):

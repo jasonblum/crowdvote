@@ -7,7 +7,7 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 ## 2025-01-06 - Documentation Reorganization
 
 **Change**: N/A (organizational change only)  
-**Commit**: TBD  
+**Commit**: 2d23490  
 **Summary**: Moved legacy documentation (4,121-line CHANGELOG.md and 26 feature plans) to `docs/legacy/`. Created new `docs/changes/` directory for future change documentation. New CHANGELOG format: concise entries with change references, commit hashes, and brief summaries only.
 
 ---

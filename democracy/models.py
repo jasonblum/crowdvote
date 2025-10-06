@@ -213,6 +213,32 @@ class Membership(BaseModel):
             roles.append("Lobbyist")
         
         return ", ".join(roles)
+    
+    # TODO (Change 0002): Add these methods to Membership model
+    # def get_tag_usage_frequency(self):
+    #     """Calculate frequency of tags used by this member in THIS community."""
+    #     pass
+    # 
+    # def get_delegation_network(self):
+    #     """Get delegation network for this member in THIS community."""
+    #     pass
+
+
+# TODO (Change 0002): Add Following model here
+# class Following(BaseModel):
+#     """
+#     Represents a Membership following another Membership for vote delegation.
+#     
+#     Key change from old architecture: Following links Membership→Membership
+#     (community-specific) instead of User→User (global).
+#     
+#     Attributes:
+#         follower (ForeignKey): Membership doing the following
+#         followee (ForeignKey): Membership being followed
+#         tags (CharField): Comma-separated tags for this following relationship
+#         order (PositiveIntegerField): Priority for tie-breaking
+#     """
+#     pass
 
 
 class Decision(BaseModel):
