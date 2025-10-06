@@ -7,8 +7,8 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 ## 2025-01-06 - Rename Accounts App to Security (Part 1)
 
 **Change**: docs/changes/0001_CHANGE-rename_accounts_to_security.md  
-**Commit**: 61ac99d  
-**Summary**: Renamed accounts→security app. Removed community-specific code (Following model, delegation methods) from security. Temporarily disabled democracy app. Deleted all migrations for fresh start. Added TODOs in democracy for Membership→Membership Following architecture.
+**Commit**: 4fcd1bc  
+**Summary**: Renamed accounts→security app. Removed community-specific code (Following model, delegation methods) from security. Re-enabled democracy app (needed for CommunityApplication). Disabled signals temporarily. Fresh migrations created for both apps.
 
 ---
 
