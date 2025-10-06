@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrowdVote Live Ballot Calculation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #252526;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        .header {
+            background: #323233;
+            padding: 20px;
+            border-bottom: 2px solid #3e3e42;
+        }
+        h1 {
+            color: #4fc3f7;
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: normal;
+        }
+        .description {
+            color: #a0a0a0;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        .controls {
+            margin-top: 15px;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        button:disabled {
+            background: #3e3e42;
+            cursor: not-allowed;
+        }
+        .stats {
+            background: #1e1e1e;
+            padding: 15px 20px;
+            border-bottom: 1px solid #3e3e42;
+            font-size: 13px;
+        }
+        .stats-item {
+            display: inline-block;
+            margin-right: 25px;
+            color: #a0a0a0;
+        }
+        .stats-value {
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+        .log-container {
+            padding: 20px;
+            height: 600px;
+            overflow-y: auto;
+            font-size: 13px;
+            scroll-behavior: smooth;
+        }
+        .log-container::-webkit-scrollbar {
+            width: 12px;
+        }
+        .log-container::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: #3e3e42;
+            border-radius: 6px;
+        }
+        .log-line {
+            margin: 3px 0;
+            opacity: 0;
+            animation: fadeIn 0.3s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .indent-0 { padding-left: 0; }
+        .indent-1 { padding-left: 20px; }
+        .indent-2 { padding-left: 40px; }
+        .indent-3 { padding-left: 60px; }
+        .indent-4 { padding-left: 80px; }
+        .indent-5 { padding-left: 100px; }
+        .indent-6 { padding-left: 120px; }
+        .indent-7 { padding-left: 140px; }
+        .indent-8 { padding-left: 160px; }
+        
+        .voter-badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .manual { background: #4caf50; }
+        .calculated { background: #2196f3; }
+        .circular { background: #ff9800; border: 2px solid #f44336; }
+        
+        .voter-name {
+            font-weight: bold;
+            color: #dcdcaa;
+        }
+        .voter-link {
+            color: #4fc3f7;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .voter-link:hover {
+            color: #81d4fa;
+            text-decoration: underline;
+        }
+        .tag-list {
+            color: #ce9178;
+        }
+        .match-success {
+            color: #4caf50;
+        }
+        .match-fail {
+            color: #f48771;
+        }
+        .circular-warning {
+            color: #ff9800;
+        }
+        .arrow {
+            color: #569cd6;
+        }
+        .section-header {
+            color: #4fc3f7;
+            font-weight: bold;
+            margin: 15px 0 5px 0;
+            font-size: 14px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗳️ CrowdVote: Live Ballot Calculation</h1>
+            <div class="description">
+                Watch <code>get_or_calculate_ballot()</code> execute in real-time as it recursively calculates<br>
+                delegated votes through tag-based following relationships. Circular references are automatically prevented.<br>
+                <strong>(N)</strong> = influence count (# of people who inherited from this voter). <strong>🏆</strong> = most influential voter(s)
+            </div>
+            <div class="controls">
+                <button id="startBtn" onclick="startCalculation()">▶ Start New Calculation</button>
+            </div>
+        </div>
+        <div class="stats">
+            <span class="stats-item">
+                <span class="voter-badge manual"></span>
+                Manual: <span class="stats-value" id="manualCount">0</span>
+            </span>
+            <span class="stats-item">
+                <span class="voter-badge calculated"></span>
+                Calculated: <span class="stats-value" id="calculatedCount">0</span>
+            </span>
+            <span class="stats-item">
+                <span class="voter-badge circular"></span>
+                Circular Prevented: <span class="stats-value" id="circularCount">0</span>
+            </span>
+            <span class="stats-item">
+                No Ballot: <span class="stats-value" id="noBallotCount">0</span> (can't calculate)
+            </span>
+            <span class="stats-item">
+                Max Depth: <span class="stats-value" id="maxDepth">0</span> levels
+            </span>
+        </div>
+        <div class="log-container" id="logContainer"></div>
+    </div>
+
+    <script>
+        const firstNames = ['Alice', 'Bob', 'Carol', 'David', 'Emma', 'Frank', 'Grace', 'Henry', 
+                           'Iris', 'Jack', 'Kate', 'Leo', 'Maria', 'Nathan', 'Olivia', 'Peter', 
+                           'Quinn', 'Rachel', 'Sam', 'Tina', 'Uma', 'Victor', 'Wendy', 'Xavier',
+                           'Yara', 'Zack', 'Amy', 'Ben', 'Claire', 'Dan', 'Eve', 'Felix',
+                           'Gina', 'Hugo', 'Ivy', 'James', 'Kelly', 'Liam', 'Maya', 'Noah',
+                           'Owen', 'Pam', 'Quincy', 'Rita', 'Steve', 'Tess', 'Uma', 'Vince',
+                           'Wade', 'Xena'];
+
+        const tags = ['environment', 'budget', 'beautification', 'maintenance', 'education', 'infrastructure'];
+
+        let animationQueue = [];
+        let calculatedBallots = {};
+        let influenceCounts = {};
+        let maxInfluence = 0;
+        let isAnimating = false;
+        let stats = { manual: 0, calculated: 0, circular: 0, noBallot: 0, maxDepth: 0 };
+
+        function generateNetwork() {
+            // 8-10 manual voters
+            const numManual = Math.floor(Math.random() * 3) + 8;
+            const shuffled = [...firstNames].sort(() => Math.random() - 0.5);
+            const manualVoters = shuffled.slice(0, numManual);
+            const calculatedVoters = shuffled.slice(numManual, 50);
+
+            // Manual voter ballot tags
+            const ballotTags = {};
+            manualVoters.forEach(voter => {
+                const numTags = Math.floor(Math.random() * 3) + 1;
+                ballotTags[voter] = [...tags].sort(() => Math.random() - 0.5).slice(0, numTags);
+            });
+
+            // Following relationships
+            const followings = {};
+            calculatedVoters.forEach(voter => {
+                const numFollows = Math.floor(Math.random() * 3) + 1;
+                const possible = [...manualVoters, ...calculatedVoters].filter(v => v !== voter);
+                const selected = possible.sort(() => Math.random() - 0.5).slice(0, numFollows);
+                
+                followings[voter] = selected.map(followee => {
+                    const choice = Math.random();
+                    let followTags = [];
+                    if (choice < 0.3) followTags = []; // ALL
+                    else if (choice < 0.6) followTags = [tags[Math.floor(Math.random() * tags.length)]];
+                    else followTags = [...tags].sort(() => Math.random() - 0.5).slice(0, 2);
+                    return { followee, tags: followTags };
+                });
+            });
+
+            // Create some circular references
+            for (let i = 0; i < 3; i++) {
+                const [v1, v2] = calculatedVoters.sort(() => Math.random() - 0.5).slice(0, 2);
+                if (followings[v1] && followings[v2]) {
+                    followings[v1].push({ followee: v2, tags: [tags[0]] });
+                    followings[v2].push({ followee: v1, tags: [tags[0]] });
+                }
+            }
+
+            return { manualVoters, calculatedVoters, followings, ballotTags };
+        }
+
+        function simulateGetOrCalculateBallot(voter, network, followPath = [], indent = 0, recursionDepth = 0, isCountingPhase = false) {
+            const { manualVoters, followings, ballotTags } = network;
+            
+            // Track actual recursion depth (not visual indent)
+            stats.maxDepth = Math.max(stats.maxDepth, recursionDepth);
+
+            // Check for circular reference
+            if (followPath.includes(voter)) {
+                if (!isCountingPhase) {
+                    stats.circular++;
+                    const pathWithHighlight = [...followPath, voter].map((v, idx) => {
+                        if (idx === followPath.length) {
+                            return `<span class="voter-name" style="color: #ff9800;">${v}</span>`;
+                        }
+                        return `<span class="voter-name">${v}</span>`;
+                    });
+                    const cyclePath = pathWithHighlight.join(' → ');
+                    const influenceBadge = influenceCounts[voter] > 0 && influenceCounts[voter] === maxInfluence ? ' 🏆' : '';
+                    const influenceText = ` <span style="color: #64748b;">(${influenceCounts[voter] || 0})</span>${influenceBadge}`;
+                    animationQueue.push({
+                        indent,
+                        html: `<span class="voter-badge circular"></span><span class="voter-name" id="voter-${voter}">${voter}</span>${influenceText} <span class="circular-warning">⚠️ Circular reference prevented (already in follow path: ${cyclePath})</span>`
+                    });
+                }
+                return [];
+            }
+
+            // If already calculated, return cached tags
+            if (calculatedBallots[voter]) {
+                return calculatedBallots[voter];
+            }
+
+            const newPath = [...followPath, voter];
+
+            // If manual voter
+            if (manualVoters.includes(voter)) {
+                const voterTags = ballotTags[voter];
+                if (!isCountingPhase) {
+                    const influenceBadge = influenceCounts[voter] > 0 && influenceCounts[voter] === maxInfluence ? ' 🏆' : '';
+                    const influenceText = ` <span style="color: #64748b;">(${influenceCounts[voter] || 0})</span>${influenceBadge}`;
+                    animationQueue.push({
+                        indent,
+                        html: `<span class="voter-badge manual"></span><span class="voter-name" id="voter-${voter}">${voter}</span>${influenceText} cast manual ballot <span class="tag-list">[${voterTags.join(', ')}]</span>`
+                    });
+                }
+                calculatedBallots[voter] = voterTags;
+                return voterTags;
+            }
+
+            // Calculated voter
+            if (!isCountingPhase) {
+                stats.calculated++;
+                const influenceBadge = influenceCounts[voter] > 0 && influenceCounts[voter] === maxInfluence ? ' 🏆' : '';
+                const influenceText = ` <span style="color: #64748b;">(${influenceCounts[voter] || 0})</span>${influenceBadge}`;
+                animationQueue.push({
+                    indent,
+                    html: `<span class="voter-badge calculated"></span><span class="voter-name" id="voter-${voter}">${voter}</span>${influenceText} calculating ballot...`
+                });
+            }
+
+            if (!followings[voter] || followings[voter].length === 0) {
+                if (!isCountingPhase) {
+                    stats.noBallot++;
+                    animationQueue.push({
+                        indent: indent + 1,
+                        html: `<span style="color: #a0a0a0;">└─ Not following anyone, no ballot calculated</span>`
+                    });
+                }
+                calculatedBallots[voter] = [];
+                return [];
+            }
+
+            let inheritedTags = [];
+
+            // Process each following relationship
+            followings[voter].forEach(({ followee, tags: followTags }) => {
+                // Determine if followee is manual or calculated for badge color
+                const followeeIsManual = network.manualVoters.includes(followee);
+                const followeeBadge = followeeIsManual ? 'manual' : 'calculated';
+                
+                if (!isCountingPhase) {
+                    const tagDisplay = followTags.length === 0 ? 'ALL' : followTags.join(', ');
+                    animationQueue.push({
+                        indent: indent + 1,
+                        html: `<span class="arrow">├─</span> Following <span class="voter-badge ${followeeBadge}"></span><a href="#voter-${followee}" class="voter-name voter-link">${followee}</a> on <span class="tag-list">[${tagDisplay}]</span>`
+                    });
+                }
+
+                // RECURSE FIRST to calculate followee's ballot
+                const followeeTags = simulateGetOrCalculateBallot(followee, network, newPath, indent + 2, recursionDepth + 1, isCountingPhase);
+                
+                // Count influence
+                if (followeeTags.length > 0) {
+                    influenceCounts[followee] = (influenceCounts[followee] || 0) + 1;
+                }
+                
+                // NOW check tag match with the calculated followee tags
+                const shouldInherit = followTags.length === 0 || 
+                                    followTags.some(tag => followeeTags.includes(tag));
+
+                if (shouldInherit && followeeTags.length > 0) {
+                    const matchingTags = followTags.length === 0 ? 'ALL' : 
+                                       followTags.filter(t => followeeTags.includes(t)).join(', ');
+                    if (!isCountingPhase) {
+                        animationQueue.push({
+                            indent: indent + 2,
+                            html: `<span class="match-success">✓ MATCH</span> on [${matchingTags}] <span class="arrow">→</span> inheriting votes`
+                        });
+                    }
+                    
+                    // Collect inherited tags
+                    const tagsToInherit = followTags.length === 0 ? followeeTags : 
+                                         followTags.filter(t => followeeTags.includes(t));
+                    inheritedTags.push(...tagsToInherit);
+                } else {
+                    if (!isCountingPhase) {
+                        animationQueue.push({
+                            indent: indent + 2,
+                            html: `<span class="match-fail">✗ NO MATCH</span> (${followee} ballot tagged [${followeeTags.join(', ')}])`
+                        });
+                    }
+                }
+            });
+
+            // Remove duplicates from inherited tags
+            inheritedTags = [...new Set(inheritedTags)];
+
+            // Track if no ballot could be calculated
+            if (inheritedTags.length === 0 && !isCountingPhase) {
+                stats.noBallot++;
+            }
+
+            // Final calculated result
+            if (!isCountingPhase) {
+                const finalText = inheritedTags.length > 0 ? 
+                    `ballot calculated <span class="tag-list">[${inheritedTags.join(', ')}]</span>` :
+                    `<span style="color: #a0a0a0;">no ballot calculated (no matching tags)</span>`;
+                animationQueue.push({
+                    indent: indent + 1,
+                    html: `<span class="arrow">└─</span> <span class="voter-name">${voter}</span> ${finalText}`
+                });
+            }
+
+            calculatedBallots[voter] = inheritedTags;
+            return inheritedTags;
+        }
+
+        async function startCalculation() {
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Calculating...';
+
+            // Reset
+            animationQueue = [];
+            calculatedBallots = {};
+            influenceCounts = {};
+            maxInfluence = 0;
+            stats = { manual: 0, calculated: 0, circular: 0, noBallot: 0, maxDepth: 0 };
+            document.getElementById('logContainer').innerHTML = '';
+            updateStats();
+
+            // Generate network
+            const network = generateNetwork();
+            stats.manual = network.manualVoters.length;
+
+            // FIRST PASS: Count influences (don't add to animation queue)
+            network.manualVoters.forEach(voter => {
+                influenceCounts[voter] = 0; // Initialize all voters
+                simulateGetOrCalculateBallot(voter, network, [], 0, 0, true);
+            });
+            network.calculatedVoters.forEach(voter => {
+                influenceCounts[voter] = 0; // Initialize all voters
+                if (!calculatedBallots[voter]) {
+                    simulateGetOrCalculateBallot(voter, network, [], 0, 0, true);
+                }
+            });
+
+            // Find max influence for highlighting
+            maxInfluence = Math.max(...Object.values(influenceCounts));
+
+            // Reset for second pass
+            calculatedBallots = {};
+            stats = { manual: stats.manual, calculated: 0, circular: 0, noBallot: 0, maxDepth: 0 };
+
+            // SECOND PASS: Build animation queue with influence counts
+            // Add header
+            animationQueue.push({
+                indent: 0,
+                html: '<div class="section-header">📊 STAGE 1: Manual Ballots</div>',
+                isHeader: true
+            });
+
+            // Process manual voters
+            network.manualVoters.forEach(voter => {
+                simulateGetOrCalculateBallot(voter, network, [], 0, 0, false);
+            });
+
+            // Add separator
+            animationQueue.push({
+                indent: 0,
+                html: '<div class="section-header">🔄 STAGE 2: Calculated Ballots (Delegation)</div>',
+                isHeader: true
+            });
+
+            // Process only calculated voters who haven't been calculated yet
+            network.calculatedVoters.forEach(voter => {
+                if (!calculatedBallots[voter]) {
+                    simulateGetOrCalculateBallot(voter, network, [], 0, 0, false);
+                }
+            });
+
+            // Add section for voters with no ballots
+            const votersWithNoBallot = network.calculatedVoters.filter(
+                voter => !calculatedBallots[voter] || calculatedBallots[voter].length === 0
+            );
+
+            if (votersWithNoBallot.length > 0) {
+                animationQueue.push({
+                    indent: 0,
+                    html: '<div class="section-header">❌ STAGE 3: No Ballot Calculated</div>',
+                    isHeader: true
+                });
+
+                votersWithNoBallot.forEach(voter => {
+                    const influenceBadge = influenceCounts[voter] > 0 && influenceCounts[voter] === maxInfluence ? ' 🏆' : '';
+                    const influenceText = ` <span style="color: #64748b;">(${influenceCounts[voter] || 0})</span>${influenceBadge}`;
+                    
+                    if (!network.followings[voter] || network.followings[voter].length === 0) {
+                        animationQueue.push({
+                            indent: 0,
+                            html: `<span class="voter-badge calculated"></span><span class="voter-name" id="voter-${voter}">${voter}</span>${influenceText} <span style="color: #a0a0a0;">not following anyone</span>`
+                        });
+                    } else {
+                        animationQueue.push({
+                            indent: 0,
+                            html: `<span class="voter-badge calculated"></span><span class="voter-name" id="voter-${voter}">${voter}</span>${influenceText} <span style="color: #a0a0a0;">following others but no tag matches</span>`
+                        });
+                    }
+                });
+            }
+
+            // Animate
+            await animateQueue();
+
+            btn.disabled = false;
+            btn.textContent = '▶ Start New Calculation';
+        }
+
+        async function animateQueue() {
+            const container = document.getElementById('logContainer');
+            let autoScrollEnabled = true;
+            
+            // Track mouse/touch interaction
+            const pauseAutoScroll = () => {
+                autoScrollEnabled = false;
+            };
+            
+            const checkResumeAutoScroll = () => {
+                const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10;
+                if (isAtBottom) {
+                    autoScrollEnabled = true;
+                }
+            };
+            
+            // Pause auto-scroll on any wheel/touch event
+            container.addEventListener('wheel', pauseAutoScroll, { passive: true });
+            container.addEventListener('touchstart', pauseAutoScroll, { passive: true });
+            
+            // Check if should resume on scroll
+            container.addEventListener('scroll', checkResumeAutoScroll);
+            
+            for (const item of animationQueue) {
+                const div = document.createElement('div');
+                div.className = `log-line indent-${Math.min(item.indent, 8)}`;
+                div.innerHTML = item.html;
+                container.appendChild(div);
+                
+                // Only auto-scroll if enabled
+                if (autoScrollEnabled) {
+                    container.scrollTop = container.scrollHeight;
+                }
+                
+                // Update stats
+                updateStats();
+                
+                // Delay for animation effect
+                await new Promise(resolve => setTimeout(resolve, item.isHeader ? 600 : 250));
+            }
+            
+            // Cleanup
+            container.removeEventListener('wheel', pauseAutoScroll);
+            container.removeEventListener('touchstart', pauseAutoScroll);
+            container.removeEventListener('scroll', checkResumeAutoScroll);
+        }
+
+        function updateStats() {
+            document.getElementById('manualCount').textContent = stats.manual;
+            document.getElementById('calculatedCount').textContent = stats.calculated;
+            document.getElementById('circularCount').textContent = stats.circular;
+            document.getElementById('noBallotCount').textContent = stats.noBallot;
+            document.getElementById('maxDepth').textContent = stats.maxDepth;
+        }
+
+        // Auto-start on load
+        window.addEventListener('load', () => {
+            setTimeout(startCalculation, 500);
+        });
+    </script>
+</body>
+</html>

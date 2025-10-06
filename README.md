@@ -32,7 +32,7 @@ CrowdVote is a Django-based web application that enables communities to make dec
 
 CrowdVote brings a process I've been calling Social Democracy (as in "Social Media" …not the political ideology) to local communities such as condo associations, town councils, student governments, and anywhere else you might want to "crowdsource" decisions to a community of people.
 
-Unlike a conventional, web-based polling application, CrowdVote allows community members to delegate their votes on to an Instant Runoff between one or more other members whose judgement they trust, whenever - and, specifically, on whichever issues they like.
+Unlike a conventional, web-based polling application, CrowdVote allows community members to delegate their votes to one or more other members whose judgement they trust, whenever - and, specifically, on whichever issues they like. When you follow multiple people, their star ratings are averaged to calculate your ballot.
 
 This is done through tagging the decisions you are voting on with terms like "budget" or "environment", which allows other members of the community who trust your judgement on such issues, to then follow you (inherit your votes) on those tags.
 
@@ -48,7 +48,7 @@ Mary is a board member, and wants to crowdsource her decision on CrowdVote, alon
 
 Her neighbor Jack sees Mary's published question, and responds by casting a Ranked Choice ballot: [ 'Cathedral Gray', 'Aqua Chiffon', 'Oceanside' ]. And if Jack wants to encourage other members of the community to follow him (again, to inherit his ballot) …he'll want to take a moment to further tag Mary's decision with terms he feels characterize her question and, more importantly, on which others in the community can follow him: [ "maintenance", "beautification", "community room" ].
 
-Now, if their neighbor Sophia is out of town or fails to cast a ballot before next Tuesday for whatever reason, CrowdVote can attempt to calculate a ballot on her behalf …but only if she has previously identified in her profile other community members whose judgement she trusts sufficiently to follow their positions on decisions like this one. Moreover, she may be inheriting votes from lots of people, on a variety of matters. She may follow Mary on "environmental" issues, Jack on "maintenance" and "budget," and also Susan on "budget". …CrowdVote just figures out who's following whom, on which issues, and runs them all through an Instant Runoff to come up with Sophia's ballot, which she is of course free to override anytime before Tuesday by logging in to CrowdVote and casting her own.
+Now, if their neighbor Sophia is out of town or fails to cast a ballot before next Tuesday for whatever reason, CrowdVote can attempt to calculate a ballot on her behalf …but only if she has previously identified in her profile other community members whose judgement she trusts sufficiently to follow their positions on decisions like this one. Moreover, she may be inheriting votes from lots of people, on a variety of matters. She may follow Mary on "environmental" issues, Jack on "maintenance" and "budget," and also Susan on "budget". …CrowdVote just figures out who's following whom, on which issues, and averages all their star ratings to calculate Sophia's ballot (which may result in fractional stars like 3.7 or 4.2), which she is of course free to override anytime before Tuesday by logging in to CrowdVote and casting her own.
 
 **CrowdVote = Free Market Representation.**
 

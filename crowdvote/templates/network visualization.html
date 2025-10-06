@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrowdVote Peep Voter Network</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        #network {
+            width: 100%;
+            height: 700px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: grab;
+        }
+        #network:active {
+            cursor: grabbing;
+        }
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            fill: none;
+        }
+        .link-label {
+            font-size: 10px;
+            fill: #666;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        .node circle {
+            stroke: #fff;
+            stroke-width: 2px;
+            cursor: move;
+        }
+        .node text {
+            font-size: 11px;
+            font-weight: bold;
+            text-anchor: middle;
+            pointer-events: none;
+            fill: white;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .legend-item {
+            margin: 5px 0;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 0 2px;
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #4338ca;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CrowdVote Peep Voter Network</h1>
+        <div class="description">
+            Arrows show delegation relationships. Tags indicate specific issues. 
+            <strong>No tags = following on ALL issues</strong>. Drag nodes to rearrange. Drag background to pan. Scroll to zoom.
+        </div>
+        <div class="controls">
+            <button onclick="location.reload()">Generate New Network</button>
+        </div>
+        <svg id="network"></svg>
+        <div class="legend">
+            <div class="legend-title">Legend:</div>
+            <div class="legend-item">→ Arrow with tags: Voter delegates on specific issues</div>
+            <div class="legend-item">→ Arrow with <strong>ALL</strong>: Voter delegates on all issues (complete trust)</div>
+            <div class="legend-item">Examples: <span class="tag">environment</span> <span class="tag">budget</span> <span class="tag">beautification</span> <span class="tag">safety</span></div>
+            <div class="legend-item" style="margin-top: 10px;"><strong>Node Colors:</strong> Gray (no followers) → Blue → Green → Yellow → Orange → Red (most followers)</div>
+        </div>
+    </div>
+
+    <script>
+        // Create network data
+        const voters = [
+            'Alice', 'Bob', 'Carol', 'David', 'Emma', 'Frank',
+            'Grace', 'Henry', 'Iris', 'Jack', 'Kate', 'Leo',
+            'Maya', 'Noah', 'Olivia', 'Peter', 'Quinn', 'Rachel',
+            'Sam', 'Tina', 'Uma', 'Victor', 'Wendy', 'Xander'
+        ];
+
+        const availableTags = ['environment', 'budget', 'beautification', 'maintenance', 'education', 'infrastructure', 'safety', 'healthcare'];
+        
+        const nodes = voters.map(name => ({ id: name }));
+        
+        // Generate completely random follow relationships with tags
+        const links = [];
+        
+        // Helper function to check if link exists
+        function linkExists(source, target) {
+            return links.some(l => l.source === source && l.target === target);
+        }
+        
+        // Helper function to get random tags
+        function getRandomTags() {
+            const tagChoice = Math.random();
+            if (tagChoice < 0.25) {
+                return [];
+            } else if (tagChoice < 0.6) {
+                return [availableTags[Math.floor(Math.random() * availableTags.length)]];
+            } else {
+                const numTags = Math.floor(Math.random() * 2) + 2;
+                const shuffledTags = [...availableTags].sort(() => Math.random() - 0.5);
+                return shuffledTags.slice(0, numTags);
+            }
+        }
+        
+        // Create some random circular relationships (1-3 circles)
+        const numCircles = Math.floor(Math.random() * 3) + 1;
+        const usedInCircles = new Set();
+        
+        for (let i = 0; i < numCircles; i++) {
+            // Circle size 2-4 people
+            const circleSize = Math.floor(Math.random() * 3) + 2;
+            const available = voters.filter(v => !usedInCircles.has(v));
+            
+            if (available.length >= circleSize) {
+                const shuffled = available.sort(() => Math.random() - 0.5);
+                const circle = shuffled.slice(0, circleSize);
+                
+                // Add to circle tracking
+                circle.forEach(v => usedInCircles.add(v));
+                
+                // Create the circle
+                for (let j = 0; j < circle.length; j++) {
+                    const source = circle[j];
+                    const target = circle[(j + 1) % circle.length];
+                    links.push({ source, target, tags: getRandomTags() });
+                }
+            }
+        }
+        
+        // Now add random relationships for all voters
+        voters.forEach(voter => {
+            const numFollows = Math.floor(Math.random() * 4); // 0-3 follows
+            const available = voters.filter(v => v !== voter);
+            const shuffled = available.sort(() => Math.random() - 0.5);
+            const follows = shuffled.slice(0, numFollows);
+            
+            follows.forEach(target => {
+                if (!linkExists(voter, target)) {
+                    links.push({ source: voter, target: target, tags: getRandomTags() });
+                }
+            });
+        });
+
+        // Calculate follower counts for each node
+        const followerCounts = new Map();
+        voters.forEach(voter => followerCounts.set(voter, 0));
+        links.forEach(link => {
+            const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+            followerCounts.set(targetId, followerCounts.get(targetId) + 1);
+        });
+
+        // Find max followers for scaling
+        const maxFollowers = Math.max(...followerCounts.values());
+
+        // Color scale function - standard heat map (gray -> blue -> green -> yellow -> orange -> red)
+        function getNodeColor(followersCount) {
+            if (followersCount === 0) return '#9ca3af'; // Gray
+            
+            const ratio = followersCount / Math.max(maxFollowers, 1);
+            
+            if (ratio <= 0.2) return '#3b82f6'; // Blue
+            if (ratio <= 0.4) return '#10b981'; // Green
+            if (ratio <= 0.6) return '#eab308'; // Yellow
+            if (ratio <= 0.8) return '#f97316'; // Orange
+            return '#ef4444'; // Red
+        }
+
+        // Set up SVG
+        const svg = d3.select('#network');
+        const width = 1160;
+        const height = 700;
+        
+        svg.attr('width', width).attr('height', height);
+
+        // Add zoom behavior to SVG
+        const g = svg.append('g');
+        
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+        
+        svg.call(zoom);
+
+        // Add arrow markers
+        svg.append('defs').append('marker')
+            .attr('id', 'arrowhead')
+            .attr('viewBox', '-0 -5 10 10')
+            .attr('refX', 28)
+            .attr('refY', 0)
+            .attr('orient', 'auto')
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .append('path')
+            .attr('d', 'M 0,-5 L 10,0 L 0,5')
+            .attr('fill', '#999');
+
+        // Create force simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d => d.id).distance(150))
+            .force('charge', d3.forceManyBody().strength(-400))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(40));
+
+        // Create container groups
+        const linkGroup = g.append('g').attr('class', 'links');
+        const nodeGroup = g.append('g').attr('class', 'nodes');
+
+        // Create links
+        const link = linkGroup.selectAll('path')
+            .data(links)
+            .join('path')
+            .attr('class', 'link')
+            .attr('stroke-width', 2)
+            .attr('marker-end', 'url(#arrowhead)');
+
+        // Create link labels (tags or "ALL")
+        const linkLabels = linkGroup.selectAll('text')
+            .data(links)
+            .join('text')
+            .attr('class', 'link-label')
+            .text(d => d.tags.length === 0 ? 'ALL' : d.tags.join(', '));
+
+        // Function to update all visual positions
+        function updatePositions() {
+            // Keep nodes within bounds
+            const margin = 50;
+            nodes.forEach(d => {
+                d.x = Math.max(margin, Math.min(width - margin, d.x));
+                d.y = Math.max(margin, Math.min(height - margin, d.y));
+            });
+
+            link.attr('d', d => {
+                const dx = d.target.x - d.source.x;
+                const dy = d.target.y - d.source.y;
+                const dr = Math.sqrt(dx * dx + dy * dy) * 2;
+                return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+            });
+
+            linkLabels
+                .attr('x', d => (d.source.x + d.target.x) / 2)
+                .attr('y', d => (d.source.y + d.target.y) / 2)
+                .attr('transform', d => {
+                    const angle = Math.atan2(d.target.y - d.source.y, d.target.x - d.source.x) * 180 / Math.PI;
+                    return `rotate(${angle}, ${(d.source.x + d.target.x) / 2}, ${(d.source.y + d.target.y) / 2})`;
+                });
+
+            node.attr('transform', d => `translate(${d.x},${d.y})`);
+        }
+
+        // Create nodes with improved drag behavior
+        const node = nodeGroup.selectAll('g')
+            .data(nodes)
+            .join('g')
+            .attr('class', 'node')
+            .call(d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended));
+
+        node.append('circle')
+            .attr('r', 22)
+            .attr('fill', d => getNodeColor(followerCounts.get(d.id)));
+
+        node.append('text')
+            .text(d => d.id)
+            .attr('dy', 4)
+            .attr('fill', '#fff');
+
+        // Update positions on tick
+        simulation.on('tick', updatePositions);
+
+        // Stop simulation after initial layout (3 seconds)
+        setTimeout(() => {
+            simulation.stop();
+        }, 3000);
+
+        // Drag functions - work independently of simulation
+        function dragstarted(event, d) {
+            d3.select(this).raise();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+            d.x = event.x;
+            d.y = event.y;
+            updatePositions();
+        }
+
+        function dragended(event, d) {
+            // Keep node pinned where user dragged it
+        }
+    </script>
+</body>
+</html>

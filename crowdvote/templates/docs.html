@@ -50,8 +50,8 @@
                 <a href="#faq-create-community" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How can I create a community?</a>
                 <a href="#faq-star-voting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is STAR voting?</a>
                 <a href="#faq-lobbyists" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What is a lobbyist?</a>
-                <a href="#faq-ties" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What happens if there is a tie?</a>
                 <a href="#faq-vote-counting" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How are votes counted?</a>
+                <a href="#faq-ties" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What if there is a tie?</a>
                 <a href="#faq-security" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• How secure is CrowdVote?</a>
                 <a href="#faq-publish-decisions" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• Who gets to publish decisions?</a>
                 <a href="#faq-influence-score" class="block text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 py-1">• What does the influence score mean?</a>
@@ -122,8 +122,8 @@
                             <strong>crowd•vote</strong> /ˈkraʊdvəʊt/ ▸ v.
                         </div>
                         <p class="mt-2 text-gray-700 dark:text-gray-300">
-                            To crowdsource decisions to an instant runoff between members of a community, who are then free 
-                            to crowdsource their votes on to each other, whenever, and on whichever issues they like -- 
+                            To crowdsource decisions to members of a community, who are then free 
+                            to delegate their votes to each other, whenever, and on whichever issues they like -- 
                             thereby effecting within their community, a free marketplace in which members can compete to 
                             represent others' interests, socially and unregulated by traditional electoral processes and cycles.
                         </p>
@@ -144,8 +144,9 @@
 
                         <p>
                             Unlike a conventional, web-based polling application however, CrowdVote allows community members to 
-                            delegate their votes on to an Instant Runoff between one or more other members whose judgement 
-                            they trust, <em>whenever -</em> and, specifically, <em>on whichever issues they like</em>. And likewise,
+                            delegate their votes to one or more other members whose judgement 
+                            they trust, <em>whenever -</em> and, specifically, <em>on whichever issues they like</em>. When you follow multiple people,
+                            their star ratings are averaged to calculate your ballot. And likewise,
                             those members can delegate their vote on to someone else, and so on.
                         </p>
 
@@ -197,8 +198,8 @@
               to follow their positions on decisions like this one. Moreover, she may be inheriting votes from lots 
               of people, on a variety of matters. She may follow Mary on "<em>environmental</em>" issues, Jack on 
               "<em>maintenance</em>" and "<em>budget</em>," and also Susan on "<em>budget</em>". …CrowdVote just 
-              figures out who's following whom, on which issues, and runs them all through an Instant Runoff to 
-              come up with Sophia's ballot, which she is of course free to override anytime before Tuesday by 
+              figures out who's following whom, on which issues, and averages all their star ratings to 
+              calculate Sophia's ballot (which may result in fractional stars like 3.7 or 4.2), which she is of course free to override anytime before Tuesday by 
               logging in to CrowdVote and casting her own.
             </p>
 
@@ -442,16 +443,6 @@
 
               <!-- FAQ 2 -->
               <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
-                <h3 id="faq-ties" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  What happens if there is a tie between two or more choices from the people I'm following?
-                </h3>
-                <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  On your profile page, where you identify members you are following, the order in which they are listed is used to break any ties. So for instance, if the decision is whether to paint the community room red or blue, and you're following only two people: José and Elizabeth, and José voted red, and Elizabeth voted blue, then the choice of whomever is listed earlier among the people you're following breaks the tie.
-                </p>
-              </div>
-
-              <!-- FAQ 3 -->
-              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
                 <h3 id="faq-vote-counting" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   How are votes calculated?
                 </h3>
@@ -545,6 +536,64 @@
                   
                   <p class="mt-6 font-medium">
                     <strong>The result:</strong> A completely transparent, mathematically precise, and real-time democratic system where every vote is counted accurately and every delegation relationship is honored exactly as intended.
+                  </p>
+                </div>
+              </div>
+              
+              <!-- FAQ 3 -->
+              <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg pt-8">
+                <h3 id="faq-ties" class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  What if there is a tie?
+                </h3>
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
+                  <p>
+                    Ties in STAR voting are rare (over 10 times less common than traditional choose-one voting), but when they occur, CrowdVote uses the <a href="https://github.com/larryh/starvote" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium" target="_blank" rel="noopener noreferrer">starvote library</a> which implements the <a href="https://www.starvoting.org/ties" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium" target="_blank" rel="noopener noreferrer">Official STAR Voting Tiebreaker Protocol</a>.
+                  </p>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">Official Tiebreaker Protocol</h4>
+                  
+                  <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600 space-y-3">
+                    <div>
+                      <strong class="text-gray-900 dark:text-white">Step 1: Score Phase Ties</strong>
+                      <p class="text-sm mt-1">
+                        If multiple candidates have equal total scores, the tie is broken in favor of the candidate who was preferred (scored higher) by more voters. If there are only two candidates, this will be the majority preferred candidate. For multiple tied candidates, they are compared head-to-head, and the candidate(s) who lost the most matchups are eliminated. This can be repeated until two candidates can advance to the runoff.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <strong class="text-gray-900 dark:text-white">Step 2: Runoff Phase Ties</strong>
+                      <p class="text-sm mt-1">
+                        If the runoff results in a tie (equal number of voters prefer each candidate), the tie is broken in favor of the candidate who had the higher total score in the scoring phase.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <strong class="text-gray-900 dark:text-white">Step 3: Five Star Ratings</strong>
+                      <p class="text-sm mt-1">
+                        If a tie cannot be resolved using steps 1 and 2, break the tie in favor of the tied candidate who received the most five-star ratings. If this doesn't fully resolve the tie, eliminate the candidate(s) with the least five-star ratings.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border-l-4 border-yellow-400 dark:border-yellow-500 mt-4">
+                    <h5 class="font-semibold text-yellow-900 dark:text-yellow-300 mb-2">Unbreakable Ties</h5>
+                    <p class="text-yellow-800 dark:text-yellow-300 text-sm">
+                      In the extremely rare event that a tie still cannot be broken after the three steps above, CrowdVote does not implement random selection or other method for breaking ties. Instead, the decision remains tied and it's up to the community managers to decide the appropriate next step. Options might include:
+                    </p>
+                    <ul class="list-disc list-inside text-yellow-800 dark:text-yellow-300 text-sm ml-4 mt-2 space-y-1">
+                      <li>Reopening the decision for additional community input</li>
+                      <li>Extending the discussion period to allow more debate</li>
+                      <li>Manually deciding between the tied choices based on community needs</li>
+                      <li>Conducting a separate, focused vote between only the tied options</li>
+                      <li>Flipping a coin</li>
+                    </ul>
+                    <p class="text-yellow-800 dark:text-yellow-300 text-sm">
+                      We recommend establishing your procedure for breaking ties in advance.
+                    </p>
+                  </div>
+                  
+                  <p class="mt-4 text-sm">
+                    For complete details on the tiebreaker protocol, visit the official STAR Voting documentation at <a href="https://www.starvoting.org/ties" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium" target="_blank" rel="noopener noreferrer">starvoting.org/ties</a>.
                   </p>
                 </div>
               </div>
@@ -778,7 +827,7 @@
                       <strong>CrowdVote mirrors real life:</strong> We're constantly influenced by people who are influenced by other people. You might buy a book because Oprah recommended it. You might see a movie your friend suggested after they read a review. You trust your mechanic's advice because they've built expertise over years.
                     </p>
                     <p class="text-green-800 dark:text-green-300 mt-2">
-                      <strong>We all live in one great free market of influence</strong> – CrowdVote simply extends this natural system to democratic representation, letting the best ideas and most trusted voices rise organically.
+                      <strong>We all live in one great free market of influence on each other</strong> – CrowdVote simply <strong>formalizes</strong> this natural system in democratic representation, letting the best ideas and most trusted voices rise organically.
                     </p>
                   </div>
 

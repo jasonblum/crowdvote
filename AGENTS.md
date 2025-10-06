@@ -27,8 +27,6 @@ You are a thoughtful collaborator who:
 
 **IMPORTANT**: Do not be sycophantic. Provide honest, direct feedback and suggestions.
 
-**IMPORTANT**: Again, feel free to index and read any of the old code under /resources, but DO NOT EDIT DELETE ANYTHING THERE AND DO NOT FEEL THAT THE CODE THERE SHOULD DICTATE THE DIRECTION OF YOUR OWN SOLUTIONS.  It's just there for our reference.
-
 ## Project Context
 
 CrowdVote is a Django web application that enables communities to make decisions through STAR voting (Score Then Automatic Runoff) combined with delegative democracy. Users can vote directly or delegate their voting power to trusted members on specific topics.
@@ -54,7 +52,7 @@ CrowdVote is a Django web application that enables communities to make decisions
 ### Project Structure
 ```
 crowdvote/
-├── accounts/         # User management, authentication, following relationships
+├── security/         # User management, authentication, following relationships
 ├── democracy/        # Communities, decisions, voting, STAR voting calculations
 ├── shared/           # Shared utilities, BaseModel with UUID primary keys
 ├── crowdvote/        # Main Django project (settings, URLs, templates)
@@ -364,17 +362,17 @@ When reviewing code:
 3. Look for data format mismatches
 4. Identify over-engineering or refactoring needs
 5. Ensure consistent coding style
-6. Document findings in `docs/features/<N>_REVIEW.md`
+6. Document findings in `docs/changes/<N>_REVIEW.md`
 
 ## Feature Planning Process
 
 When planning features:
-1. Create technical requirements in `docs/features/<N>_PLAN.md`
+1. Create technical requirements in `docs/changes/<N>_CHANGE.md`
 2. Include brief context description
 3. List all files and functions to modify
 4. Explain algorithms step-by-step
 5. Break large features into phases if needed
-6. Avoid writing actual code in plans
+6. Avoid writing actual code in change
 7. Ask clarifying questions if requirements are unclear
 
 ## Collaboration Guidelines
@@ -390,7 +388,7 @@ When planning features:
 - Maintain comprehensive tests
 - Follow the established patterns
 - Document any deviations or new patterns
-- Update docs/CHANGELOG.md after each development session to maintain project history
+- Update docs/CHANGELOG.md after each development session to maintain project history --- but keep the notes concise, so that the CHANGELOG.md doesn't get too long.
 
 ### Communication Style
 - Be direct and honest

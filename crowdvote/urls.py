@@ -17,17 +17,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from django.views.generic import TemplateView
 from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('docs/', views.docs, name='docs'),
     path('slogans/', views.slogans, name='slogans'),
+    path('docs/', views.docs, name='docs'),
     path('status/global-calculations/', views.global_calculation_status, name='global_calculation_status'),
     path(f'{settings.ADMIN_URL}/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('', include('accounts.urls')),
     path('', include('democracy.urls')),
+    path('network-visualization/', TemplateView.as_view(template_name='network visualization.html'), name='network_visualization'),
+    path('vote-inheritance/', TemplateView.as_view(template_name='vote-inheritance-tree.html'), name='vote_inheritance'),
 ]
 
 # Add Debug Toolbar URLs when in DEBUG mode (but not during testing)
