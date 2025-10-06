@@ -7,7 +7,7 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 ## 2025-01-06 - Restore Democracy App with Membership-Based Following
 
 **Change**: docs/changes/0002_CHANGE-restore_democracy_app.md  
-**Commit**: [pending]  
+**Commit**: 3a31e40  
 **Summary**: Restored democracy app with Following model using Membership→Membership architecture (community-specific delegation). Updated generate_demo_communities command to create Following relationships between Memberships instead of Users. Added Following to Django admin. Database reset required for fresh migrations.
 
 ---
