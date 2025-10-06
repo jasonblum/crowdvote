@@ -4,8 +4,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from security.models import Following
-from democracy.models import Community, Membership, Decision, Choice, Ballot, Vote
+from democracy.models import Community, Membership, Decision, Choice, Ballot, Vote, Following
 
 User = get_user_model()
 
@@ -298,8 +297,11 @@ class Command(BaseCommand):
         for community_name in ['Minion Collective', 'Springfield Town Council']:
             suffix = '_minion' if 'Minion' in community_name else '_springfield'
             
-            # Find test users for this community
+            # Get community
             try:
+                community = Community.objects.get(name=community_name)
+                
+                # Find test users for this community
                 A = User.objects.get(username=f'A{suffix}')
                 B = User.objects.get(username=f'B{suffix}')
                 C = User.objects.get(username=f'C{suffix}')
@@ -309,79 +311,89 @@ class Command(BaseCommand):
                 G = User.objects.get(username=f'G{suffix}')
                 H = User.objects.get(username=f'H{suffix}')
                 
+                # Get their Memberships in this community
+                A_membership = Membership.objects.get(member=A, community=community)
+                B_membership = Membership.objects.get(member=B, community=community)
+                C_membership = Membership.objects.get(member=C, community=community)
+                D_membership = Membership.objects.get(member=D, community=community)
+                E_membership = Membership.objects.get(member=E, community=community)
+                F_membership = Membership.objects.get(member=F, community=community)
+                G_membership = Membership.objects.get(member=G, community=community)
+                H_membership = Membership.objects.get(member=H, community=community)
+                
                 # Create delegation relationships as specified:
                 # B and C follow A. B follows A only on "governance". A always uses "governance" tag.
                 Following.objects.get_or_create(
-                    follower=B, followee=A,
+                    follower=B_membership, followee=A_membership,
                     defaults={'tags': 'governance', 'order': 1}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=C, followee=A,
+                    follower=C_membership, followee=A_membership,
                     defaults={'tags': 'governance', 'order': 1}
                 )
                 
                 # E and F are following C. E follows C on governance, F follows C on all tags.
                 Following.objects.get_or_create(
-                    follower=E, followee=C,
+                    follower=E_membership, followee=C_membership,
                     defaults={'tags': 'governance', 'order': 1}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=F, followee=C,
+                    follower=F_membership, followee=C_membership,
                     defaults={'tags': '', 'order': 1}  # Empty tags means "all tags"
                 )
                 
                 # G is following A and D
                 Following.objects.get_or_create(
-                    follower=G, followee=A,
+                    follower=G_membership, followee=A_membership,
                     defaults={'tags': 'governance', 'order': 1}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=G, followee=D,
+                    follower=G_membership, followee=D_membership,
                     defaults={'tags': '', 'order': 2}  # All tags
                 )
                 
                 # H is following all of them on all tags
                 Following.objects.get_or_create(
-                    follower=H, followee=A,
+                    follower=H_membership, followee=A_membership,
                     defaults={'tags': '', 'order': 1}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=H, followee=B,
+                    follower=H_membership, followee=B_membership,
                     defaults={'tags': '', 'order': 2}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=H, followee=C,
+                    follower=H_membership, followee=C_membership,
                     defaults={'tags': '', 'order': 3}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=H, followee=D,
+                    follower=H_membership, followee=D_membership,
                     defaults={'tags': '', 'order': 4}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=H, followee=E,
+                    follower=H_membership, followee=E_membership,
                     defaults={'tags': '', 'order': 5}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=H, followee=F,
+                    follower=H_membership, followee=F_membership,
                     defaults={'tags': '', 'order': 6}
                 )
                 
                 Following.objects.get_or_create(
-                    follower=H, followee=G,
+                    follower=H_membership, followee=G_membership,
                     defaults={'tags': '', 'order': 7}
                 )
                 
                 # ADD CIRCULAR REFERENCE TEST: D follows B (creates potential D→B→A loop)
                 Following.objects.get_or_create(
-                    follower=D, followee=B,
+                    follower=D_membership, followee=B_membership,
                     defaults={'tags': 'budget', 'order': 1}
                 )
                 
@@ -408,9 +420,9 @@ class Command(BaseCommand):
             'transportation', 'recreation', 'education', 'health'
         ]
         
-        # Get community-specific users
-        minion_users = [u for u in all_users if 'minion' in u.username.lower() or 'gru' in u.username.lower()]
-        springfield_users = [u for u in all_users if u not in minion_users]
+        # Get community-specific users (exclude test users A-H)
+        minion_users = [u for u in all_users if ('minion' in u.username.lower() or 'gru' in u.username.lower()) and not u.username.startswith(('A_', 'B_', 'C_', 'D_', 'E_', 'F_', 'G_', 'H_'))]
+        springfield_users = [u for u in all_users if u not in minion_users and not u.username.startswith(('A_', 'B_', 'C_', 'D_', 'E_', 'F_', 'G_', 'H_'))]
         
         # Create delegation chains for each community
         self.create_community_delegation_chains(minion_users, tag_options)
@@ -425,55 +437,83 @@ class Command(BaseCommand):
         manual_voters = users[:10]
         calculated_voters = users[10:25]  # Next 15 are calculated voters
         
+        # Determine community from first user
+        if not manual_voters:
+            return
+        first_user = manual_voters[0]
+        try:
+            # Get community membership to determine which community we're working with
+            membership = Membership.objects.filter(member=first_user).first()
+            if not membership:
+                return
+            community = membership.community
+        except Exception:
+            return
+        
         # Create one complex 4-level branching delegation tree
         if len(calculated_voters) >= 8 and len(manual_voters) >= 3:
             # Level 4 (deepest): Bob follows Alice AND Susan (2 manual voters)
             bob = calculated_voters[0]
             alice, susan = manual_voters[0], manual_voters[1]  # 2 manual voters
             
+            # Get Memberships
+            bob_membership = Membership.objects.get(member=bob, community=community)
+            alice_membership = Membership.objects.get(member=alice, community=community)
+            susan_membership = Membership.objects.get(member=susan, community=community)
+            
             Following.objects.get_or_create(
-                follower=bob,
-                followee=alice,
+                follower=bob_membership,
+                followee=alice_membership,
                 defaults={'tags': 'budget', 'order': 1}
             )
             Following.objects.get_or_create(
-                follower=bob,
-                followee=susan,
+                follower=bob_membership,
+                followee=susan_membership,
                 defaults={'tags': 'environment', 'order': 2}
             )
             
             # Level 3: Carol and David both follow Bob (so they inherit from Alice+Susan)
             carol, david = calculated_voters[1], calculated_voters[2]
+            try:
+                carol_membership = Membership.objects.get(member=carol, community=community)
+                david_membership = Membership.objects.get(member=david, community=community)
+            except Membership.DoesNotExist as e:
+                self.stdout.write(f'Warning: Skipping delegation chain - membership not found for {carol.username} or {david.username} in {community.name}')
+                return
             
             Following.objects.get_or_create(
-                follower=carol,
-                followee=bob,
+                follower=carol_membership,
+                followee=bob_membership,
                 defaults={'tags': 'budget', 'order': 1}
             )
             Following.objects.get_or_create(
-                follower=david,
-                followee=bob,
+                follower=david_membership,
+                followee=bob_membership,
                 defaults={'tags': 'environment', 'order': 1}
             )
             
             # Level 2: Eve follows Carol AND David (gets both their inheritance trees)
             eve = calculated_voters[3]
+            eve_membership = Membership.objects.get(member=eve, community=community)
+            
             Following.objects.get_or_create(
-                follower=eve,
-                followee=carol,
+                follower=eve_membership,
+                followee=carol_membership,
                 defaults={'tags': 'budget', 'order': 1}
             )
             Following.objects.get_or_create(
-                follower=eve,
-                followee=david,
+                follower=eve_membership,
+                followee=david_membership,
                 defaults={'tags': 'environment', 'order': 2}
             )
             
             # Level 1: Frank follows Eve (inherits from entire tree: Alice, Susan, Bob, Carol, David)
             frank = calculated_voters[4]
+            frank_membership = Membership.objects.get(member=frank, community=community)
+            
             Following.objects.get_or_create(
-                follower=frank,
-                followee=eve,
+                follower=frank_membership,
+                followee=eve_membership,
                 defaults={'tags': 'budget,environment', 'order': 1}
             )
             
@@ -494,11 +534,17 @@ class Command(BaseCommand):
             potential_followees = manual_voters + [v for v in calculated_voters if v != voter]
             followees = random.sample(potential_followees, min(num_follows, len(potential_followees)))
             
+            # Get voter's membership
+            voter_membership = Membership.objects.get(member=voter, community=community)
+            
             for i, followee in enumerate(followees):
                 tag = random.choice(tag_options)
+                # Get followee's membership
+                followee_membership = Membership.objects.get(member=followee, community=community)
+                
                 Following.objects.get_or_create(
-                    follower=voter,
-                    followee=followee,
+                    follower=voter_membership,
+                    followee=followee_membership,
                     defaults={'tags': tag, 'order': i + 1}
                 )
 

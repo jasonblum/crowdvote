@@ -20,7 +20,7 @@ import threading
 import logging
 
 from .models import Community, Decision, Membership, Ballot, Choice, Vote
-from security.models import Following
+from democracy.models import Following
 from .signals import recalculate_community_decisions_async
 from .utils import generate_username_hash
 
@@ -488,7 +488,7 @@ def community_detail(request, community_id):
     # Get follow status for current user (for follow buttons)
     following_status = {}
     if request.user.is_authenticated:
-        from security.models import Following
+        from democracy.models import Following
         user_followings = Following.objects.filter(
             follower=request.user,
             followee__in=[m.member for m in memberships]

@@ -84,7 +84,7 @@ from security.utils import ...
 **Files likely to need updates:**
 - `democracy/models.py` (imports CustomUser, CommunityApplication)
 - `democracy/views.py` (may import from accounts)
-- `democracy/admin.py` (if registering accounts models)
+- `democracy/Let's do this phase one prep.py` (if registering accounts models)
 - `democracy/forms.py` (if using accounts forms)
 - `crowdvote/views.py` (landing page, docs)
 - `tests/` (all test files referencing accounts)

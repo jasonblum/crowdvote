@@ -224,21 +224,91 @@ class Membership(BaseModel):
     #     pass
 
 
-# TODO (Change 0002): Add Following model here
-# class Following(BaseModel):
-#     """
-#     Represents a Membership following another Membership for vote delegation.
-#     
-#     Key change from old architecture: Following links Membership→Membership
-#     (community-specific) instead of User→User (global).
-#     
-#     Attributes:
-#         follower (ForeignKey): Membership doing the following
-#         followee (ForeignKey): Membership being followed
-#         tags (CharField): Comma-separated tags for this following relationship
-#         order (PositiveIntegerField): Priority for tie-breaking
-#     """
-#     pass
+class Following(BaseModel):
+    """
+    Represents a Membership following another Membership for vote delegation.
+    
+    Following relationships are community-specific: each Following links two
+    Membership objects within the SAME community. This ensures delegation
+    respects community boundaries and allows users to have different delegation
+    preferences in different communities.
+    
+    Key architectural change: Following links Membership→Membership
+    (community-specific) instead of User→User (global). This allows:
+    - Users to have different delegation preferences in each community
+    - Delegation chains that respect community boundaries
+    - Per-community trust networks
+    
+    Attributes:
+        follower (ForeignKey): Membership doing the following (who inherits votes)
+        followee (ForeignKey): Membership being followed (whose votes are inherited)
+        tags (CharField): Comma-separated tags to filter which decisions this applies to
+        order (PositiveIntegerField): Priority order for resolving ties (lower = higher priority)
+    
+    Example:
+        If Alice (Member in Community A) follows Bob (Member in Community A) on "budget" tags,
+        then when Bob votes on a decision tagged with "budget", Alice's ballot can inherit
+        from Bob's vote if Alice hasn't voted directly.
+    """
+    follower = models.ForeignKey(
+        Membership,
+        related_name='following',
+        on_delete=models.CASCADE,
+        help_text="The membership who is following someone (inherits votes)"
+    )
+    followee = models.ForeignKey(
+        Membership,
+        related_name='followers',
+        on_delete=models.CASCADE,
+        help_text="The membership being followed (whose votes are inherited)"
+    )
+    tags = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Comma-separated tags. Empty means 'all tags'. Example: 'budget,environment'"
+    )
+    order = models.PositiveIntegerField(
+        default=1,
+        help_text="Priority order for tie-breaking (lower number = higher priority)"
+    )
+    
+    class Meta:
+        ordering = ['follower', 'order', 'followee']
+        verbose_name = "Following Relationship"
+        verbose_name_plural = "Following Relationships"
+        unique_together = ['follower', 'followee']
+    
+    def __str__(self):
+        """Return string representation of the following relationship."""
+        tags_str = f" on tags: {self.tags}" if self.tags else " on all tags"
+        return f"{self.follower.member.username} follows {self.followee.member.username}{tags_str}"
+    
+    def clean(self):
+        """
+        Validate the following relationship.
+        
+        Raises:
+            ValidationError: If follower and followee are not in the same community,
+                           or if a member tries to follow themselves
+        """
+        from django.core.exceptions import ValidationError
+        
+        super().clean()
+        
+        # Ensure both memberships are in the same community
+        if self.follower.community != self.followee.community:
+            raise ValidationError(
+                "Following relationships must be within the same community"
+            )
+        
+        # Prevent self-following
+        if self.follower == self.followee:
+            raise ValidationError("A member cannot follow themselves")
+    
+    def save(self, *args, **kwargs):
+        """Override save to run validation."""
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class Decision(BaseModel):

@@ -131,8 +131,8 @@ class Command(BaseCommand):
 
     def show_system_overview(self):
         """Show high-level system statistics."""
-        from security.models import CustomUser, Following
-        from democracy.models import Ballot
+        from security.models import CustomUser
+        from democracy.models import Following, Ballot
         
         total_users = CustomUser.objects.count()
         total_communities = Community.objects.count()

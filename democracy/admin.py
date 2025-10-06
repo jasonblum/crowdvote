@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Community, Membership, Decision, Choice, Ballot, Vote, Result, DecisionSnapshot
+from .models import Community, Membership, Following, Decision, Choice, Ballot, Vote, Result, DecisionSnapshot
 
 
 class MembershipInline(admin.TabularInline):
@@ -31,6 +31,41 @@ class MembershipAdmin(admin.ModelAdmin):
     list_filter = ['is_voting_community_member', 'is_community_manager', 'is_anonymous_by_default', 'dt_joined']
     search_fields = ['member__username', 'community__name']
     raw_id_fields = ['member', 'community']
+
+
+@admin.register(Following)
+class FollowingAdmin(admin.ModelAdmin):
+    """Admin interface for Following model."""
+    list_display = ['follower_display', 'followee_display', 'community_display', 'tags_display', 'order', 'created']
+    list_filter = ['follower__community', 'order', 'created']
+    search_fields = [
+        'follower__member__username',
+        'followee__member__username',
+        'follower__community__name',
+        'tags'
+    ]
+    raw_id_fields = ['follower', 'followee']
+    ordering = ['follower__community', 'follower__member__username', 'order']
+    
+    def follower_display(self, obj):
+        """Display follower with username."""
+        return f"{obj.follower.member.username}"
+    follower_display.short_description = 'Follower'
+    
+    def followee_display(self, obj):
+        """Display followee with username."""
+        return f"{obj.followee.member.username}"
+    followee_display.short_description = 'Followee'
+    
+    def community_display(self, obj):
+        """Display community name."""
+        return obj.follower.community.name
+    community_display.short_description = 'Community'
+    
+    def tags_display(self, obj):
+        """Display tags or indicate all tags."""
+        return obj.tags if obj.tags else "(all tags)"
+    tags_display.short_description = 'Tags'
 
 
 class ChoiceInline(admin.TabularInline):
