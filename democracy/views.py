@@ -27,6 +27,75 @@ from .utils import generate_username_hash
 User = get_user_model()
 
 
+def build_network_data(community):
+    """
+    Build network visualization data for D3.js showing delegation relationships.
+    
+    Returns a dictionary with:
+    - nodes: List of node objects (memberships)
+    - links: List of link objects (following relationships)
+    - follower_counts: Dict mapping membership IDs to follower counts
+    
+    Args:
+        community: Community object to build network data for
+    
+    Returns:
+        dict: Network data structure for D3.js visualization
+    """
+    import json
+    from collections import defaultdict
+    
+    # Get all memberships for this community
+    all_memberships = Membership.objects.filter(
+        community=community
+    ).select_related('member')
+    
+    # Get all following relationships in this community
+    followings = Following.objects.filter(
+        follower__community=community,
+        followee__community=community
+    ).select_related('follower__member', 'followee__member')
+    
+    # Build nodes array
+    nodes = []
+    for membership in all_memberships:
+        display_name = membership.member.get_full_name() or membership.member.username
+        nodes.append({
+            'id': str(membership.id),
+            'username': membership.member.username,
+            'display_name': display_name,
+        })
+    
+    # Build links array
+    links = []
+    for following in followings:
+        # Parse tags - tags field is a comma-separated string
+        tags = []
+        if following.tags:
+            tags = [tag.strip() for tag in following.tags.split(',') if tag.strip()]
+        
+        links.append({
+            'source': str(following.follower.id),
+            'target': str(following.followee.id),
+            'tags': tags,
+        })
+    
+    # Calculate follower counts for each membership
+    follower_counts = defaultdict(int)
+    for link in links:
+        follower_counts[link['target']] += 1
+    
+    # Convert defaultdict to regular dict for JSON serialization
+    follower_counts = dict(follower_counts)
+    
+    # Convert to JSON for safe template rendering
+    return {
+        'nodes': json.dumps(nodes),
+        'links': json.dumps(links),
+        'follower_counts': json.dumps(follower_counts),
+    }
+
+
 def build_decision_delegation_tree(decision, include_links=True):
     """
     Build delegation tree for a specific decision (legacy function).
@@ -471,10 +540,34 @@ def community_detail(request, community_id):
         'member__username'
     )
     
-    # Get recent decisions
-    recent_decisions = Decision.objects.filter(
-        community=community
-    ).order_by('-created')[:5]
+    # Get all decisions for this community (if user is a member)
+    decisions = []
+    if user_membership:
+        from django.db.models import Count
+        decisions = Decision.objects.filter(community=community).select_related('community')
+        
+        # Filter based on user role - regular members can't see drafts
+        if not user_membership.is_community_manager:
+            decisions = decisions.exclude(dt_close__isnull=True)
+        
+        # Annotate with vote counts
+        decisions = decisions.annotate(
+            total_votes=Count('ballots', distinct=True),
+            total_choices=Count('choices', distinct=True)
+        )
+        
+        # Order by close date (active first, then most recent)
+        decisions = decisions.order_by('-dt_close')
+        
+        # Add status information
+        now = timezone.now()
+        for decision in decisions:
+            if decision.dt_close is None:
+                decision.status = 'draft'
+            elif decision.dt_close > now:
+                decision.status = 'active'
+            else:
+                decision.status = 'closed'
     
     # Calculate community statistics
     total_members = community.members.count()
@@ -482,16 +575,20 @@ def community_detail(request, community_id):
     manager_count = community.get_managers().count()
     lobbyist_count = total_members - voting_members
     
-    # Generate influence tree for community
-    influence_tree = build_influence_tree(community)
+    # Build network visualization data
+    network_data = build_network_data(community)
+    
+    # Get current timestamp for network visualization
+    from django.utils.formats import date_format
+    network_timestamp = date_format(timezone.now(), 'F j, Y @ g:i A T')
     
     # Get follow status for current user (for follow buttons)
     following_status = {}
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and user_membership:
         from democracy.models import Following
         user_followings = Following.objects.filter(
-            follower=request.user,
-            followee__in=[m.member for m in memberships]
+            follower=user_membership,
+            followee__in=memberships
         ).select_related('followee')
         following_status = {f.followee.id: f for f in user_followings}
     
@@ -500,11 +597,12 @@ def community_detail(request, community_id):
         'user_membership': user_membership,
         'user_application': user_application,
         'memberships': memberships,
-        'recent_decisions': recent_decisions,
+        'decisions': decisions,
         'role_filter': role_filter,
         'search_query': search_query,
-        'influence_tree': influence_tree,
         'following_status': following_status,
+        'network_data': network_data,
+        'network_timestamp': network_timestamp,
         'stats': {
             'total_members': total_members,
             'voting_members': voting_members,
@@ -1267,7 +1365,9 @@ def decision_results(request, community_id, decision_id):
     })
     
     # Generate decision-specific delegation tree
-    decision_delegation_tree = build_decision_delegation_tree(decision, include_links=True)
+    # TODO: Temporarily disabled for new network visualization (Change 0003)
+    # decision_delegation_tree = build_decision_delegation_tree(decision, include_links=True)
+    decision_delegation_tree = None
     
     context = {
         'community': community,
@@ -1280,7 +1380,7 @@ def decision_results(request, community_id, decision_id):
         'choice_stats': choice_stats,
         'can_manage': user_membership.is_community_manager,
         'delegation_tree_data': delegation_tree_data,
-        'decision_delegation_tree': decision_delegation_tree,
+        # 'decision_delegation_tree': decision_delegation_tree,  # TODO: Temporarily disabled (Change 0003)
         'star_results': star_results,
         'winner_choice_id': winner_choice_id,
     }

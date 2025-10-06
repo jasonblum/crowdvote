@@ -1,0 +1,21 @@
+/*
+ * CrowdVote Site-wide Styles
+ * 
+ * This file contains common styles used across all pages of the CrowdVote application.
+ * It should be loaded after Tailwind CSS but before page-specific CSS files.
+ * 
+ * TODO: In a future change, consolidate repetitive CSS from templates into this file.
+ * Look for common patterns in:
+ * - Panel/card styles (bg-white dark:bg-gray-800 rounded-lg shadow-sm, etc.)
+ * - Button styles (primary, secondary, danger, etc.)
+ * - Typography (headings, body text, etc.)
+ * - Dark mode utilities
+ * - Layout helpers (spacing, containers, etc.)
+ * - Form elements (inputs, selects, etc.)
+ * - Status badges (active, closed, draft, etc.)
+ * 
+ * This consolidation will reduce template bloat and ensure consistent styling
+ * across the entire application.
+ */
+
+/* Placeholder for future styles */

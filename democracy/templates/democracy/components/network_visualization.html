@@ -1,0 +1,191 @@
+<!-- D3.js Network Visualization Component -->
+<svg id="network-svg"></svg>
+
+<div class="network-legend bg-gray-50 dark:bg-gray-900">
+    <div class="network-legend-title text-gray-900 dark:text-white">Legend:</div>
+    <div class="network-legend-item text-gray-700 dark:text-gray-300">→ Arrow with tags: Member delegates on specific issues</div>
+    <div class="network-legend-item text-gray-700 dark:text-gray-300">→ Arrow with <strong>ALL</strong>: Member delegates on all issues (complete trust)</div>
+    <div class="network-legend-item text-gray-700 dark:text-gray-300" style="margin-top: 10px;">
+        <strong>Node Colors (Heat Map):</strong> Gray (no followers) → Light Blue → Blue → Purple → Red (most followers)
+    </div>
+</div>
+
+<script>
+// Wait for D3.js to load before initializing visualization
+(function() {
+    // Check if D3 is loaded, if not wait for window load
+    function initNetworkVisualization() {
+        if (typeof d3 === 'undefined') {
+            console.error('D3.js library not loaded');
+            return;
+        }
+    // Get network data from template context
+    const networkData = {
+        nodes: {{ network_data.nodes|safe }},
+        links: {{ network_data.links|safe }},
+        followerCounts: {{ network_data.follower_counts|safe }}
+    };
+
+    // If no data, show message
+    if (!networkData.nodes || networkData.nodes.length === 0) {
+        document.getElementById('network-svg').insertAdjacentHTML('afterend', 
+            '<div class="text-center py-8 text-gray-500 dark:text-gray-400">No delegation relationships to display</div>'
+        );
+        return;
+    }
+
+    // Set up SVG
+    const svg = d3.select('#network-svg');
+    const container = document.getElementById('network-visualization');
+    const width = container.clientWidth || 1100;
+    const height = 500;
+    
+    svg.attr('width', width).attr('height', height);
+
+    // Add zoom behavior to SVG
+    const g = svg.append('g');
+    
+    const zoom = d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on('zoom', (event) => {
+            g.attr('transform', event.transform);
+        });
+    
+    svg.call(zoom);
+
+    // Add arrow markers
+    svg.append('defs').append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '-0 -5 10 10')
+        .attr('refX', 28)
+        .attr('refY', 0)
+        .attr('orient', 'auto')
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 8)
+        .append('path')
+        .attr('d', 'M 0,-5 L 10,0 L 0,5')
+        .attr('fill', '#999');
+
+    // Find max followers for scaling
+    const maxFollowers = Math.max(...Object.values(networkData.followerCounts));
+
+    // Color scale function - classic heat map (cold to hot)
+    function getNodeColor(followersCount) {
+        if (followersCount === 0) return '#9ca3af'; // Gray (no followers)
+        
+        const ratio = followersCount / Math.max(maxFollowers, 1);
+        
+        if (ratio <= 0.25) return '#93c5fd'; // Light Blue (cool)
+        if (ratio <= 0.5) return '#3b82f6';  // Blue
+        if (ratio <= 0.75) return '#a855f7'; // Purple
+        return '#ef4444'; // Red (hot)
+    }
+
+    // Create force simulation
+    const simulation = d3.forceSimulation(networkData.nodes)
+        .force('link', d3.forceLink(networkData.links).id(d => d.id).distance(150))
+        .force('charge', d3.forceManyBody().strength(-400))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(40));
+
+    // Create container groups
+    const linkGroup = g.append('g').attr('class', 'links');
+    const nodeGroup = g.append('g').attr('class', 'nodes');
+
+    // Create links
+    const link = linkGroup.selectAll('path')
+        .data(networkData.links)
+        .join('path')
+        .attr('class', 'link')
+        .attr('stroke-width', 2)
+        .attr('marker-end', 'url(#arrowhead)');
+
+    // Create link labels (tags or "ALL")
+    const linkLabels = linkGroup.selectAll('text')
+        .data(networkData.links)
+        .join('text')
+        .attr('class', 'link-label')
+        .text(d => d.tags.length === 0 ? 'ALL' : d.tags.join(', '));
+
+    // Function to update all visual positions
+    function updatePositions() {
+        // Keep nodes within bounds
+        const margin = 50;
+        networkData.nodes.forEach(d => {
+            d.x = Math.max(margin, Math.min(width - margin, d.x));
+            d.y = Math.max(margin, Math.min(height - margin, d.y));
+        });
+
+        link.attr('d', d => {
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const dr = Math.sqrt(dx * dx + dy * dy) * 2;
+            return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+        });
+
+        linkLabels
+            .attr('x', d => (d.source.x + d.target.x) / 2)
+            .attr('y', d => (d.source.y + d.target.y) / 2)
+            .attr('transform', d => {
+                const angle = Math.atan2(d.target.y - d.source.y, d.target.x - d.source.x) * 180 / Math.PI;
+                return `rotate(${angle}, ${(d.source.x + d.target.x) / 2}, ${(d.source.y + d.target.y) / 2})`;
+            });
+
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
+    }
+
+    // Create nodes with improved drag behavior
+    const node = nodeGroup.selectAll('g')
+        .data(networkData.nodes)
+        .join('g')
+        .attr('class', 'node')
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+
+    node.append('circle')
+        .attr('r', 22)
+        .attr('fill', d => getNodeColor(networkData.followerCounts[d.id] || 0));
+
+    node.append('text')
+        .text(d => d.username)
+        .attr('dy', 4)
+        .attr('fill', '#fff');
+
+    // Update positions on tick
+    simulation.on('tick', updatePositions);
+
+    // Stop simulation after initial layout (3 seconds)
+    setTimeout(() => {
+        simulation.stop();
+    }, 3000);
+
+    // Drag functions - work independently of simulation
+    function dragstarted(event, d) {
+        d3.select(this).raise();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+        d.x = event.x;
+        d.y = event.y;
+        updatePositions();
+    }
+
+    function dragended(event, d) {
+        // Keep node pinned where user dragged it
+    }
+    }
+    
+    // Initialize when DOM and D3 are ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initNetworkVisualization);
+    } else {
+        initNetworkVisualization();
+    }
+})();
+</script>
