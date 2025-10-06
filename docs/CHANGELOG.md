@@ -4,6 +4,14 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 
 ---
 
+## 2025-01-06 - Add Reusable DataTables Component with Dark Mode
+
+**Change**: docs/changes/0004_CHANGE-reusable-datatables-with-dark-mode.md  
+**Commit**: [pending]  
+**Summary**: Implemented DataTables library with comprehensive dark mode support across the app. Converted three card-based lists to sortable, searchable, paginated tables: Members table (community detail), Decisions table (docket), and Communities table (discovery page). Created reusable pattern with datatables-custom.css containing Tailwind-style dark mode styling. Tables default to 10 rows per page with options for 10/25/50/100. All tables support column sorting, instant search, and badges/buttons in cells.
+
+---
+
 ## 2025-01-06 - Add Interactive Delegation Network Visualization
 
 **Change**: docs/changes/0003_CHANGE-delegation-network-visualization.md  

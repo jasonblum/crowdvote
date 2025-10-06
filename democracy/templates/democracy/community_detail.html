@@ -143,100 +143,54 @@
 
         <!-- Members Section -->
         <section id="members-section" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 mb-6">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Community Members</h2>
-                
-                <!-- Member Filters -->
-                <div class="flex space-x-2">
-                    <a href="?role=all" class="{% if role_filter == 'all' %}bg-blue-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
-                        All ({{ stats.total_members }})
-                    </a>
-                    <a href="?role=managers" class="{% if role_filter == 'managers' %}bg-purple-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
-                        Managers ({{ stats.managers }})
-                    </a>
-                    <a href="?role=voters" class="{% if role_filter == 'voters' %}bg-green-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
-                        Voters ({{ stats.voting_members }})
-                    </a>
-                    <a href="?role=lobbyists" class="{% if role_filter == 'lobbyists' %}bg-yellow-600 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %} px-3 py-1 rounded text-sm transition-colors">
-                        Lobbyists ({{ stats.lobbyists }})
-                    </a>
-                </div>
-            </div>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Community Members</h2>
 
-            <!-- Search Box -->
-            <form method="GET" class="mb-6">
-                <input type="hidden" name="role" value="{{ role_filter }}">
-                <div class="flex">
-                    <input type="text" 
-                           name="search" 
-                           value="{{ search_query }}"
-                           placeholder="Search members..."
-                           class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <button type="submit" 
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg transition-colors">
-                        Search
-                    </button>
-                </div>
-            </form>
-
-            <!-- Members List -->
-            <div class="space-y-3">
-                {% for membership in memberships %}
-                    <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                        <div class="flex items-center space-x-3">
-                            <div>
-                                <div class="font-medium text-gray-900 dark:text-white">
-                                    {% username_link membership.member community "hover:text-blue-600 transition-colors" %}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 ml-8">@{{ membership.member.username }}</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Actions and Role Badges -->
-                        <div class="flex items-center space-x-3">
-                            <!-- Follow Button (only for community members following other users) -->
-                            {# TODO: Temporarily disabled for Change 0003 - follow functionality needs URLs #}
-                            {% comment %}
-                            {% if user.is_authenticated and user_membership and user != membership.member %}
-                                {% with member_following=following_status|get_item:membership.member.id %}
-                                    {% include 'accounts/components/follow_button.html' with user=membership.member is_following=member_following following=member_following %}
-                                {% endwith %}
+            <!-- Members Table -->
+            <table id="members-table" class="display w-full">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Username</th>
+                        <th>Roles</th>
+                        <th>Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for membership in memberships %}
+                    <tr>
+                        <td>
+                            {{ membership.member.get_full_name|default:membership.member.username }}
+                        </td>
+                        <td>@{{ membership.member.username }}</td>
+                        <td>
+                            {% if membership.is_community_manager %}
+                                <span class="badge badge-purple">👑 Manager</span>
                             {% endif %}
-                            {% endcomment %}
-                            
-                            <!-- Role Badges -->
-                            <div class="flex space-x-2">
-                                {% if membership.is_community_manager %}
-                                    <span class="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-1 rounded text-xs font-medium">
-                                        👑 Manager
-                                    </span>
-                                {% endif %}
-                                {% if membership.is_voting_community_member %}
-                                    <span class="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 px-2 py-1 rounded text-xs font-medium">
-                                        🗳️ Voter
-                                    </span>
-                                {% else %}
-                                    <span class="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">
-                                        📢 Lobbyist
-                                    </span>
-                                {% endif %}
-                                <span class="text-xs text-gray-500 dark:text-gray-400">
-                                    Joined {{ membership.dt_joined|date:"M Y" }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="text-center py-8 text-gray-500">
-                        {% if search_query %}
-                            No members found matching "{{ search_query }}"
-                        {% else %}
-                            No members found in this role category.
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
+                            {% if membership.is_voting_community_member %}
+                                <span class="badge badge-green">🗳️ Voter</span>
+                            {% else %}
+                                <span class="badge badge-blue">📢 Lobbyist</span>
+                            {% endif %}
+                        </td>
+                        <td data-order="{{ membership.dt_joined|date:'U' }}">{{ membership.dt_joined|date:"M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </section>
+        
+        <script>
+        $(document).ready(function() {
+            $('#members-table').DataTable({
+                pageLength: 10,
+                lengthMenu: [10, 25, 50, 100],
+                order: [[1, 'asc']], // Sort by username
+                columnDefs: [
+                    { orderable: false, targets: [2] } // Roles column not sortable
+                ]
+            });
+        });
+        </script>
 
         <!-- Delegation Network Panel -->
         <section id="delegation-network" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 mb-6">
@@ -272,94 +226,83 @@
                 {% endif %}
             </div>
 
-            <!-- Decisions List -->
-            <div class="space-y-4">
-                {% for decision in decisions %}
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <!-- Status Badge -->
-                                <div class="flex items-center space-x-3 mb-2">
-                                    {% if decision.status == 'active' %}
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
-                                            🟢 Active
-                                        </span>
-                                    {% elif decision.status == 'closed' %}
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
-                                            🔴 Closed
-                                        </span>
-                                    {% elif decision.status == 'draft' %}
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200">
-                                            ⚪ Draft
-                                        </span>
-                                    {% endif %}
-                                    
-                                    {% if decision.dt_close %}
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                                            {% if decision.status == 'active' %}
-                                                Closes {{ decision.dt_close|date:"M j, Y \a\t g:i A" }}
-                                            {% else %}
-                                                Closed {{ decision.dt_close|date:"M j, Y" }}
-                                            {% endif %}
-                                        </span>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Title and Description -->
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                    <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
-                                       class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                        {{ decision.title }}
-                                    </a>
-                                </h3>
-                                
-                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                    {{ decision.description|truncatewords:20 }}
-                                </p>
-
-                                <!-- Stats -->
-                                <div class="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                                    <div class="flex items-center space-x-1">
-                                        <span>🗳️</span>
-                                        <span>{{ decision.total_votes }} vote{{ decision.total_votes|pluralize }}</span>
-                                    </div>
-                                    <div class="flex items-center space-x-1">
-                                        <span>📋</span>
-                                        <span>{{ decision.total_choices }} choice{{ decision.total_choices|pluralize }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Actions -->
-                            <div class="flex space-x-2 ml-4">
-                                <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
-                                   class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 font-medium transition-colors">
-                                    {% if decision.status == 'active' %}
-                                        Vote
-                                    {% elif decision.status == 'draft' %}
-                                        View
-                                    {% else %}
-                                        Results
-                                    {% endif %}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% empty %}
-                    <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                        {% if user_membership.is_community_manager %}
-                            <p class="mb-4">No decisions yet. Create the first one!</p>
-                            <a href="{% url 'democracy:decision_create' community.id %}" 
-                               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium">
-                                📝 Create First Decision
+            <!-- Decisions Table -->
+            {% if decisions %}
+            <table id="decisions-table" class="display w-full">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Title</th>
+                        <th>Close Date</th>
+                        <th>Votes</th>
+                        <th>Choices</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for decision in decisions %}
+                    <tr>
+                        <td>
+                            {% if decision.status == 'active' %}
+                                <span class="badge badge-green">🟢 Active</span>
+                            {% elif decision.status == 'closed' %}
+                                <span class="badge badge-gray">🔴 Closed</span>
+                            {% elif decision.status == 'draft' %}
+                                <span class="badge badge-yellow">⚪ Draft</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'democracy:decision_detail' community.id decision.id %}">
+                                {{ decision.title }}
                             </a>
-                        {% else %}
-                            <p>No decisions have been created yet.</p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
+                        </td>
+                        <td data-order="{{ decision.dt_close|date:'U'|default:'0' }}">
+                            {% if decision.dt_close %}
+                                {{ decision.dt_close|date:"M j, Y g:i A" }}
+                            {% else %}
+                                Draft
+                            {% endif %}
+                        </td>
+                        <td>{{ decision.total_votes }}</td>
+                        <td>{{ decision.total_choices }}</td>
+                        <td>
+                            <a href="{% url 'democracy:decision_detail' community.id decision.id %}" class="btn-primary-sm">
+                                {% if decision.status == 'active' %}Vote{% elif decision.status == 'draft' %}View{% else %}Results{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    {% if user_membership.is_community_manager %}
+                        <p class="mb-4">No decisions yet. Create the first one!</p>
+                        <a href="{% url 'democracy:decision_create' community.id %}" 
+                           class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium">
+                            📝 Create First Decision
+                        </a>
+                    {% else %}
+                        <p>No decisions have been created yet.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
         </section>
+        
+        <script>
+        $(document).ready(function() {
+            if ($('#decisions-table').length) {
+                $('#decisions-table').DataTable({
+                    pageLength: 10,
+                    lengthMenu: [10, 25, 50, 100],
+                    order: [[2, 'desc']], // Sort by close date, most recent first
+                    columnDefs: [
+                        { orderable: false, targets: [0, 5] } // Status and Action columns not sortable
+                    ]
+                });
+            }
+        });
+        </script>
         {% endif %}
 
     </div>

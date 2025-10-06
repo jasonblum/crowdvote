@@ -1,0 +1,391 @@
+/*
+ * DataTables Custom Styling with Tailwind & Dark Mode
+ * 
+ * This file provides complete dark mode support for DataTables
+ * integrated with Tailwind CSS styling.
+ */
+
+/* ============================================================================
+   TABLE STYLING
+   ============================================================================ */
+
+/* Base table wrapper */
+.dataTables_wrapper {
+    color: rgb(17, 24, 39); /* gray-900 */
+}
+
+.dark .dataTables_wrapper {
+    color: rgb(243, 244, 246); /* gray-100 */
+}
+
+/* Table itself */
+.dataTables_wrapper table.dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+/* Table header */
+.dataTables_wrapper table.dataTable thead th {
+    background-color: rgb(243, 244, 246); /* gray-100 */
+    color: rgb(55, 65, 81); /* gray-700 */
+    font-weight: 600;
+    font-size: 0.875rem; /* text-sm */
+    padding: 0.75rem 1rem; /* px-4 py-3 */
+    text-align: left;
+    border-bottom: 1px solid rgb(229, 231, 235); /* gray-200 */
+}
+
+.dark .dataTables_wrapper table.dataTable thead th {
+    background-color: rgb(55, 65, 81); /* gray-700 */
+    color: rgb(209, 213, 219); /* gray-300 */
+    border-bottom-color: rgb(75, 85, 99); /* gray-600 */
+}
+
+/* Sortable column indicators */
+.dataTables_wrapper table.dataTable thead th.sorting,
+.dataTables_wrapper table.dataTable thead th.sorting_asc,
+.dataTables_wrapper table.dataTable thead th.sorting_desc {
+    cursor: pointer;
+    position: relative;
+    padding-right: 30px;
+}
+
+.dataTables_wrapper table.dataTable thead th.sorting:before,
+.dataTables_wrapper table.dataTable thead th.sorting_asc:before,
+.dataTables_wrapper table.dataTable thead th.sorting_desc:before,
+.dataTables_wrapper table.dataTable thead th.sorting:after,
+.dataTables_wrapper table.dataTable thead th.sorting_asc:after,
+.dataTables_wrapper table.dataTable thead th.sorting_desc:after {
+    position: absolute;
+    right: 8px;
+    opacity: 0.3;
+    font-size: 0.8em;
+}
+
+/* Table body cells */
+.dataTables_wrapper table.dataTable tbody td {
+    padding: 0.75rem 1rem; /* px-4 py-3 */
+    font-size: 0.875rem; /* text-sm */
+    color: rgb(17, 24, 39); /* gray-900 */
+    border-bottom: 1px solid rgb(229, 231, 235); /* gray-200 */
+}
+
+.dark .dataTables_wrapper table.dataTable tbody td {
+    color: rgb(243, 244, 246); /* gray-100 */
+    border-bottom-color: rgb(55, 65, 81); /* gray-700 */
+}
+
+/* Row hover */
+.dataTables_wrapper table.dataTable tbody tr:hover {
+    background-color: rgb(249, 250, 251); /* gray-50 */
+}
+
+.dark .dataTables_wrapper table.dataTable tbody tr:hover {
+    background-color: rgb(55, 65, 81); /* gray-700 */
+}
+
+/* ============================================================================
+   SEARCH BOX
+   ============================================================================ */
+
+.dataTables_wrapper .dataTables_filter {
+    float: right;
+    text-align: right;
+    margin-bottom: 1rem;
+}
+
+.dataTables_wrapper .dataTables_filter label {
+    font-weight: normal;
+    white-space: nowrap;
+    text-align: left;
+    color: rgb(55, 65, 81); /* gray-700 */
+}
+
+.dark .dataTables_wrapper .dataTables_filter label {
+    color: rgb(209, 213, 219); /* gray-300 */
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid rgb(209, 213, 219); /* gray-300 */
+    border-radius: 0.375rem; /* rounded */
+    padding: 0.5rem 0.75rem; /* px-3 py-2 */
+    font-size: 0.875rem; /* text-sm */
+    background-color: white;
+    color: rgb(17, 24, 39); /* gray-900 */
+    margin-left: 0.5rem;
+    width: 200px;
+}
+
+.dark .dataTables_wrapper .dataTables_filter input {
+    background-color: rgb(31, 41, 55); /* gray-800 */
+    border-color: rgb(75, 85, 99); /* gray-600 */
+    color: rgb(243, 244, 246); /* gray-100 */
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    outline: 2px solid rgb(59, 130, 246); /* blue-500 */
+    outline-offset: 2px;
+    border-color: rgb(59, 130, 246);
+}
+
+/* ============================================================================
+   LENGTH MENU (Show X entries dropdown)
+   ============================================================================ */
+
+.dataTables_wrapper .dataTables_length {
+    float: left;
+    margin-bottom: 1rem;
+}
+
+.dataTables_wrapper .dataTables_length label {
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    color: rgb(55, 65, 81); /* gray-700 */
+}
+
+.dark .dataTables_wrapper .dataTables_length label {
+    color: rgb(209, 213, 219); /* gray-300 */
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border: 1px solid rgb(209, 213, 219); /* gray-300 */
+    border-radius: 0.375rem;
+    padding: 0.25rem 2rem 0.25rem 0.5rem;
+    background-color: white;
+    color: rgb(17, 24, 39); /* gray-900 */
+    margin: 0 0.5rem;
+    font-size: 0.875rem;
+}
+
+.dark .dataTables_wrapper .dataTables_length select {
+    background-color: rgb(31, 41, 55); /* gray-800 */
+    border-color: rgb(75, 85, 99); /* gray-600 */
+    color: rgb(243, 244, 246); /* gray-100 */
+}
+
+/* ============================================================================
+   INFO TEXT (Showing X to Y of Z entries)
+   ============================================================================ */
+
+.dataTables_wrapper .dataTables_info {
+    clear: both;
+    float: left;
+    padding-top: 0.75rem;
+    color: rgb(107, 114, 128); /* gray-500 */
+    font-size: 0.875rem;
+}
+
+.dark .dataTables_wrapper .dataTables_info {
+    color: rgb(156, 163, 175); /* gray-400 */
+}
+
+/* ============================================================================
+   PAGINATION
+   ============================================================================ */
+
+.dataTables_wrapper .dataTables_paginate {
+    float: right;
+    text-align: right;
+    padding-top: 0.5rem;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    box-sizing: border-box;
+    display: inline-block;
+    min-width: 1.5em;
+    padding: 0.25rem 0.75rem; /* px-3 py-1 */
+    margin-left: 0.25rem; /* mx-1 */
+    margin-right: 0.25rem;
+    text-align: center;
+    text-decoration: none !important;
+    cursor: pointer;
+    border: 1px solid rgb(209, 213, 219); /* gray-300 */
+    border-radius: 0.375rem; /* rounded */
+    background-color: white;
+    color: rgb(55, 65, 81); /* gray-700 */
+    font-size: 0.875rem;
+}
+
+.dark .dataTables_wrapper .dataTables_paginate .paginate_button {
+    background-color: rgb(31, 41, 55); /* gray-800 */
+    border-color: rgb(75, 85, 99); /* gray-600 */
+    color: rgb(209, 213, 219); /* gray-300 */
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background-color: rgb(37, 99, 235); /* blue-600 */
+    color: white;
+    border-color: rgb(37, 99, 235);
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: rgb(243, 244, 246); /* gray-100 */
+    border-color: rgb(156, 163, 175); /* gray-400 */
+}
+
+.dark .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: rgb(55, 65, 81); /* gray-700 */
+    border-color: rgb(107, 114, 128); /* gray-500 */
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+    cursor: default;
+    opacity: 0.5;
+}
+
+/* ============================================================================
+   PROCESSING INDICATOR
+   ============================================================================ */
+
+.dataTables_wrapper .dataTables_processing {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    margin-left: -100px;
+    margin-top: -26px;
+    text-align: center;
+    padding: 1rem;
+    background-color: white;
+    border: 1px solid rgb(209, 213, 219);
+    border-radius: 0.375rem;
+}
+
+.dark .dataTables_wrapper .dataTables_processing {
+    background-color: rgb(31, 41, 55);
+    border-color: rgb(75, 85, 99);
+    color: rgb(243, 244, 246);
+}
+
+/* ============================================================================
+   EMPTY TABLE
+   ============================================================================ */
+
+.dataTables_wrapper .dataTables_empty {
+    text-align: center;
+    padding: 2rem;
+    color: rgb(107, 114, 128); /* gray-500 */
+}
+
+.dark .dataTables_wrapper .dataTables_empty {
+    color: rgb(156, 163, 175); /* gray-400 */
+}
+
+/* ============================================================================
+   BADGE CLASSES FOR TABLE CELLS
+   ============================================================================ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem; /* px-2 py-1 */
+    border-radius: 0.25rem; /* rounded */
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 500; /* font-medium */
+}
+
+.badge-green {
+    background-color: rgb(220, 252, 231); /* green-100 */
+    color: rgb(22, 101, 52); /* green-800 */
+}
+
+.dark .badge-green {
+    background-color: rgba(34, 197, 94, 0.3); /* green-900/30 */
+    color: rgb(187, 247, 208); /* green-200 */
+}
+
+.badge-blue {
+    background-color: rgb(219, 234, 254); /* blue-100 */
+    color: rgb(30, 64, 175); /* blue-800 */
+}
+
+.dark .badge-blue {
+    background-color: rgba(59, 130, 246, 0.3); /* blue-900/30 */
+    color: rgb(191, 219, 254); /* blue-200 */
+}
+
+.badge-purple {
+    background-color: rgb(243, 232, 255); /* purple-100 */
+    color: rgb(107, 33, 168); /* purple-800 */
+}
+
+.dark .badge-purple {
+    background-color: rgba(168, 85, 247, 0.3); /* purple-900/30 */
+    color: rgb(233, 213, 255); /* purple-200 */
+}
+
+.badge-yellow {
+    background-color: rgb(254, 249, 195); /* yellow-100 */
+    color: rgb(133, 77, 14); /* yellow-800 */
+}
+
+.dark .badge-yellow {
+    background-color: rgba(234, 179, 8, 0.3); /* yellow-900/30 */
+    color: rgb(254, 240, 138); /* yellow-200 */
+}
+
+.badge-gray {
+    background-color: rgb(243, 244, 246); /* gray-100 */
+    color: rgb(31, 41, 55); /* gray-800 */
+}
+
+.dark .badge-gray {
+    background-color: rgb(75, 85, 99); /* gray-600 */
+    color: rgb(229, 231, 235); /* gray-200 */
+}
+
+/* ============================================================================
+   BUTTON CLASSES FOR TABLE CELLS
+   ============================================================================ */
+
+.btn-primary-sm {
+    display: inline-block;
+    padding: 0.375rem 0.75rem; /* px-3 py-1.5 */
+    background-color: rgb(37, 99, 235); /* blue-600 */
+    color: white;
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 500; /* font-medium */
+    border-radius: 0.375rem; /* rounded-md */
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-primary-sm:hover {
+    background-color: rgb(29, 78, 216); /* blue-700 */
+}
+
+/* ============================================================================
+   UTILITIES
+   ============================================================================ */
+
+/* Clear floats */
+.dataTables_wrapper:after {
+    visibility: hidden;
+    display: block;
+    content: "";
+    clear: both;
+    height: 0;
+}
+
+/* Links in table cells */
+.dataTables_wrapper table.dataTable tbody td a {
+    color: rgb(37, 99, 235); /* blue-600 */
+    text-decoration: none;
+}
+
+.dataTables_wrapper table.dataTable tbody td a:hover {
+    color: rgb(29, 78, 216); /* blue-700 */
+    text-decoration: underline;
+}
+
+.dark .dataTables_wrapper table.dataTable tbody td a {
+    color: rgb(96, 165, 250); /* blue-400 */
+}
+
+.dark .dataTables_wrapper table.dataTable tbody td a:hover {
+    color: rgb(147, 197, 253); /* blue-300 */
+}

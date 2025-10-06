@@ -65,81 +65,79 @@
             </p>
         </div>
 
-        <!-- Real Communities -->
-        <div class="grid md:grid-cols-2 gap-8 mb-12">
-            {% for data in community_data %}
-            <div class="bg-white rounded-xl p-8 shadow-lg border border-gray-200">
-                <div class="flex items-center mb-4">
-                    <span class="text-3xl mr-4">
-                        {% if "Minion" in data.community.name %}🍌
-                        {% elif "Springfield" in data.community.name %}🏭
-                        {% else %}🏛️{% endif %}
-                    </span>
-                    <div class="flex-1">
-                        <h3 class="text-xl font-bold text-gray-800">{{ data.community.name }}</h3>
-                        <p class="text-gray-600">{{ data.voting_member_count }} voting members • {{ data.member_count }} total</p>
-                    </div>
-                    <a href="{% url 'democracy:community_detail' data.community.id %}" 
-                       class="text-crowdvote-blue hover:text-blue-700 font-medium text-sm">
-                        View Details →
-                    </a>
-                </div>
-                <p class="text-gray-700 mb-6">
-                    {{ data.community.description|truncatewords:25 }}
-                </p>
-                
-                <!-- Community Tags (placeholder for now) -->
-                <div class="flex flex-wrap gap-2 mb-6">
-                    {% if "Minion" in data.community.name %}
-                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">environmental</span>
-                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">fiscal</span>
-                        <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">workplace</span>
-                    {% elif "Springfield" in data.community.name %}
-                        <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">safety</span>
-                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">business</span>
-                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">zoning</span>
-                    {% endif %}
-                </div>
-                
-                <!-- Application Status & Button -->
-                <div id="community-{{ data.community.id }}-status">
-                    {% if not is_authenticated %}
-                        <a href="/" 
-                           class="w-full inline-block text-center bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg">
-                            Login to Apply
-                        </a>
-                    {% elif data.user_status == 'member' %}
-                        <div class="w-full bg-green-100 text-green-800 font-semibold py-3 px-6 rounded-lg text-center">
-                            ✅ You're a Member!
-                        </div>
-                    {% elif data.user_status == 'pending' %}
-                        <div class="w-full bg-yellow-100 text-yellow-800 font-semibold py-3 px-6 rounded-lg text-center">
-                            ⏳ Application Pending
-                        </div>
-                    {% elif data.user_status == 'rejected' %}
-                        <button hx-post="{% url 'accounts:apply_to_community' data.community.id %}"
-                                hx-target="#community-{{ data.community.id }}-status"
-                                hx-swap="innerHTML"
-                                class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">
-                            🔄 Reapply
-                        </button>
-                    {% else %}
-                        <button hx-post="{% url 'accounts:apply_to_community' data.community.id %}"
-                                hx-target="#community-{{ data.community.id }}-status"
-                                hx-swap="innerHTML"
-                                class="w-full {% if 'Minion' in data.community.name %}bg-yellow-500 hover:bg-yellow-600{% elif 'Springfield' in data.community.name %}bg-green-600 hover:bg-green-700{% else %}bg-crowdvote-blue hover:bg-blue-700{% endif %} text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">
-                            Apply to Join {% if "Minion" in data.community.name %}🍌{% elif "Springfield" in data.community.name %}⚡{% else %}🏛️{% endif %}
-                        </button>
-                    {% endif %}
-                </div>
+        <!-- Communities Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6 mb-12">
+            {% if community_data %}
+            <table id="communities-table" class="display w-full">
+                <thead>
+                    <tr>
+                        <th>Community</th>
+                        <th>Members</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in community_data %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'democracy:community_detail' data.community.id %}" class="font-semibold">
+                                {{ data.community.name }}
+                            </a>
+                        </td>
+                        <td>{{ data.member_count }}</td>
+                        <td>{{ data.community.description|truncatewords:15 }}</td>
+                        <td>
+                            <div id="community-{{ data.community.id }}-status">
+                                {% if not is_authenticated %}
+                                    <a href="/" class="btn-primary-sm">Login</a>
+                                {% elif data.user_status == 'member' %}
+                                    <span class="badge badge-green">✅ Member</span>
+                                {% elif data.user_status == 'pending' %}
+                                    <span class="badge badge-yellow">⏳ Pending</span>
+                                {% elif data.user_status == 'rejected' %}
+                                    <button hx-post="{% url 'accounts:apply_to_community' data.community.id %}"
+                                            hx-target="#community-{{ data.community.id }}-status"
+                                            hx-swap="innerHTML"
+                                            class="btn-primary-sm">
+                                        Reapply
+                                    </button>
+                                {% else %}
+                                    <button hx-post="{% url 'accounts:apply_to_community' data.community.id %}"
+                                            hx-target="#community-{{ data.community.id }}-status"
+                                            hx-swap="innerHTML"
+                                            class="btn-primary-sm">
+                                        Apply
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center py-12">
+                <p class="text-gray-600 dark:text-gray-400 text-lg">No communities available yet.</p>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">Communities will appear here as they're created.</p>
             </div>
-            {% empty %}
-            <div class="col-span-2 text-center py-12">
-                <p class="text-gray-600 text-lg">No communities available yet.</p>
-                <p class="text-gray-500 mt-2">Communities will appear here as they're created.</p>
-            </div>
-            {% endfor %}
+            {% endif %}
         </div>
+        
+        <script>
+        $(document).ready(function() {
+            if ($('#communities-table').length) {
+                $('#communities-table').DataTable({
+                    pageLength: 10,
+                    lengthMenu: [10, 25, 50, 100],
+                    order: [[0, 'asc']], // Sort by community name
+                    columnDefs: [
+                        { orderable: false, targets: [3] } // Status column not sortable
+                    ]
+                });
+            }
+        });
+        </script>
 
         <!-- Coming Soon -->
         <div class="text-center bg-white rounded-xl p-8 shadow-lg border border-gray-200">
