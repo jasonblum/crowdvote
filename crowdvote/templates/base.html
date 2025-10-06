@@ -95,6 +95,11 @@
         #processing-tooltip .hover-bridge {
             pointer-events: auto;
         }
+        
+        /* Smooth scrolling for anchor links */
+        html {
+            scroll-behavior: smooth;
+        }
     </style>
     
     <!-- Allow child templates to add custom head content -->
@@ -108,7 +113,7 @@
             {% block sidebar %}
                 {% if user.is_authenticated %}
                     <!-- Default sidebar for authenticated users -->
-                    <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:min-h-screen">
+                    <nav class="lg:w-80 lg:flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">
                         {% block sidebar_content %}
                             <!-- CrowdVote Logo Header -->
                             <div class="px-6 border-b border-gray-200 dark:border-gray-700">

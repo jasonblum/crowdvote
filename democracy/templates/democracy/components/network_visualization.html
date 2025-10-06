@@ -57,7 +57,7 @@
     svg.append('defs').append('marker')
         .attr('id', 'arrowhead')
         .attr('viewBox', '-0 -5 10 10')
-        .attr('refX', 28)
+        .attr('refX', 60)  // Adjusted for wider rectangular nodes
         .attr('refY', 0)
         .attr('orient', 'auto')
         .attr('markerWidth', 8)
@@ -83,10 +83,10 @@
 
     // Create force simulation
     const simulation = d3.forceSimulation(networkData.nodes)
-        .force('link', d3.forceLink(networkData.links).id(d => d.id).distance(150))
-        .force('charge', d3.forceManyBody().strength(-400))
+        .force('link', d3.forceLink(networkData.links).id(d => d.id).distance(180))
+        .force('charge', d3.forceManyBody().strength(-500))
         .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('collision', d3.forceCollide().radius(40));
+        .force('collision', d3.forceCollide().radius(70));  // Increased for wider nodes
 
     // Create container groups
     const linkGroup = g.append('g').attr('class', 'links');
@@ -134,24 +134,42 @@
         node.attr('transform', d => `translate(${d.x},${d.y})`);
     }
 
-    // Create nodes with improved drag behavior
+    // Create nodes with improved drag behavior and clickable links
     const node = nodeGroup.selectAll('g')
         .data(networkData.nodes)
         .join('g')
         .attr('class', 'node')
+        .style('cursor', 'pointer')
+        .on('click', function(event, d) {
+            // Navigate to member profile page
+            window.location.href = `/member/${d.username}/`;
+        })
         .call(d3.drag()
             .on('start', dragstarted)
             .on('drag', dragged)
             .on('end', dragended));
 
-    node.append('circle')
-        .attr('r', 22)
-        .attr('fill', d => getNodeColor(networkData.followerCounts[d.id] || 0));
+    // Add rounded rectangle instead of circle
+    node.append('rect')
+        .attr('width', 100)
+        .attr('height', 35)
+        .attr('x', -50)  // Center the rectangle
+        .attr('y', -17.5)  // Center the rectangle
+        .attr('rx', 8)  // Rounded corners
+        .attr('ry', 8)  // Rounded corners
+        .attr('fill', d => getNodeColor(networkData.followerCounts[d.id] || 0))
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2);
 
+    // Add text (username) centered in the rectangle
     node.append('text')
         .text(d => d.username)
-        .attr('dy', 4)
-        .attr('fill', '#fff');
+        .attr('dy', 5)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#fff')
+        .attr('font-size', '11px')
+        .attr('font-weight', 'bold')
+        .style('pointer-events', 'none');  // Allow click to pass through to parent
 
     // Update positions on tick
     simulation.on('tick', updatePositions);

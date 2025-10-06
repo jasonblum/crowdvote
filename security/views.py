@@ -438,36 +438,14 @@ def member_profile(request, username):
         community_id__in=user_community_ids
     ).select_related('community').order_by('community__name')
     
-    # Get member's following relationships (who they follow)
-    following = member.followings.select_related('followee').order_by('followee__username')
-    
-    # Get member's followers (who follows them)
-    followers = member.followers.select_related('follower').order_by('follower__username')
-    
-    # Check if current user is following this member
-    current_following = None
-    is_following = False
-    if request.user.is_authenticated and request.user != member:
-        try:
-            current_following = Following.objects.get(
-                follower=request.user,
-                followee=member
-            )
-            is_following = True
-        except Following.DoesNotExist:
-            pass
+    # Note: Delegation relationships are private and community-specific
+    # They are not shown on public profile pages for privacy reasons
     
     context = {
         'member': member,
         'visible_memberships': visible_memberships,
-        'following_count': following.count(),
-        'followers_count': followers.count(),
-        'following': following[:10],  # Show first 10
-        'followers': followers[:10],  # Show first 10
         'is_own_profile': request.user == member,
         'can_view_details': bool(visible_memberships.exists()),
-        'is_following': is_following,
-        'current_following': current_following,
     }
     
     return render(request, 'accounts/member_profile.html', context)

@@ -149,6 +149,39 @@ crowdvote/
 - Use semantic HTML5 elements
 - Follow accessibility guidelines
 
+### Sidebar Navigation Pattern
+**Standard navigation structure for all authenticated pages:**
+
+The sidebar should be **sticky** (floats with scrolling) and organized into three sections:
+
+1. **"On This Page" Section** (Local Navigation)
+   - Section header: `<h3>` with text "On This Page"
+   - Links to page sections using anchor links (`#section-id`)
+   - Each link should have an emoji icon for visual clarity
+   - Example: 🏘️ Community Info, 👥 Members, 🌳 Delegation Network, 📋 Docket
+
+2. **Quick Actions Section** (Optional, no border)
+   - Context-specific action buttons (Create, Manage, etc.)
+   - Only show if relevant to the page and user permissions
+   - Can be omitted if no actions are available
+
+3. **"Navigation" Section** (Site-Wide Navigation)
+   - **Separated by a single horizontal rule** (`border-t`)
+   - Section header: `<h3>` with text "Navigation"
+   - Site-wide navigation links (Back to Communities, Dashboard, etc.)
+   - Should always provide a way back to broader context
+
+**Implementation Notes:**
+- Sidebar is made sticky via: `lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto` in base.html
+- Smooth scrolling enabled globally: `html { scroll-behavior: smooth; }`
+- Section headers use: `text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3`
+- Navigation links use: `flex items-center px-3 py-2 text-sm font-medium` with hover states
+- Active/current section can be highlighted with: `text-blue-600 bg-blue-50 dark:bg-blue-900/20`
+
+**Reference Implementation:**
+- See `democracy/templates/democracy/community_detail.html` for complete example
+- Pattern ensures consistent navigation experience across all pages
+
 ### HTMX Integration
 - Install `django-htmx` middleware
 - Use `request.htmx` to detect HTMX requests

@@ -41,13 +41,22 @@
 }
 
 /* Node styles */
-.node circle {
-    stroke: #fff;
-    stroke-width: 2px;
-    cursor: move;
+.node {
+    cursor: pointer;
 }
 
-.dark .node circle {
+.node rect {
+    stroke: #fff;
+    stroke-width: 2px;
+    transition: opacity 0.2s;
+}
+
+.node:hover rect {
+    opacity: 0.8;
+    stroke-width: 3px;
+}
+
+.dark .node rect {
     stroke: #1f2937;
 }
 
