@@ -1,0 +1,215 @@
+<!-- Follow/Unfollow Modal with Tag Selection -->
+<div class="modal-backdrop" onclick="document.getElementById('follow-modal-container').innerHTML=''">
+    <div class="modal-dialog" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h3 class="modal-title">
+                {% if existing_following %}
+                    Update Following: @{{ member_membership.member.username }}
+                {% else %}
+                    Follow @{{ member_membership.member.username }}
+                {% endif %}
+            </h3>
+            <button type="button" 
+                    onclick="document.getElementById('follow-modal-container').innerHTML=''"
+                    class="modal-close">
+                ×
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Follow this member in <strong>{{ community.name }}</strong> to inherit their votes on specific topics.
+            </p>
+
+            <form id="follow-form"
+                  hx-post="{% url 'democracy:follow_member' community.id member_membership.id %}"
+                  hx-swap="none"
+                  hx-on::before-request="updateHiddenInput()"
+                  hx-on::after-request="if(event.detail.successful) { document.getElementById('follow-modal-container').innerHTML = ''; }">
+                
+                <!-- Selected Tags Pills Display -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Selected Tags
+                    </label>
+                    <div id="selected-tags" class="min-h-[40px] p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-900 flex flex-wrap gap-2">
+                        <!-- Tag pills will be added here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Tag Input -->
+                <div class="mb-4">
+                    <label for="tag-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Add Tags
+                    </label>
+                    <input type="text" 
+                           id="tag-input"
+                           placeholder="Type a tag and press Enter"
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                           onblur="addTagFromInput()">
+                </div>
+
+                <!-- Suggested Tags -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Tags this member has used in this community:
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        {% if member_tags %}
+                            {% for tag in member_tags %}
+                                <button type="button"
+                                        class="tag-pill tag-suggestion"
+                                        onclick="addTag('{{ tag }}')">
+                                    {{ tag }}
+                                </button>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-sm text-gray-500 dark:text-gray-400 italic">No tags yet</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- All Tags Option -->
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" 
+                               id="all-tags-checkbox"
+                               onchange="toggleAllTags(this.checked)"
+                               {% if existing_following and not existing_following.tags %}checked{% endif %}
+                               class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Follow on <strong>ALL tags</strong> (ignore specific tag selection)
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Hidden input to store tags as JSON -->
+                <input type="hidden" name="tags" id="tags-input-hidden" value="">
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="button"
+                            onclick="document.getElementById('follow-modal-container').innerHTML=''"
+                            class="btn-secondary">
+                        Cancel
+                    </button>
+                    
+                    {% if existing_following %}
+                        <button type="button"
+                                hx-post="{% url 'democracy:unfollow_member' community.id member_membership.id %}"
+                                hx-swap="none"
+                                hx-confirm="Stop following @{{ member_membership.member.username }}?"
+                                hx-on::after-request="if(event.detail.successful) { document.getElementById('follow-modal-container').innerHTML = ''; }"
+                                class="btn-danger">
+                            Unfollow
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            Update
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn-primary">
+                            Follow
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Initialize fresh Set for this modal instance
+    const selectedTags = new Set([
+        {% if existing_following %}
+            {% if current_tags %}
+                {% for tag in current_tags %}'{{ tag|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% endif %}
+        {% endif %}
+    ]);
+
+    function addTag(tag) {
+    tag = tag.trim();
+    if (!tag || selectedTags.has(tag)) return;
+    
+    selectedTags.add(tag);
+    renderSelectedTags();
+    updateHiddenInput();
+    
+    // Clear "all tags" checkbox if specific tags are added
+    const checkbox = document.getElementById('all-tags-checkbox');
+        if (checkbox) checkbox.checked = false;
+    }
+
+    window.removeTag = function(tag) {
+        selectedTags.delete(tag);
+        renderSelectedTags();
+        updateHiddenInput();
+    };
+
+    window.addTagFromInput = function() {
+        const input = document.getElementById('tag-input');
+        if (!input) return;
+        const tag = input.value.trim();
+        if (tag) {
+            addTag(tag);
+            input.value = '';
+        }
+    };
+
+    function renderSelectedTags() {
+        const container = document.getElementById('selected-tags');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (selectedTags.size === 0) {
+            container.innerHTML = '<span class="text-sm text-gray-400 italic">No tags selected</span>';
+            return;
+        }
+        
+        selectedTags.forEach(tag => {
+            const pill = document.createElement('span');
+            pill.className = 'tag-pill';
+            pill.setAttribute('data-tag', tag);
+            pill.innerHTML = `
+                ${tag}
+                <button type="button" class="tag-pill-remove" onclick="removeTag('${tag}')">×</button>
+            `;
+            container.appendChild(pill);
+        });
+    }
+
+    window.toggleAllTags = function(isChecked) {
+        if (isChecked) {
+            selectedTags.clear();
+            renderSelectedTags();
+        }
+        updateHiddenInput();
+    };
+
+    window.updateHiddenInput = function() {
+        const checkbox = document.getElementById('all-tags-checkbox');
+        const hiddenInput = document.getElementById('tags-input-hidden');
+        if (!checkbox || !hiddenInput) return;
+        
+        const allTagsChecked = checkbox.checked;
+        const tagsArray = allTagsChecked ? ['ALL'] : Array.from(selectedTags);
+        hiddenInput.value = JSON.stringify(tagsArray);
+    };
+
+    // Initialize immediately (not on DOMContentLoaded, since HTMX already loaded the DOM)
+    renderSelectedTags();
+    updateHiddenInput();
+
+    // Handle Enter key in tag input
+    document.getElementById('tag-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTagFromInput();
+        }
+    });
+})();
+</script>

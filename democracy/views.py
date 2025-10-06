@@ -25,6 +25,7 @@ from .signals import recalculate_community_decisions_async
 from .utils import generate_username_hash
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def build_network_data(community):
@@ -1500,3 +1501,181 @@ def manual_recalculation(request, community_id, decision_id):
             'success': False,
             'error': 'An error occurred while starting recalculation. Please try again.'
         }, status=500)
+
+
+# ============================================================================
+# FOLLOW/UNFOLLOW VIEWS
+# ============================================================================
+
+def get_member_tags_in_community(membership):
+    """
+    Get all unique tags a member has used in their community.
+    
+    Queries Ballot tags where this membership has voted.
+    Returns list of unique tag names.
+    """
+    # Get all ballots this user has cast in this community's decisions
+    ballots = Ballot.objects.filter(
+        voter=membership.member,
+        decision__community=membership.community
+    ).exclude(tags='').exclude(tags__isnull=True).values_list('tags', flat=True)
+    
+    # Collect all unique tags from ballots
+    tag_names = set()
+    for tags_string in ballots:
+        if tags_string:
+            for tag in tags_string.split(','):
+                tag_names.add(tag.strip())
+    
+    return sorted(list(tag_names))
+
+
+@login_required
+def follow_modal(request, community_id, member_id):
+    """
+    Return HTMX modal for follow/unfollow with tag selection.
+    
+    Args:
+        community_id: UUID of the community
+        member_id: UUID of the membership to follow
+    
+    Returns:
+        Rendered follow modal template with context for tag selection
+    """
+    community = get_object_or_404(Community, id=community_id)
+    member_membership = get_object_or_404(Membership, id=member_id, community=community)
+    
+    # Get current user's membership in this community
+    try:
+        user_membership = Membership.objects.get(member=request.user, community=community)
+    except Membership.DoesNotExist:
+        return HttpResponse("You must be a member of this community to follow others.", status=403)
+    
+    # Don't allow following yourself
+    if member_membership == user_membership:
+        return HttpResponse("You cannot follow yourself.", status=400)
+    
+    # Check if already following
+    try:
+        existing_following = Following.objects.get(
+            follower=user_membership,
+            followee=member_membership
+        )
+        current_tags = [tag.strip() for tag in existing_following.tags.split(',')] if existing_following.tags else []
+    except Following.DoesNotExist:
+        existing_following = None
+        current_tags = []
+    
+    # Get tags this member has used in this community
+    member_tags = get_member_tags_in_community(member_membership)
+    
+    context = {
+        'community': community,
+        'member_membership': member_membership,
+        'user_membership': user_membership,
+        'existing_following': existing_following,
+        'member_tags': member_tags,
+        'current_tags': current_tags,
+    }
+    
+    return render(request, 'democracy/components/follow_modal.html', context)
+
+
+@login_required
+@require_POST
+def follow_member(request, community_id, member_id):
+    """
+    Create or update Following relationship with tag selection.
+    
+    POST data:
+        - tags: JSON string of array of tag names, or ["ALL"] for all tags
+    
+    Returns:
+        Partial template with updated Following and Actions columns (HTMX out-of-band swaps)
+    """
+    import json
+    
+    community = get_object_or_404(Community, id=community_id)
+    member_membership = get_object_or_404(Membership, id=member_id, community=community)
+    
+    # Get current user's membership
+    try:
+        user_membership = Membership.objects.get(member=request.user, community=community)
+    except Membership.DoesNotExist:
+        return HttpResponse("You must be a member of this community.", status=403)
+    
+    # Parse tags from POST data
+    tags_json = request.POST.get('tags', '[]')
+    try:
+        tags_list = json.loads(tags_json)
+    except json.JSONDecodeError:
+        return HttpResponse("Invalid tags format.", status=400)
+    
+    # Convert tags list to comma-separated string
+    # Empty string means "ALL tags"
+    if tags_list == ['ALL'] or not tags_list:
+        tags_string = ''
+    else:
+        tags_string = ','.join(tags_list)
+    
+    # Get or create Following object
+    following, created = Following.objects.get_or_create(
+        follower=user_membership,
+        followee=member_membership,
+        defaults={'tags': tags_string}
+    )
+    
+    if not created:
+        # Update existing following
+        following.tags = tags_string
+        following.save()
+    
+    logger.info(f"[FOLLOWING_UPDATED] [{request.user.username}] - Now following {member_membership.member.username} in {community.name} on tags: {tags_string or 'ALL'}")
+    
+    # Prepare tags list for template
+    tags_display = tags_string.split(',') if tags_string else None
+    
+    context = {
+        'membership': member_membership,
+        'following': following,
+        'tags_list': tags_display,
+        'community': community,
+    }
+    
+    return render(request, 'democracy/components/following_update.html', context)
+
+
+@login_required
+@require_POST
+def unfollow_member(request, community_id, member_id):
+    """
+    Delete Following relationship.
+    
+    Returns:
+        Partial template with updated Following and Actions columns (HTMX out-of-band swaps)
+    """
+    community = get_object_or_404(Community, id=community_id)
+    member_membership = get_object_or_404(Membership, id=member_id, community=community)
+    
+    # Get current user's membership
+    try:
+        user_membership = Membership.objects.get(member=request.user, community=community)
+    except Membership.DoesNotExist:
+        return HttpResponse("You must be a member of this community.", status=403)
+    
+    # Delete the following relationship
+    deleted_count, _ = Following.objects.filter(
+        follower=user_membership,
+        followee=member_membership
+    ).delete()
+    
+    if deleted_count > 0:
+        logger.info(f"[FOLLOWING_REMOVED] [{request.user.username}] - Unfollowed {member_membership.member.username} in {community.name}")
+    
+    context = {
+        'membership': member_membership,
+        'following': None,
+        'community': community,
+    }
+    
+    return render(request, 'democracy/components/following_update.html', context)

@@ -24,4 +24,9 @@ urlpatterns = [
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/results/', views.decision_results, name='decision_results'),
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/recalculate/', views.manual_recalculation, name='manual_recalculation'),
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/status/', views.calculation_status, name='calculation_status'),
+    
+    # Follow/Unfollow
+    path('communities/<uuid:community_id>/follow/<uuid:member_id>/', views.follow_modal, name='follow_modal'),
+    path('communities/<uuid:community_id>/follow/<uuid:member_id>/save/', views.follow_member, name='follow_member'),
+    path('communities/<uuid:community_id>/unfollow/<uuid:member_id>/', views.unfollow_member, name='unfollow_member'),
 ]

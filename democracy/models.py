@@ -283,6 +283,13 @@ class Following(BaseModel):
         tags_str = f" on tags: {self.tags}" if self.tags else " on all tags"
         return f"{self.follower.member.username} follows {self.followee.member.username}{tags_str}"
     
+    @property
+    def tags_list(self):
+        """Return tags as a list. Empty list if following all tags."""
+        if not self.tags:
+            return []
+        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+    
     def clean(self):
         """
         Validate the following relationship.

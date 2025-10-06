@@ -1,0 +1,26 @@
+<!-- HTMX Out-of-Band Swap for Actions column (merged Following + Actions) -->
+
+<td id="actions-{{ membership.id }}" hx-swap-oob="true">
+    {% if following %}
+        <button hx-get="{% url 'democracy:follow_modal' community.id membership.id %}"
+                hx-target="#follow-modal-container"
+                hx-swap="innerHTML"
+                class="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 text-sm font-medium">
+            <span class="font-semibold">Following:</span>
+            {% if following.tags %}
+                {% for tag in tags_list %}
+                    <span class="tag-pill-small ml-1">{{ tag }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="following-all-tags ml-1">All Tags</span>
+            {% endif %}
+        </button>
+    {% else %}
+        <button hx-get="{% url 'democracy:follow_modal' community.id membership.id %}"
+                hx-target="#follow-modal-container"
+                hx-swap="innerHTML"
+                class="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 text-sm font-medium">
+            Follow
+        </button>
+    {% endif %}
+</td>
