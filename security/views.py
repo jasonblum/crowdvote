@@ -303,7 +303,7 @@ def apply_to_community(request, community_id):
                     member=request.user,
                     is_voting_community_member=True,
                     is_community_manager=False,
-                    is_anonymous_by_default=False,
+                    is_anonymous=True,  # Default to anonymous
                 )
                 return return_response(
                     success=True,

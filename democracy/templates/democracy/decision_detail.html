@@ -259,35 +259,40 @@
                             {% endfor %}
                         </div>
                         
-                        <!-- Tags Input -->
+                        <!-- Tags Input with Chips -->
                         <div class="mb-6">
-                            <label for="tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Tags for this vote (optional)
                             </label>
-                            <input type="text" 
-                                   name="tags" 
-                                   id="tags"
-                                   class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   placeholder="Add tags like 'budget, environment, maintenance' to help others follow your expertise"
-                                   value="{% if user_ballot %}{{ user_ballot.tags }}{% endif %}">
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            
+                            <!-- Selected Tags Display (Chips) -->
+                            <div id="selected-tags-display" class="flex flex-wrap gap-2 mb-3 min-h-[2rem]">
+                                <!-- Tags will be rendered here as chips -->
+                            </div>
+                            
+                            <!-- Tag Input -->
+                            <div class="flex gap-2">
+                                <input type="text" 
+                                       id="tag-input"
+                                       class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="Type a tag and press Enter"
+                                       onkeypress="if(event.key==='Enter'){event.preventDefault();addTagFromInput();}">
+                                <button type="button"
+                                        onclick="addTagFromInput()"
+                                        class="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 font-medium transition-colors">
+                                    Add Tag
+                                </button>
+                            </div>
+                            
+                            <!-- Hidden input to store tags as comma-delimited string -->
+                            <input type="hidden" name="tags" id="tags-hidden-input" value="">
+                            
+                            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                                 Tags help other community members follow your expertise on specific topics for delegation.
                             </p>
                         </div>
                         
-                        <!-- Anonymity Toggle -->
-                        <div class="mb-6">
-                            <div class="flex items-center">
-                                <input type="checkbox" 
-                                       name="is_anonymous" 
-                                       id="is_anonymous"
-                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
-                                       {% if user_ballot.is_anonymous or user_membership.is_anonymous_by_default %}checked{% endif %}>
-                                <label for="is_anonymous" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                                    Vote anonymously (your identity will be hidden in public results)
-                                </label>
-                            </div>
-                        </div>
+                        <!-- Note: Anonymity is controlled at membership level via "My Settings" button -->
                         
                         <!-- Submit Button (Save Draft removed as requested) -->
                         <div class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-600">
@@ -721,5 +726,85 @@ document.addEventListener('DOMContentLoaded', function() {
         setInterval(updateCountdown, 1000);
     }
 });
+
+// ============================================
+// TAG CHIP MANAGEMENT (for ballot tags)
+// ============================================
+(function() {
+    const selectedTags = new Set([
+        {% if user_ballot_tags %}
+            {% for tag in user_ballot_tags %}'{{ tag|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% endif %}
+    ]);
+
+    window.addTag = function(tag) {
+        tag = tag.trim().toLowerCase();
+        if (!tag || selectedTags.has(tag)) return;
+        if (tag.length < 2 || tag.length > 30) {
+            alert('Tags must be between 2 and 30 characters');
+            return;
+        }
+        if (selectedTags.size >= 10) {
+            alert('Maximum 10 tags allowed');
+            return;
+        }
+        
+        selectedTags.add(tag);
+        renderSelectedTags();
+        updateHiddenInput();
+    };
+
+    window.removeTag = function(tag) {
+        selectedTags.delete(tag);
+        renderSelectedTags();
+        updateHiddenInput();
+    };
+
+    window.addTagFromInput = function() {
+        const input = document.getElementById('tag-input');
+        if (!input) return;
+        
+        const tag = input.value.trim();
+        if (tag) {
+            addTag(tag);
+            input.value = '';
+        }
+    };
+
+    function renderSelectedTags() {
+        const container = document.getElementById('selected-tags-display');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (selectedTags.size === 0) {
+            container.innerHTML = '<span class="text-sm text-gray-400 dark:text-gray-500 italic">No tags added yet</span>';
+            return;
+        }
+        
+        selectedTags.forEach(tag => {
+            const pill = document.createElement('span');
+            pill.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
+            pill.innerHTML = `
+                ${tag}
+                <button type="button" onclick="removeTag('${tag}')" class="ml-2 text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 font-bold">
+                    ×
+                </button>
+            `;
+            container.appendChild(pill);
+        });
+    }
+
+    function updateHiddenInput() {
+        const hiddenInput = document.getElementById('tags-hidden-input');
+        if (!hiddenInput) return;
+        
+        hiddenInput.value = Array.from(selectedTags).join(', ');
+    }
+
+    // Initialize on page load
+    renderSelectedTags();
+    updateHiddenInput();
+})();
 </script>
 {% endblock scripts %}

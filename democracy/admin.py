@@ -27,8 +27,8 @@ class CommunityAdmin(admin.ModelAdmin):
 @admin.register(Membership)
 class MembershipAdmin(admin.ModelAdmin):
     """Admin interface for Membership model."""
-    list_display = ['member', 'community', 'is_voting_community_member', 'is_community_manager', 'dt_joined']
-    list_filter = ['is_voting_community_member', 'is_community_manager', 'is_anonymous_by_default', 'dt_joined']
+    list_display = ['member', 'community', 'is_voting_community_member', 'is_community_manager', 'is_anonymous', 'dt_joined']
+    list_filter = ['is_voting_community_member', 'is_community_manager', 'is_anonymous', 'dt_joined']
     search_fields = ['member__username', 'community__name']
     raw_id_fields = ['member', 'community']
 
@@ -103,9 +103,14 @@ class VoteInline(admin.TabularInline):
 
 @admin.register(Ballot)
 class BallotAdmin(admin.ModelAdmin):
-    """Admin interface for Ballot model."""
-    list_display = ['voter', 'decision', 'tags_display', 'is_calculated', 'is_anonymous', 'created']
-    list_filter = ['is_calculated', 'is_anonymous', 'decision__community', 'created']
+    """
+    Admin interface for Ballot model.
+    
+    Note: Anonymity is now controlled at the Membership level, not per-ballot.
+    To check if a voter is anonymous, look at their membership in the decision's community.
+    """
+    list_display = ['voter', 'decision', 'tags_display', 'is_calculated', 'created']
+    list_filter = ['is_calculated', 'decision__community', 'created']
     search_fields = ['voter__username', 'decision__title', 'tags']
     raw_id_fields = ['voter', 'decision']
     inlines = [VoteInline]

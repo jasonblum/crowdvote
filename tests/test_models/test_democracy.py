@@ -531,3 +531,107 @@ class TestSTARVotingConstraints:
         choice.score = 5.1
         with pytest.raises(ValidationError):
             choice.full_clean()
+
+
+@pytest.mark.models
+class TestMembershipAnonymity:
+    """Test membership-level anonymity system and constraints."""
+    
+    def test_membership_is_anonymous_defaults_to_true(self):
+        """Test that new memberships default to anonymous."""
+        user = UserFactory()
+        community = CommunityFactory()
+        membership = Membership.objects.create(
+            member=user,
+            community=community,
+            is_voting_community_member=True
+        )
+        
+        assert membership.is_anonymous is True
+    
+    def test_voting_member_can_be_anonymous(self):
+        """Test that voting members can be anonymous."""
+        user = UserFactory()
+        community = CommunityFactory()
+        membership = Membership.objects.create(
+            member=user,
+            community=community,
+            is_voting_community_member=True,
+            is_anonymous=True
+        )
+        
+        membership.full_clean()  # Should not raise
+        assert membership.is_anonymous is True
+    
+    def test_voting_member_can_be_public(self):
+        """Test that voting members can be public."""
+        user = UserFactory()
+        community = CommunityFactory()
+        membership = Membership.objects.create(
+            member=user,
+            community=community,
+            is_voting_community_member=True,
+            is_anonymous=False
+        )
+        
+        membership.full_clean()  # Should not raise
+        assert membership.is_anonymous is False
+    
+    def test_lobbyist_cannot_be_anonymous_constraint(self):
+        """Test that database constraint prevents anonymous lobbyists."""
+        from django.db import IntegrityError
+        
+        user = UserFactory()
+        community = CommunityFactory()
+        
+        # Attempting to create anonymous lobbyist should fail
+        with pytest.raises(IntegrityError, match='lobbyists_cannot_be_anonymous'):
+            Membership.objects.create(
+                member=user,
+                community=community,
+                is_voting_community_member=False,  # Lobbyist
+                is_anonymous=True  # Cannot be anonymous
+            )
+    
+    def test_lobbyist_must_be_public(self):
+        """Test that lobbyists are always public."""
+        user = UserFactory()
+        community = CommunityFactory()
+        membership = Membership.objects.create(
+            member=user,
+            community=community,
+            is_voting_community_member=False,  # Lobbyist
+            is_anonymous=False
+        )
+        
+        membership.full_clean()  # Should not raise
+        assert membership.is_anonymous is False
+    
+    def test_ballot_get_display_name_respects_anonymity(self):
+        """Test that ballot display name respects membership anonymity."""
+        user = UserFactory(username='testuser')
+        community = CommunityFactory()
+        decision = DecisionFactory(community=community)
+        
+        # Create anonymous membership
+        membership = Membership.objects.create(
+            member=user,
+            community=community,
+            is_voting_community_member=True,
+            is_anonymous=True
+        )
+        
+        ballot = BallotFactory(
+            voter=user,
+            decision=decision
+        )
+        
+        # Should return "Anonymous" for anonymous members
+        assert ballot.get_display_name() == 'Anonymous'
+        
+        # Change to public
+        membership.is_anonymous = False
+        membership.save()
+        
+        # Should return actual username for public members
+        assert ballot.get_display_name() == 'testuser'

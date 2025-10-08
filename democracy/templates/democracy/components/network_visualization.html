@@ -139,10 +139,12 @@
         .data(networkData.nodes)
         .join('g')
         .attr('class', 'node')
-        .style('cursor', 'pointer')
+        .style('cursor', d => d.is_anonymous ? 'grab' : 'pointer')
         .on('click', function(event, d) {
-            // Navigate to member profile page
-            window.location.href = `/member/${d.username}/`;
+            // Don't navigate for anonymous members (they have no public profile)
+            if (!d.is_anonymous) {
+                window.location.href = `/member/${d.username}/`;
+            }
         })
         .call(d3.drag()
             .on('start', dragstarted)

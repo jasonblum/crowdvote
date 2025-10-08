@@ -242,12 +242,12 @@ def following_changed(sender, instance, created, **kwargs):
         action = "started" if created else "updated"
         tags_display = f" on tags: {instance.tags}" if instance.tags else " (all tags)"
         
-        logger.info(f"[FOLLOWING_{action.upper()}] [{instance.follower.username}] - {action.title()} following {instance.followee.username}{tags_display} (priority: {instance.order})")
+        # Note: follower and followee are Membership objects, not User objects
+        logger.info(f"[FOLLOWING_{action.upper()}] [{instance.follower.member.username}] - {action.title()} following {instance.followee.member.username}{tags_display} (priority: {instance.order})")
         
-        # Find communities where both users are members
-        follower_communities = set(instance.follower.memberships.values_list('community_id', flat=True))
-        followee_communities = set(instance.followee.memberships.values_list('community_id', flat=True))
-        shared_communities = follower_communities.intersection(followee_communities)
+        # Both follower and followee are already in the same community (Following is community-specific)
+        # So we only need to recalculate for this one community
+        shared_communities = {instance.follower.community_id}
         
         # Trigger recalculation for each shared community
         for community_id in shared_communities:
@@ -281,12 +281,13 @@ def following_deleted(sender, instance, **kwargs):
     """
     try:
         tags_display = f" on tags: {instance.tags}" if instance.tags else " (all tags)"
-        logger.info(f"[FOLLOWING_DELETED] [{instance.follower.username}] - Stopped following {instance.followee.username}{tags_display}")
         
-        # Find communities where both users are members
-        follower_communities = set(instance.follower.memberships.values_list('community_id', flat=True))
-        followee_communities = set(instance.followee.memberships.values_list('community_id', flat=True))
-        shared_communities = follower_communities.intersection(followee_communities)
+        # Note: follower and followee are Membership objects, not User objects
+        logger.info(f"[FOLLOWING_DELETED] [{instance.follower.member.username}] - Stopped following {instance.followee.member.username}{tags_display}")
+        
+        # Both follower and followee are already in the same community (Following is community-specific)
+        # So we only need to recalculate for this one community
+        shared_communities = {instance.follower.community_id}
         
         # Trigger recalculation for each shared community
         for community_id in shared_communities:

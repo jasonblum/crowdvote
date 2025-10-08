@@ -134,23 +134,32 @@ class Membership(BaseModel):
     Through-model for Community-User relationship with additional membership details.
     
     This model defines the relationship between users and communities, including
-    their roles, permissions, and preferences within each community. It enables
+    their roles, permissions, and anonymity settings within each community. It enables
     fine-grained control over who can vote, manage the community, and how their
     participation is handled.
     
     Membership Types:
     - Voting Members: Can cast ballots that count toward decision results
-    - Lobbyists: Can vote and tag and be followed on their votes and tags, but their votes aren't counted.
+    - Lobbyists: Can vote and tag and be followed on their votes and tags, but their votes aren't counted
     - Managers: Can manage community membership and settings
     
-    Privacy Features:
-    - Anonymous voting: Members can choose to hide their identity in votes
-    - Flexible privacy controls per community
+    Anonymity System:
+    - Anonymity is controlled at the membership level (per-community)
+    - Users can be anonymous in some communities but not others
+    - Lobbyists CANNOT be anonymous (database constraint enforced)
+    - Anonymous members appear as "Anonymous" but managers can see their real names
+    - This approach maintains auditability while preserving privacy
+    
+    Why Membership-Level Anonymity:
+    - Simpler than per-ballot anonymity
+    - Users who want privacy want it consistently in a community
+    - Lobbyists building reputation need visibility
+    - Tally reports can verify all voters are legitimate members
     
     Attributes:
         member (ForeignKey): The user who is a member of the community
         community (ForeignKey): The community the user belongs to
-        is_anonymous_by_default (BooleanField): Whether member prefers anonymous voting
+        is_anonymous (BooleanField): Whether member's identity is anonymous in this community
         is_community_manager (BooleanField): Whether member can manage the community
         is_voting_community_member (BooleanField): Whether member's votes count
         dt_joined (DateTimeField): When the member joined this community
@@ -167,9 +176,9 @@ class Membership(BaseModel):
         on_delete=models.PROTECT,
         help_text="The community this membership belongs to"
     )
-    is_anonymous_by_default = models.BooleanField(
+    is_anonymous = models.BooleanField(
         default=True, 
-        help_text="Whether this member prefers anonymous voting by default"
+        help_text="Whether this member's identity is anonymous in this community"
     )
     is_community_manager = models.BooleanField(
         default=False, 
@@ -191,6 +200,12 @@ class Membership(BaseModel):
         verbose_name_plural = "Community Memberships"
         # Ensure a user can only have one membership per community
         unique_together = ["member", "community"]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(is_voting_community_member=True) | models.Q(is_anonymous=False),
+                name='lobbyists_cannot_be_anonymous'
+            )
+        ]
 
     def __str__(self):
         """Return string representation of the membership."""
@@ -685,18 +700,23 @@ class Ballot(BaseModel):
     - Multiple levels of delegation are supported (A follows B, B follows C)
     - Users can always override calculated ballots by voting directly
     
-    Privacy Features:
-    - Anonymous voting: When is_anonymous=True, user's identity is hidden in reports
-    - GUID mapping: Anonymous voters appear as GUIDs in public reports
-    - Per-decision anonymity: Users can override their default anonymity preference
-    - Comments: Users can explain their reasoning (optional)
+    Anonymity:
+    - Anonymity is now controlled at the Membership level, not per-ballot
+    - Check voter.memberships.get(community=decision.community).is_anonymous
+    - This ensures consistent privacy across all votes in a community
+    - Lobbyists are always public (enforced by database constraint)
+    
+    Comments:
+    - Users can explain their voting reasoning (optional)
+    - Comments help other members understand positions
     
     Attributes:
         id (UUIDField): Unique identifier for this ballot
         decision (ForeignKey): The decision this ballot is for
         voter (ForeignKey): The user who cast (or will have calculated) this ballot
         is_calculated (BooleanField): Whether this ballot was calculated vs. manual
-        is_anonymous (BooleanField): Whether this ballot should be anonymous
+        hashed_username (CharField): One-way hash for verification
+        tags (CharField): Comma-separated tags for categorization
         comments (TextField): Optional explanation of voting reasoning
     """
     id = models.UUIDField(
@@ -720,10 +740,6 @@ class Ballot(BaseModel):
     is_calculated = models.BooleanField(
         default=False,
         help_text="True if calculated by delegation system, False if manually cast"
-    )
-    is_anonymous = models.BooleanField(
-        default=True,
-        help_text="Whether this ballot should be kept anonymous"
     )
     hashed_username = models.CharField(
         max_length=64,
@@ -790,54 +806,26 @@ class Ballot(BaseModel):
         choice_count = self.decision.choices.count()
         vote_count = self.votes.count()
         return choice_count == vote_count
-
+    
     def get_display_name(self):
         """
-        Get the display name for this ballot's voter.
+        Get the display name for this ballot's voter based on membership anonymity.
         
-        Returns either the real username or "Anonymous" based on
-        the ballot's anonymity setting.
+        Anonymity is now controlled at the membership level, not per-ballot.
+        This method checks the voter's membership in the decision's community.
         
         Returns:
             str: Either the actual username or "Anonymous"
         """
-        if self.is_anonymous:
-            return "Anonymous"
-        else:
+        try:
+            membership = self.voter.memberships.get(community=self.decision.community)
+            if membership.is_anonymous:
+                return "Anonymous"
+            else:
+                return self.voter.username
+        except:
+            # Fallback to username if membership not found
             return self.voter.username
-    
-    def get_display_username(self):
-        """
-        Get the username to display for this ballot.
-        
-        Alias for get_display_name() for consistency with plan documentation.
-        
-        Returns:
-            str: Either the actual username or "Anonymous"
-        """
-        return self.get_display_name()
-
-    def set_anonymity_preference(self, is_anonymous=None):
-        """
-        Set the anonymity preference for this ballot.
-        
-        If no preference is provided, uses the user's default anonymity setting
-        from their membership in this decision's community.
-        
-        Args:
-            is_anonymous (bool, optional): Override anonymity preference.
-                If None, uses user's default setting.
-        """
-        if is_anonymous is not None:
-            self.is_anonymous = is_anonymous
-        else:
-            # Use user's default anonymity preference from their community membership
-            try:
-                membership = self.voter.memberships.get(community=self.decision.community)
-                self.is_anonymous = membership.is_anonymous_by_default
-            except:
-                # Fallback to anonymous if membership not found
-                self.is_anonymous = True
 
 
 class Vote(BaseModel):

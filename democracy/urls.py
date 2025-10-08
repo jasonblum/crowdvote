@@ -29,4 +29,8 @@ urlpatterns = [
     path('communities/<uuid:community_id>/follow/<uuid:member_id>/', views.follow_modal, name='follow_modal'),
     path('communities/<uuid:community_id>/follow/<uuid:member_id>/save/', views.follow_member, name='follow_member'),
     path('communities/<uuid:community_id>/unfollow/<uuid:member_id>/', views.unfollow_member, name='unfollow_member'),
+    
+    # Membership Settings (Anonymity Toggle)
+    path('communities/<uuid:community_id>/membership-settings/', views.membership_settings_modal, name='membership_settings_modal'),
+    path('communities/<uuid:community_id>/membership-settings/save/', views.membership_settings_save, name='membership_settings_save'),
 ]

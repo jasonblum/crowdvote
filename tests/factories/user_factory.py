@@ -10,7 +10,7 @@ from factory.django import DjangoModelFactory
 from faker import Faker
 from django.contrib.auth import get_user_model
 
-from accounts.models import Following
+from democracy.models import Following
 from democracy.models import Membership
 
 fake = Faker()
@@ -130,7 +130,7 @@ class MembershipFactory(DjangoModelFactory):
     # community will be set by the calling code
     is_voting_community_member = True
     is_community_manager = False
-    is_anonymous_by_default = factory.Faker('boolean', chance_of_getting_true=30)
+    is_anonymous = factory.Faker('boolean', chance_of_getting_true=30)
 
 
 class ManagerMembershipFactory(MembershipFactory):

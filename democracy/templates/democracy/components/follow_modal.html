@@ -130,18 +130,18 @@
         {% endif %}
     ]);
 
-    function addTag(tag) {
-    tag = tag.trim();
-    if (!tag || selectedTags.has(tag)) return;
-    
-    selectedTags.add(tag);
-    renderSelectedTags();
-    updateHiddenInput();
-    
-    // Clear "all tags" checkbox if specific tags are added
-    const checkbox = document.getElementById('all-tags-checkbox');
+    window.addTag = function(tag) {
+        tag = tag.trim();
+        if (!tag || selectedTags.has(tag)) return;
+        
+        selectedTags.add(tag);
+        renderSelectedTags();
+        updateHiddenInput();
+        
+        // Clear "all tags" checkbox if specific tags are added
+        const checkbox = document.getElementById('all-tags-checkbox');
         if (checkbox) checkbox.checked = false;
-    }
+    };
 
     window.removeTag = function(tag) {
         selectedTags.delete(tag);

@@ -8,7 +8,7 @@ and voting interfaces.
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib import messages
 from django.db.models import Q
@@ -32,16 +32,19 @@ def build_network_data(community):
     """
     Build network visualization data for D3.js showing delegation relationships.
     
+    Creates a network graph showing how members follow each other for vote delegation.
+    Anonymous members will display as "Anonymous" in the visualization to preserve privacy.
+    
     Returns a dictionary with:
-    - nodes: List of node objects (memberships)
-    - links: List of link objects (following relationships)
-    - follower_counts: Dict mapping membership IDs to follower counts
+    - nodes: List of node objects (memberships) with id, username, display_name, is_anonymous
+    - links: List of link objects (following relationships) with source, target, tags
+    - follower_counts: Dict mapping membership IDs to follower counts (for node colors)
     
     Args:
         community: Community object to build network data for
     
     Returns:
-        dict: Network data structure for D3.js visualization
+        dict: Network data structure for D3.js visualization with JSON-serialized values
     """
     import json
     from collections import defaultdict
@@ -63,8 +66,9 @@ def build_network_data(community):
         display_name = membership.member.get_full_name() or membership.member.username
         nodes.append({
             'id': str(membership.id),
-            'username': membership.member.username,
-            'display_name': display_name,
+            'username': membership.member.username if not membership.is_anonymous else 'Anonymous',
+            'display_name': display_name if not membership.is_anonymous else 'Anonymous',
+            'is_anonymous': membership.is_anonymous,
         })
     
     # Build links array
@@ -963,8 +967,12 @@ def decision_detail(request, community_id, decision_id):
     
     # Get user's existing ballot if any
     user_ballot = None
+    user_ballot_tags = []
     try:
         user_ballot = Ballot.objects.get(decision=decision, voter=request.user)
+        # Split tags for template (Django templates can't call .split(','))
+        if user_ballot.tags:
+            user_ballot_tags = [tag.strip() for tag in user_ballot.tags.split(',') if tag.strip()]
     except Ballot.DoesNotExist:
         pass
     
@@ -993,6 +1001,7 @@ def decision_detail(request, community_id, decision_id):
         'user_membership': user_membership,
         'decision': decision,
         'user_ballot': user_ballot,
+        'user_ballot_tags': user_ballot_tags,
         'status': status,
         'can_vote': status == 'active' and user_membership.is_voting_community_member,
         'can_manage': user_membership.is_community_manager,
@@ -1105,13 +1114,20 @@ def vote_submit(request, community_id, decision_id):
     """
     Submit or update a vote on a decision.
     
-    Handles STAR voting submission with tag input and anonymity preferences.
-    Creates or updates the user's ballot and individual choice votes.
+    Handles STAR voting submission with tag input. Creates or updates the user's
+    ballot and individual choice votes. Anonymity is controlled at the membership
+    level, not per-ballot, via the membership settings modal.
     
     Args:
-        request: Django request object
+        request: Django POST request object containing vote data
         community_id: UUID of the community
         decision_id: UUID of the decision
+        
+    Returns:
+        Redirect to decision detail page with success/error message
+        
+    Raises:
+        Http404: If community or decision doesn't exist
     """
     from .forms import VoteForm
     
@@ -1145,12 +1161,12 @@ def vote_submit(request, community_id, decision_id):
     
     if form.is_valid():
         # Get or create ballot
+        # Note: Anonymity is now controlled at the Membership level, not per-ballot
         ballot, created = Ballot.objects.get_or_create(
             decision=decision,
             voter=request.user,
             defaults={
                 'is_calculated': False,
-                'is_anonymous': form.cleaned_data.get('is_anonymous', True),
                 'tags': form.cleaned_data.get('tags', ''),
                 'hashed_username': generate_username_hash(request.user.username),
             }
@@ -1158,7 +1174,6 @@ def vote_submit(request, community_id, decision_id):
         
         # Update ballot if it already existed
         if not created:
-            ballot.is_anonymous = form.cleaned_data.get('is_anonymous', True)
             ballot.tags = form.cleaned_data.get('tags', '')
             ballot.hashed_username = generate_username_hash(request.user.username)
             ballot.save()
@@ -1679,3 +1694,101 @@ def unfollow_member(request, community_id, member_id):
     }
     
     return render(request, 'democracy/components/following_update.html', context)
+
+
+@login_required
+def membership_settings_modal(request, community_id):
+    """
+    Display membership settings modal for the current user in a community.
+    
+    This HTMX view loads a modal that allows members to toggle their anonymity
+    setting for the specific community. Lobbyists will see a disabled checkbox
+    with an explanation that they cannot be anonymous.
+    
+    Args:
+        request: HTTP request object
+        community_id: UUID of the community
+        
+    Returns:
+        Rendered modal template with membership settings form
+        
+    Raises:
+        Http404: If community doesn't exist
+        HttpResponse 403: If user is not a member of the community
+    """
+    community = get_object_or_404(Community, id=community_id)
+    
+    # Get current user's membership in this community
+    try:
+        membership = Membership.objects.get(member=request.user, community=community)
+    except Membership.DoesNotExist:
+        return HttpResponse("You must be a member of this community to access settings.", status=403)
+    
+    context = {
+        'community': community,
+        'membership': membership,
+    }
+    
+    return render(request, 'democracy/components/membership_settings_modal.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def membership_settings_save(request, community_id):
+    """
+    Save membership settings (anonymity toggle) for the current user.
+    
+    This HTMX view processes the anonymity toggle form. It validates that
+    lobbyists cannot be made anonymous (enforced by database constraint and
+    view logic). Upon successful save, logs the change and returns an empty
+    response to close the modal with HTMX redirect.
+    
+    Args:
+        request: HTTP POST request with is_anonymous checkbox value
+        community_id: UUID of the community
+        
+    Returns:
+        Empty response with HX-Redirect header to reload page
+        Or error response if validation fails
+        
+    Raises:
+        Http404: If community doesn't exist
+        HttpResponse 403: If user is not a member or trying invalid operation
+    """
+    community = get_object_or_404(Community, id=community_id)
+    
+    # Get current user's membership
+    try:
+        membership = Membership.objects.get(member=request.user, community=community)
+    except Membership.DoesNotExist:
+        return HttpResponse("You must be a member of this community.", status=403)
+    
+    # Get the new anonymity preference from checkbox
+    # Checkbox checked = True (anonymous), unchecked/missing = False (public)
+    new_is_anonymous = request.POST.get('is_anonymous') == 'on'
+    
+    # Validate: Lobbyists cannot be anonymous
+    if not membership.is_voting_community_member and new_is_anonymous:
+        return HttpResponse(
+            "Lobbyists cannot vote anonymously. Only voting members can choose to be anonymous.",
+            status=403
+        )
+    
+    # Update the membership
+    old_is_anonymous = membership.is_anonymous
+    membership.is_anonymous = new_is_anonymous
+    membership.save()
+    
+    # Log the change if it actually changed
+    if old_is_anonymous != new_is_anonymous:
+        anonymity_status = "anonymous" if new_is_anonymous else "public"
+        logger.info(
+            f"[ANONYMITY_CHANGED] [{request.user.username}] - "
+            f"Changed anonymity to {anonymity_status} in {community.name}"
+        )
+    
+    # Return empty response with redirect to reload the page
+    # This will close the modal and refresh to show the updated table
+    response = HttpResponse("")
+    response['HX-Redirect'] = request.META.get('HTTP_REFERER', f'/communities/{community_id}/')
+    return response

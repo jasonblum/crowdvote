@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.conf import settings
 
 from democracy.models import Community, Membership, Decision, Choice, Ballot, Vote, Following
 
@@ -10,38 +11,47 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Generate realistic dummy data with multi-level delegation chains'
+    help = 'Generate realistic demo communities with delegation chains. Use --reset-database to wipe everything first.'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--clear-data',
             action='store_true',
-            help='Clear existing data before generating new data'
+            help='Clear existing community data (keeps users)'
+        )
+        parser.add_argument(
+            '--reset-database',
+            action='store_true',
+            help='DESTRUCTIVE: Wipe entire database and recreate superuser (local only)'
         )
 
     def handle(self, *args, **options):
-        if options['clear_data']:
+        # --reset-database takes precedence over --clear-data
+        if options['reset_database']:
+            self.reset_database_completely()
+        elif options['clear_data']:
             self.clear_existing_data()
         
         self.stdout.write(
             self.style.SUCCESS('Generating REALISTIC community with proper voting patterns...')
         )
 
-        # Create communities
-        communities = self.create_communities()
+        # Create communities (returns 5, but we only populate first 2)
+        all_communities = self.create_communities()
+        communities_to_populate = all_communities[:2]  # Only Minions and Springfield
         
-        # Create users with specific voting patterns
+        # Create users with specific voting patterns (only for first 2 communities)
         all_users = []
-        for community in communities:
+        for community in communities_to_populate:
             users = self.create_users_for_community(community)
             all_users.extend(users)
         
-        # Add specific test users for delegation debugging
-        test_users = self.create_test_delegation_users(communities)
+        # Add specific test users for delegation debugging (only for first 2 communities)
+        test_users = self.create_test_delegation_users(communities_to_populate)
         all_users.extend(test_users)
         
-        # Create test decisions FIRST
-        decisions = self.create_test_decisions(communities)
+        # Create test decisions FIRST (only for first 2 communities)
+        decisions = self.create_test_decisions(communities_to_populate)
         
         # Create manual votes (seed votes for delegation) - CRITICAL STEP
         self.create_realistic_manual_votes(decisions, all_users)
@@ -65,8 +75,61 @@ class Command(BaseCommand):
             )
         )
 
+    def reset_database_completely(self):
+        """
+        Completely wipe the database and recreate superuser.
+        
+        This method performs a complete database reset in the correct order
+        to respect foreign key constraints. After wiping, it creates a superuser
+        with username/password 'admin' ONLY if DEBUG=True (local development).
+        
+        This is designed for daily/weekly demo resets on the production site.
+        """
+        self.stdout.write(self.style.WARNING('⚠️  RESETTING ENTIRE DATABASE...'))
+        
+        # Delete in reverse foreign key order
+        self.stdout.write('Deleting Votes...')
+        Vote.objects.all().delete()
+        
+        self.stdout.write('Deleting Ballots...')
+        Ballot.objects.all().delete()
+        
+        self.stdout.write('Deleting Choices...')
+        Choice.objects.all().delete()
+        
+        self.stdout.write('Deleting Decisions...')
+        Decision.objects.all().delete()
+        
+        self.stdout.write('Deleting Following relationships...')
+        Following.objects.all().delete()
+        
+        self.stdout.write('Deleting Memberships...')
+        Membership.objects.all().delete()
+        
+        self.stdout.write('Deleting Communities...')
+        Community.objects.all().delete()
+        
+        self.stdout.write('Deleting Users...')
+        User.objects.all().delete()
+        
+        self.stdout.write(self.style.SUCCESS('✅ Database wiped clean!'))
+        
+        # Create superuser only in DEBUG mode (local development)
+        if settings.DEBUG:
+            self.stdout.write('Creating superuser (DEBUG mode)...')
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@crowdvote.local',
+                password='admin',
+                first_name='Admin',
+                last_name='User'
+            )
+            self.stdout.write(self.style.SUCCESS('🔐 Superuser created: admin/admin'))
+        else:
+            self.stdout.write(self.style.WARNING('⚠️  Skipping superuser creation (production mode)'))
+
     def clear_existing_data(self):
-        """Clear existing data."""
+        """Clear existing relationships data but keep users and communities."""
         self.stdout.write('Clearing existing data...')
         Vote.objects.all().delete()
         Ballot.objects.all().delete()
@@ -77,7 +140,13 @@ class Command(BaseCommand):
         # Don't delete communities and users - just relationships
 
     def create_communities(self):
-        """Create Minion Collective and Springfield communities."""
+        """
+        Create 5 demo communities: 2 auto-approve + 3 application-required.
+        
+        Returns:
+            list: All communities, but only first 2 will have users/decisions created
+        """
+        # Auto-approve communities (for immediate demo access)
         minion_community, _ = Community.objects.get_or_create(
             name='Minion Collective',
             defaults={
@@ -94,7 +163,42 @@ class Command(BaseCommand):
             }
         )
         
-        return [minion_community, springfield_community]
+        # Application-required communities (users must apply to join)
+        oceanview, _ = Community.objects.get_or_create(
+            name='Ocean View Condo Association',
+            defaults={
+                'description': 'A beachfront residential community managing shared amenities, maintenance decisions, and community events.',
+                'auto_approve_applications': False,
+                'application_message_required': True
+            }
+        )
+        
+        tech_coop, _ = Community.objects.get_or_create(
+            name='Tech Workers Cooperative',
+            defaults={
+                'description': 'A worker-owned technology cooperative making operational and strategic decisions democratically.',
+                'auto_approve_applications': False,
+                'application_message_required': True
+            }
+        )
+        
+        garden, _ = Community.objects.get_or_create(
+            name='Riverside Community Garden',
+            defaults={
+                'description': 'A neighborhood garden collective deciding on plot assignments, rules, and community events.',
+                'auto_approve_applications': False,
+                'application_message_required': True
+            }
+        )
+        
+        self.stdout.write(self.style.SUCCESS(
+            f'✅ Created 5 communities:\n'
+            f'   • 2 auto-approve (with demo users): Minions, Springfield\n'
+            f'   • 3 application-required (empty): Ocean View, Tech Workers, Riverside'
+        ))
+        
+        # Return all communities, but caller should only populate first 2
+        return [minion_community, springfield_community, oceanview, tech_coop, garden]
 
     def create_users_for_community(self, community):
         """Create exactly 30 users per community with specific roles."""
@@ -164,12 +268,16 @@ class Command(BaseCommand):
             
             # Create membership
             community = Community.objects.get(name='Minion Collective')
+            is_voter = username not in [u[0] for u in non_voters]
+            # Lobbyists MUST be public (is_anonymous=False), voters can be anonymous
+            is_anonymous = random.random() > 0.3 if is_voter else False  # 70% anonymous for voters, 0% for lobbyists
             Membership.objects.get_or_create(
                 member=user,
                 community=community,
                 defaults={
-                    'is_voting_community_member': username not in [u[0] for u in non_voters],
-                    'is_community_manager': username == 'gru_leader'
+                    'is_voting_community_member': is_voter,
+                    'is_community_manager': username == 'gru_leader',
+                    'is_anonymous': is_anonymous
                 }
             )
         
@@ -236,12 +344,16 @@ class Command(BaseCommand):
             
             # Create membership
             community = Community.objects.get(name='Springfield Town Council')
+            is_voter = username not in [u[0] for u in non_voters]
+            # Lobbyists MUST be public (is_anonymous=False), voters can be anonymous
+            is_anonymous = random.random() > 0.3 if is_voter else False  # 70% anonymous for voters, 0% for lobbyists
             Membership.objects.get_or_create(
                 member=user,
                 community=community,
                 defaults={
-                    'is_voting_community_member': username not in [u[0] for u in non_voters],
-                    'is_community_manager': username == 'mayor_quimby'
+                    'is_voting_community_member': is_voter,
+                    'is_community_manager': username == 'mayor_quimby',
+                    'is_anonymous': is_anonymous
                 }
             )
         
@@ -284,7 +396,8 @@ class Command(BaseCommand):
                     community=community,
                     defaults={
                         'is_voting_community_member': True,
-                        'is_community_manager': False
+                        'is_community_manager': False,
+                        'is_anonymous': random.random() > 0.3  # 70% anonymous
                     }
                 )
                 
@@ -549,73 +662,191 @@ class Command(BaseCommand):
                 )
 
     def create_test_decisions(self, communities):
-        """Create themed decisions for each community."""
+        """
+        Create 4 themed decisions per community with varied timing.
+        
+        Decision timing strategy:
+        - Decision 1: CLOSED (1 hour ago)
+        - Decision 2: Closes tomorrow (~23 hours)
+        - Decision 3: Closes in 1 week
+        - Decision 4: Closes in 2 weeks
+        """
         decisions = []
         
         for community in communities:
             if community.name == 'Minion Collective':
-                decision = self.create_minion_decision(community)
+                community_decisions = self.create_minion_decisions(community)
             else:
-                decision = self.create_springfield_decision(community)
-            decisions.append(decision)
+                community_decisions = self.create_springfield_decisions(community)
+            decisions.extend(community_decisions)
             
         return decisions
 
-    def create_minion_decision(self, community):
-        """Create a Minion-themed decision."""
-        decision, created = Decision.objects.get_or_create(
+    def create_minion_decisions(self, community):
+        """Create 4 Minion-themed decisions with varied timing."""
+        decisions = []
+        now = timezone.now()
+        
+        # Decision 1: CLOSED (1 hour ago)
+        decision1, created = Decision.objects.get_or_create(
             community=community,
-            title='World Domination Meeting Schedule',
+            title='Which Master Should We Follow Next?',
             defaults={
-                'description': 'When should we hold our weekly world domination planning meetings? Consider banana snack timing and nap schedules.',
-                'dt_close': timezone.now() + timedelta(days=7),
+                'description': 'Our current master situation is uncertain. Who should lead us into our next adventure?',
+                'dt_close': now - timedelta(hours=1),
                 'results_need_updating': True
             }
         )
-        
         if created:
-            choices_data = [
-                ('Monday 9 AM', 'Early start, fresh bananas available'),
-                ('Wednesday 2 PM', 'Post-lunch energy, good for scheming'),
-                ('Friday 4 PM', 'End-of-week motivation, weekend planning')
-            ]
-            
-            for title, description in choices_data:
-                Choice.objects.get_or_create(
-                    decision=decision,
-                    title=title,
-                    defaults={'description': description}
-                )
+            Choice.objects.bulk_create([
+                Choice(decision=decision1, title='Stay with Gru', description='He\'s familiar and has great gadgets'),
+                Choice(decision=decision1, title='Return to Scarlet Overkill', description='She was stylish and ambitious'),
+                Choice(decision=decision1, title='Find El Macho', description='Strong and fearless leader'),
+                Choice(decision=decision1, title='Follow Dr. Nefario', description='Smart inventor with freeze ray'),
+            ])
+        decisions.append(decision1)
         
-        return decision
+        # Decision 2: Closes tomorrow (~23 hours)
+        decision2, created = Decision.objects.get_or_create(
+            community=community,
+            title='Official Minion Language Word of the Month',
+            defaults={
+                'description': 'Vote for the most useful Minionese word that everyone should use more often this month!',
+                'dt_close': now + timedelta(hours=23),
+                'results_need_updating': True
+            }
+        )
+        if created:
+            Choice.objects.bulk_create([
+                Choice(decision=decision2, title='Bello!', description='Classic greeting, always appropriate'),
+                Choice(decision=decision2, title='Poopaye!', description='Versatile exclamation for any situation'),
+                Choice(decision=decision2, title='Tulaliloo ti amo', description='Romantic and sophisticated'),
+                Choice(decision=decision2, title='Banana', description='Universal word, works for everything'),
+            ])
+        decisions.append(decision2)
+        
+        # Decision 3: Closes in 1 week
+        decision3, created = Decision.objects.get_or_create(
+            community=community,
+            title='Mandatory Uniform Upgrade Decision',
+            defaults={
+                'description': 'Time to update our iconic look! Which uniform modification should we adopt?',
+                'dt_close': now + timedelta(days=7),
+                'results_need_updating': True
+            }
+        )
+        if created:
+            Choice.objects.bulk_create([
+                Choice(decision=decision3, title='Keep Classic Overalls', description='If it ain\'t broke, don\'t fix it'),
+                Choice(decision=decision3, title='Add Superhero Capes', description='More dramatic and impressive'),
+                Choice(decision=decision3, title='Switch to Tuxedos', description='Sophisticated and professional'),
+                Choice(decision=decision3, title='Banana Costumes', description='Commit fully to the banana theme'),
+            ])
+        decisions.append(decision3)
+        
+        # Decision 4: Closes in 2 weeks
+        decision4, created = Decision.objects.get_or_create(
+            community=community,
+            title='Weekly Banana Budget Allocation',
+            defaults={
+                'description': 'How many bananas should each minion receive per week? This affects our community budget significantly.',
+                'dt_close': now + timedelta(days=14),
+                'results_need_updating': True
+            }
+        )
+        if created:
+            Choice.objects.bulk_create([
+                Choice(decision=decision4, title='50 bananas per week', description='Conservative, sustainable approach'),
+                Choice(decision=decision4, title='75 bananas per week', description='Balanced option for most minions'),
+                Choice(decision=decision4, title='100 bananas per week', description='Generous allocation for happy minions'),
+                Choice(decision=decision4, title='Unlimited banana access', description='BANANA! (budget concerns irrelevant)'),
+            ])
+        decisions.append(decision4)
+        
+        return decisions
 
-    def create_springfield_decision(self, community):
-        """Create a Springfield-themed decision."""
-        decision, created = Decision.objects.get_or_create(
+    def create_springfield_decisions(self, community):
+        """Create 4 Springfield-themed decisions with varied timing."""
+        decisions = []
+        now = timezone.now()
+        
+        # Decision 1: CLOSED (1 hour ago)
+        decision1, created = Decision.objects.get_or_create(
             community=community,
-            title='Nuclear Plant Safety Inspection Schedule', 
+            title='Donut Shop Zoning Variance for Lard Lad',
             defaults={
-                'description': 'How often should we inspect the nuclear power plant for safety violations? Homer promises to stay awake this time.',
-                'dt_close': timezone.now() + timedelta(days=7),
+                'description': 'Lard Lad Donuts wants to expand. Should we approve the zoning variance?',
+                'dt_close': now - timedelta(hours=1),
                 'results_need_updating': True
             }
         )
-        
         if created:
-            choices_data = [
-                ('Daily Inspections', 'Maximum safety, minimum donuts'),
-                ('Weekly Inspections', 'Balanced approach, some donuts allowed'),
-                ('Monthly Inspections', 'Trust Homer, maximum donuts')
-            ]
-            
-            for title, description in choices_data:
-                Choice.objects.get_or_create(
-                    decision=decision,
-                    title=title,
-                    defaults={'description': description}
-                )
+            Choice.objects.bulk_create([
+                Choice(decision=decision1, title='Approve Full Expansion', description='More donuts = happier Springfield'),
+                Choice(decision=decision1, title='Deny Expansion', description='Keep our small-town character'),
+                Choice(decision=decision1, title='Approve with Conditions', description='Require healthy options menu'),
+                Choice(decision=decision1, title='Relocate to Edge of Town', description='Compromise solution'),
+            ])
+        decisions.append(decision1)
         
-        return decision
+        # Decision 2: Closes tomorrow (~23 hours)
+        decision2, created = Decision.objects.get_or_create(
+            community=community,
+            title='School Bus Route Optimization',
+            defaults={
+                'description': 'Springfield Elementary needs updated bus routes. Otto is willing to drive whatever we decide.',
+                'dt_close': now + timedelta(hours=23),
+                'results_need_updating': True
+            }
+        )
+        if created:
+            Choice.objects.bulk_create([
+                Choice(decision=decision2, title='Keep Otto\'s Current Route', description='Chaotic but familiar'),
+                Choice(decision=decision2, title='Hire Professional Driver', description='Safety-first approach'),
+                Choice(decision=decision2, title='Add More Stops', description='Convenience for all students'),
+                Choice(decision=decision2, title='Reduce Stops for Efficiency', description='Faster routes, less waiting'),
+            ])
+        decisions.append(decision2)
+        
+        # Decision 3: Closes in 1 week
+        decision3, created = Decision.objects.get_or_create(
+            community=community,
+            title='Nuclear Plant Safety Inspection Frequency',
+            defaults={
+                'description': 'How often should we inspect the power plant? Homer promises to stay awake this time. Probably.',
+                'dt_close': now + timedelta(days=7),
+                'results_need_updating': True
+            }
+        )
+        if created:
+            Choice.objects.bulk_create([
+                Choice(decision=decision3, title='Daily Inspections', description='Maximum safety, minimum donuts for Homer'),
+                Choice(decision=decision3, title='Weekly Inspections', description='Balanced approach, some donuts allowed'),
+                Choice(decision=decision3, title='Monthly Inspections', description='Trust Homer more, maximum donuts'),
+                Choice(decision=decision3, title='When Homer Remembers', description='The Springfield way'),
+            ])
+        decisions.append(decision3)
+        
+        # Decision 4: Closes in 2 weeks
+        decision4, created = Decision.objects.get_or_create(
+            community=community,
+            title='Annual Ribwich Festival Location',
+            defaults={
+                'description': 'Where should we hold this year\'s legendary Ribwich Festival? The whole town is watching!',
+                'dt_close': now + timedelta(days=14),
+                'results_need_updating': True
+            }
+        )
+        if created:
+            Choice.objects.bulk_create([
+                Choice(decision=decision4, title='Town Square', description='Central location, traditional'),
+                Choice(decision=decision4, title='Krusty Burger Parking Lot', description='Corporate sponsorship, free fries'),
+                Choice(decision=decision4, title='Springfield Stadium', description='Largest capacity, proper facilities'),
+                Choice(decision=decision4, title='Cancel Festival', description='Health department concerns'),
+            ])
+        decisions.append(decision4)
+        
+        return decisions
 
     def create_realistic_manual_votes(self, decisions, all_users):
         """Create realistic manual votes - the foundation for delegation."""
@@ -664,7 +895,6 @@ class Command(BaseCommand):
                     voter=voter,
                     defaults={
                         'is_calculated': False,
-                        'is_anonymous': random.choice([True, False]),
                         'tags': ','.join(tags)
                     }
                 )

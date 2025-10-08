@@ -290,7 +290,7 @@ class CommunityApplication(BaseModel):
             defaults={
                 'is_voting_community_member': True,
                 'is_community_manager': False,
-                'is_anonymous_by_default': False,
+                'is_anonymous': True,  # Default to anonymous
             }
         )
         

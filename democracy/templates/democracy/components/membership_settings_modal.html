@@ -1,0 +1,95 @@
+{% load static %}
+
+<!-- Membership Settings Modal Overlay -->
+<div class="fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50" 
+     id="membership-settings-overlay"
+     @click.self="document.getElementById('membership-settings-overlay').remove()">
+    
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 ring-1 ring-gray-200 dark:ring-gray-700">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                My Membership in {{ community.name }}
+            </h3>
+            <button @click="document.getElementById('membership-settings-overlay').remove()"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <form hx-post="{% url 'democracy:membership_settings_save' community.id %}"
+              hx-target="#membership-settings-overlay"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            
+            <div class="mb-6">
+                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Anonymity Settings</h4>
+                
+                <div class="flex items-start space-x-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                    {% if membership.is_voting_community_member %}
+                        <!-- Voting members can toggle anonymity -->
+                        <input type="checkbox" 
+                               id="is_anonymous" 
+                               name="is_anonymous" 
+                               {% if membership.is_anonymous %}checked{% endif %}
+                               class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <div class="flex-1">
+                            <label for="is_anonymous" class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
+                                Vote anonymously in this community
+                            </label>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                When enabled, your username will appear as "Anonymous" to other members. 
+                                Your first and last name will still be visible to community managers.
+                            </p>
+                        </div>
+                    {% else %}
+                        <!-- Lobbyists cannot be anonymous -->
+                        <input type="checkbox" 
+                               id="is_anonymous" 
+                               disabled
+                               class="mt-1 w-4 h-4 text-gray-400 bg-gray-200 border-gray-300 rounded cursor-not-allowed">
+                        <div class="flex-1">
+                            <label for="is_anonymous" class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                Vote anonymously in this community
+                            </label>
+                            <div class="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+                                <p class="text-xs text-yellow-800 dark:text-yellow-200">
+                                    ⚠️ <strong>Lobbyists cannot vote anonymously</strong> because they are building 
+                                    public reputation and influence. Only voting members can choose to be anonymous.
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if membership.is_voting_community_member %}
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                    <strong>Note:</strong> This setting applies to all your votes in this community. 
+                    You can change it at any time from this page.
+                </p>
+                {% endif %}
+            </div>
+            
+            <!-- Modal Actions -->
+            <div class="flex space-x-3 justify-end">
+                <button type="button"
+                        @click="document.getElementById('membership-settings-overlay').remove()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                    Cancel
+                </button>
+                {% if membership.is_voting_community_member %}
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors">
+                    Save Changes
+                </button>
+                {% endif %}
+            </div>
+        </form>
+        
+    </div>
+</div>
+

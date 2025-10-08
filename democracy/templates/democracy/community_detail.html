@@ -40,6 +40,14 @@
     <div class="px-6 py-4">
         {% if user_membership %}
             <div class="space-y-3">
+                <!-- My Settings Button (for all members) -->
+                <button hx-get="{% url 'democracy:membership_settings_modal' community.id %}"
+                        hx-target="#settings-modal-container"
+                        hx-swap="innerHTML"
+                        class="inline-flex items-center justify-center w-full px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors">
+                    ⚙️ My Settings
+                </button>
+                
                 {% if user_membership.is_community_manager %}
                     <a href="{% url 'democracy:decision_create' community.id %}" 
                        class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors">
@@ -161,6 +169,7 @@
                     <thead>
                         <tr>
                             <th>Member</th>
+                            <th>Username</th>
                             <th>Roles</th>
                             <th>Joined</th>
                             <th>Actions</th>
@@ -170,11 +179,20 @@
                     {% for membership in memberships %}
                     <tr>
                         <td>
-                            <a href="{% url 'accounts:member_profile' membership.member.username %}" 
-                               class="flex items-center hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <div class="flex items-center">
                                 {% user_avatar membership.member 24 %}
-                                <span class="ml-2">@{{ membership.member.username }}</span>
-                            </a>
+                                <span class="ml-2">{{ membership.member.first_name }} {{ membership.member.last_name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if membership.is_anonymous %}
+                                <span class="text-gray-500 dark:text-gray-400 italic">Anonymous</span>
+                            {% else %}
+                                <a href="{% url 'accounts:member_profile' membership.member.username %}" 
+                                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                                    @{{ membership.member.username }}
+                                </a>
+                            {% endif %}
                         </td>
                         <td>
                             {% if membership.is_community_manager %}
@@ -226,9 +244,9 @@
             $('#members-table').DataTable({
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
-                order: [[0, 'asc']], // Sort by member (username)
+                order: [[0, 'asc']], // Sort by member name (first/last)
                 columnDefs: [
-                    { orderable: false, targets: [1, 3] } // Roles and Actions columns not sortable
+                    { orderable: false, targets: [2, 4] } // Roles and Actions columns not sortable
                 ]
             });
         });
@@ -350,6 +368,7 @@
     </div>
 </div>
 
-<!-- Modal Container for HTMX -->
+<!-- Modal Containers for HTMX -->
 <div id="follow-modal-container"></div>
+<div id="settings-modal-container"></div>
 {% endblock %}

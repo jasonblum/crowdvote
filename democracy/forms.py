@@ -170,6 +170,9 @@ class VoteForm(forms.Form):
     
     Dynamically generates star rating fields for each choice in the decision
     and includes tag input for delegation purposes.
+    
+    Note: Anonymity is now controlled at the Membership level, not per-ballot.
+    Users set their anonymity preference for the entire community, not per vote.
     """
     
     tags = forms.CharField(
@@ -180,14 +183,6 @@ class VoteForm(forms.Form):
             'placeholder': 'Add tags like "budget, environment, maintenance" (optional)'
         }),
         help_text="Tags help others follow your expertise on specific topics"
-    )
-    
-    is_anonymous = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
-        }),
-        help_text="Keep your vote anonymous in public results"
     )
     
     def __init__(self, decision, user=None, *args, **kwargs):
@@ -214,14 +209,6 @@ class VoteForm(forms.Form):
                 label=choice.title,
                 help_text=choice.description
             )
-        
-        # Set default anonymity preference if user provided
-        if user and hasattr(user, 'memberships'):
-            try:
-                membership = user.memberships.get(community=decision.community)
-                self.fields['is_anonymous'].initial = membership.is_anonymous_by_default
-            except:
-                self.fields['is_anonymous'].initial = True
     
     def clean_tags(self):
         """Validate and clean tags input."""

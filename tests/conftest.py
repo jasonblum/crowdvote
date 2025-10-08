@@ -11,8 +11,8 @@ from django.test import Client
 from django.utils import timezone
 from datetime import timedelta
 
-from accounts.models import Following, CommunityApplication  
-from democracy.models import Community, Decision, Choice, Ballot, Vote, Membership
+from democracy.models import Community, Decision, Choice, Ballot, Vote, Membership, Following
+from security.models import CommunityApplication
 from crowdvote.models import BaseModel
 
 User = get_user_model()
@@ -171,54 +171,55 @@ def delegation_users(user_factory, test_community):
     # User F: Dual inheritance scenario
     users['F'] = user_factory(username="F_testuser", email="f@example.com")
     
-    # Add all users to community as voting members
-    for user in users.values():
-        Membership.objects.create(
+    # Add all users to community as voting members and store memberships
+    memberships = {}
+    for key, user in users.items():
+        memberships[key] = Membership.objects.create(
             member=user,
             community=test_community,
             is_voting_community_member=True,
             is_community_manager=False
         )
     
-    # Set up delegation relationships
+    # Set up delegation relationships (Following links Membership objects, not User objects)
     Following.objects.create(
-        follower=users['B'],
-        followee=users['A'],
+        follower=memberships['B'],
+        followee=memberships['A'],
         tags="apple",
         order=1
     )
     
     Following.objects.create(
-        follower=users['C'],
-        followee=users['A'],
+        follower=memberships['C'],
+        followee=memberships['A'],
         tags="orange",
         order=1
     )
     
     Following.objects.create(
-        follower=users['D'],
-        followee=users['C'],
+        follower=memberships['D'],
+        followee=memberships['C'],
         tags="orange",
         order=1
     )
     
     Following.objects.create(
-        follower=users['E'],
-        followee=users['C'],
+        follower=memberships['E'],
+        followee=memberships['C'],
         tags="orange",
         order=1
     )
     
     Following.objects.create(
-        follower=users['F'],
-        followee=users['A'],
+        follower=memberships['F'],
+        followee=memberships['A'],
         tags="apple",
         order=1
     )
     
     Following.objects.create(
-        follower=users['F'],
-        followee=users['D'],
+        follower=memberships['F'],
+        followee=memberships['D'],
         tags="banana",
         order=2
     )
