@@ -4,6 +4,14 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 
 ---
 
+## 2025-01-08 - Membership-Level Anonymity System
+
+**Change**: docs/changes/0006_CHANGE-membership-level-anonymity.md  
+**Commit**: d2155f9  
+**Summary**: Refactored anonymity from ballot-level to membership-level. Renamed `Membership.is_anonymous_by_default` → `is_anonymous` (default True). Added database constraint preventing anonymous lobbyists. Removed ballot `is_anonymous` field. Added HTMX modal (⚙️ My Settings) for per-community anonymity toggle. Community detail table now shows Member (first/last name) and Username columns; anonymous members display "Anonymous" with no profile link. Network visualization shows "Anonymous" nodes. Ballot page updated with tag chips UI, removed anonymity checkbox. Enhanced `generate_demo_communities` command: `--reset-database` flag, admin/admin superuser (DEBUG only), 3 new application-required communities (Ocean View, Tech Workers, Riverside), 8 themed decisions (4 per community) with varied close times, 43 Following relationships with realistic delegation chains. Fixed signal handlers and Following model bugs. Added 16 new tests. Includes Railway cron job documentation.
+
+---
+
 ## 2025-01-06 - Add Follow/Unfollow UI with Tag Selection
 
 **Change**: docs/changes/0005_CHANGE-follow-unfollow-ui-with-tags.md  
