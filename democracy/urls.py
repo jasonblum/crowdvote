@@ -24,6 +24,8 @@ urlpatterns = [
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/results/', views.decision_results, name='decision_results'),
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/recalculate/', views.manual_recalculation, name='manual_recalculation'),
     path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/status/', views.calculation_status, name='calculation_status'),
+    # Plan #8: Snapshot detail page (Phase 7)
+    path('communities/<uuid:community_id>/decisions/<uuid:decision_id>/snapshots/<uuid:snapshot_id>/', views.snapshot_detail, name='snapshot_detail'),
     
     # Follow/Unfollow
     path('communities/<uuid:community_id>/follow/<uuid:member_id>/', views.follow_modal, name='follow_modal'),

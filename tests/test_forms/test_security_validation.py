@@ -14,7 +14,7 @@ from datetime import timedelta
 
 from democracy.forms import DecisionForm, ChoiceFormSet, VoteForm, DecisionSearchForm
 from democracy.models import Decision, Choice, Community
-from accounts.forms import ProfileEditForm
+from security.forms import ProfileEditForm
 from tests.factories import (
     CommunityFactory, UserFactory, MembershipFactory, 
     DecisionFactory, ChoiceFactory

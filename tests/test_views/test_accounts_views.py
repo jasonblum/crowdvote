@@ -13,8 +13,8 @@ from django.urls import reverse
 from django.http import Http404
 from unittest.mock import patch, MagicMock
 
-from accounts.models import MagicLink, CommunityApplication
-from accounts.forms import ProfileEditForm
+from security.models import MagicLink, CommunityApplication
+from security.forms import ProfileEditForm
 from democracy.models import Community, Membership
 from tests.factories.user_factory import UserFactory
 from tests.factories.community_factory import CommunityFactory

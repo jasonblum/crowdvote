@@ -80,39 +80,59 @@ class Command(BaseCommand):
         Completely wipe the database and recreate superuser.
         
         This method performs a complete database reset in the correct order
-        to respect foreign key constraints. After wiping, it creates a superuser
-        with username/password 'admin' ONLY if DEBUG=True (local development).
+        to respect foreign key constraints. Signals are temporarily disabled
+        to prevent massive thread spawning during deletion.
+        
+        After wiping, it creates a superuser with username/password 'admin' 
+        ONLY if DEBUG=True (local development).
         
         This is designed for daily/weekly demo resets on the production site.
         """
+        from django.db.models import signals
+        from democracy.models import DecisionSnapshot
+        
         self.stdout.write(self.style.WARNING('⚠️  RESETTING ENTIRE DATABASE...'))
+        self.stdout.write('Temporarily disabling signals to prevent thread overload...')
         
-        # Delete in reverse foreign key order
-        self.stdout.write('Deleting Votes...')
-        Vote.objects.all().delete()
+        # Temporarily disconnect signals to prevent overwhelming database with threads
+        signals.post_save.disconnect(dispatch_uid='vote_changed')
+        signals.post_delete.disconnect(dispatch_uid='vote_deleted')
+        signals.post_save.disconnect(dispatch_uid='following_changed')
+        signals.post_delete.disconnect(dispatch_uid='following_deleted')
         
-        self.stdout.write('Deleting Ballots...')
-        Ballot.objects.all().delete()
-        
-        self.stdout.write('Deleting Choices...')
-        Choice.objects.all().delete()
-        
-        self.stdout.write('Deleting Decisions...')
-        Decision.objects.all().delete()
-        
-        self.stdout.write('Deleting Following relationships...')
-        Following.objects.all().delete()
-        
-        self.stdout.write('Deleting Memberships...')
-        Membership.objects.all().delete()
-        
-        self.stdout.write('Deleting Communities...')
-        Community.objects.all().delete()
-        
-        self.stdout.write('Deleting Users...')
-        User.objects.all().delete()
-        
-        self.stdout.write(self.style.SUCCESS('✅ Database wiped clean!'))
+        try:
+            # Delete in reverse foreign key order
+            self.stdout.write('Deleting Votes...')
+            Vote.objects.all().delete()
+            
+            self.stdout.write('Deleting Ballots...')
+            Ballot.objects.all().delete()
+            
+            self.stdout.write('Deleting Choices...')
+            Choice.objects.all().delete()
+            
+            self.stdout.write('Deleting DecisionSnapshots...')
+            DecisionSnapshot.objects.all().delete()
+            
+            self.stdout.write('Deleting Decisions...')
+            Decision.objects.all().delete()
+            
+            self.stdout.write('Deleting Following relationships...')
+            Following.objects.all().delete()
+            
+            self.stdout.write('Deleting Memberships...')
+            Membership.objects.all().delete()
+            
+            self.stdout.write('Deleting Communities...')
+            Community.objects.all().delete()
+            
+            self.stdout.write('Deleting Users...')
+            User.objects.all().delete()
+            
+            self.stdout.write(self.style.SUCCESS('✅ Database wiped clean!'))
+        finally:
+            # Re-enable signals (they'll reconnect automatically on next import)
+            self.stdout.write('Re-enabling signals...')
         
         # Create superuser only in DEBUG mode (local development)
         if settings.DEBUG:
@@ -406,7 +426,11 @@ class Command(BaseCommand):
         return test_users
 
     def create_test_delegation_relationships(self, all_users):
-        """Create the specific test delegation pattern as requested by user."""
+        """
+        Create the specific test delegation pattern as requested by user.
+        
+        Ensures test users are public (non-anonymous) so they can be followed.
+        """
         for community_name in ['Minion Collective', 'Springfield Town Council']:
             suffix = '_minion' if 'Minion' in community_name else '_springfield'
             
@@ -433,6 +457,14 @@ class Command(BaseCommand):
                 F_membership = Membership.objects.get(member=F, community=community)
                 G_membership = Membership.objects.get(member=G, community=community)
                 H_membership = Membership.objects.get(member=H, community=community)
+                
+                # Ensure test users A-H are all public (not anonymous) for testing purposes
+                for membership in [A_membership, B_membership, C_membership, D_membership, 
+                                 E_membership, F_membership, G_membership, H_membership]:
+                    if membership.is_anonymous:
+                        membership.is_anonymous = False
+                        membership.save()
+                        self.stdout.write(f'Made {membership.member.username} public for delegation testing')
                 
                 # Create delegation relationships as specified:
                 # B and C follow A. B follows A only on "governance". A always uses "governance" tag.
@@ -542,7 +574,12 @@ class Command(BaseCommand):
         self.create_community_delegation_chains(springfield_users, tag_options)
 
     def create_community_delegation_chains(self, users, tag_options):
-        """Create delegation chains within a community."""
+        """
+        Create delegation chains within a community.
+        
+        Only creates Following relationships to public (non-anonymous) members,
+        since it's unrealistic for people to follow anonymous users.
+        """
         if len(users) < 15:
             return
             
@@ -565,9 +602,19 @@ class Command(BaseCommand):
         
         # Create one complex 4-level branching delegation tree
         if len(calculated_voters) >= 8 and len(manual_voters) >= 3:
-            # Level 4 (deepest): Bob follows Alice AND Susan (2 manual voters)
+            # Get public (non-anonymous) manual voters only - people only follow public members
+            public_manual_voters = [
+                u for u in manual_voters 
+                if not Membership.objects.get(member=u, community=community).is_anonymous
+            ]
+            
+            if len(public_manual_voters) < 2:
+                self.stdout.write('Not enough public manual voters for delegation tree')
+                return
+            
+            # Level 4 (deepest): Bob follows Alice AND Susan (2 public manual voters)
             bob = calculated_voters[0]
-            alice, susan = manual_voters[0], manual_voters[1]  # 2 manual voters
+            alice, susan = public_manual_voters[0], public_manual_voters[1]
             
             # Get Memberships
             bob_membership = Membership.objects.get(member=bob, community=community)
@@ -643,8 +690,16 @@ class Command(BaseCommand):
             # Each voter follows 1-3 people (creating branching, not just chains)
             num_follows = random.randint(1, 3)
             
-            # Mix of manual voters and other calculated voters
-            potential_followees = manual_voters + [v for v in calculated_voters if v != voter]
+            # Mix of manual voters and other calculated voters - but ONLY public members
+            potential_followees_all = manual_voters + [v for v in calculated_voters if v != voter]
+            potential_followees = [
+                u for u in potential_followees_all
+                if not Membership.objects.get(member=u, community=community).is_anonymous
+            ]
+            
+            if not potential_followees:
+                continue  # Skip if no public members to follow
+            
             followees = random.sample(potential_followees, min(num_follows, len(potential_followees)))
             
             # Get voter's membership

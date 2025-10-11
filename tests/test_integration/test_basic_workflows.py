@@ -12,7 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from democracy.models import Community, Decision, Choice, Ballot, Vote, Membership
-from accounts.models import Following
+from democracy.models import Following
 from democracy.services import StageBallots
 from tests.factories import (
     CommunityFactory, UserFactory, MembershipFactory, 

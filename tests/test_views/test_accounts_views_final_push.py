@@ -12,7 +12,7 @@ from django.contrib.messages import get_messages
 
 from tests.factories.user_factory import UserFactory, MembershipFactory
 from tests.factories.community_factory import CommunityFactory
-from accounts.models import CommunityApplication
+from security.models import CommunityApplication
 
 User = get_user_model()
 
@@ -182,7 +182,7 @@ class TestAccountsViewsFinalPush(TestCase):
         # Should create magic link for existing user
         self.assertEqual(response.status_code, 302)  # Redirect after success
         
-        from accounts.models import MagicLink
+        from security.models import MagicLink
         magic_links = MagicLink.objects.filter(email=self.user.email)
         self.assertTrue(magic_links.exists())
         
@@ -197,13 +197,13 @@ class TestAccountsViewsFinalPush(TestCase):
         # Should create magic link for new email
         self.assertEqual(response.status_code, 302)  # Redirect after success
         
-        from accounts.models import MagicLink
+        from security.models import MagicLink
         magic_links = MagicLink.objects.filter(email=new_email)
         self.assertTrue(magic_links.exists())
         
     def test_magic_link_login_expired_token(self):
         """Test magic link login with expired token - covers expiration handling."""
-        from accounts.models import MagicLink
+        from security.models import MagicLink
         from django.utils import timezone
         from datetime import timedelta
         
@@ -228,7 +228,7 @@ class TestAccountsViewsFinalPush(TestCase):
         
     def test_magic_link_login_used_token(self):
         """Test magic link login with already used token - covers usage tracking."""
-        from accounts.models import MagicLink
+        from security.models import MagicLink
         from django.utils import timezone
         from datetime import timedelta
         

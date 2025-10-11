@@ -4,6 +4,14 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 
 ---
 
+## 2025-10-11 - Event-Driven Ballot Calculation with System Snapshots
+
+**Change**: docs/changes/0008_CHANGE-event-driven-ballot-calculation-with-snapshots.md  
+**Commit**: (pending)  
+**Summary**: Implemented three-stage democratic process: (1) Ballot calculation using simple averaging (not STAR voting) with full Decimal precision, (2) Immutable system snapshots capturing complete delegation trees and ballot state, (3) STAR voting tally on frozen snapshot data. Refactored `StageBallots` service to maintain Decimal throughout, removed `round()` calls. Rewrote `Tally` service to integrate Plan #7 `STARVotingTally` class. Completed `SnapshotBasedStageBallots` to process from frozen snapshot data. Updated `CreateCalculationSnapshot` to store Decimals as strings in JSON. Fixed `democracy/signals.py` to pass User IDs instead of Membership IDs. Renamed `stage_and_tally_ballots.py` → `stage_snapshot_and_tally_ballots.py`. Added historical snapshots table (DataTables) to `decision_detail.html`. Created `snapshot_detail.html` template with delegation tree visualization (modeled after `vote-inheritance-tree.html`). Added `snapshot_detail` view with influence analytics. Updated `docs.html` to reflect three-stage process and simple averaging for ballots. Fixed 19 test files with obsolete `accounts` imports → `security`. Tests: 461 passing, 165 legacy tests need updates.
+
+---
+
 ## 2025-10-11 - STAR Voting with Decimal Support
 
 **Change**: docs/changes/0007_CHANGE-implement-star-voting-with-float-support.md  

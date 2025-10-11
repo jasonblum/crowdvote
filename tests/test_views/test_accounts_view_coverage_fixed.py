@@ -16,7 +16,7 @@ from datetime import timedelta
 
 from tests.factories.user_factory import UserFactory, MembershipFactory
 from tests.factories.community_factory import CommunityFactory
-from accounts.models import MagicLink, CommunityApplication
+from security.models import MagicLink, CommunityApplication
 from democracy.models import Community
 
 User = get_user_model()

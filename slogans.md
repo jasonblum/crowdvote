@@ -132,4 +132,16 @@ CrowdVote revitalizes local journalism
 
 ~~Corporations~~People are people, my friend!
 
-No more "spoiler effect"
+No more "spoiler effect"!
+
+People Over Politics!
+
+Do we really even need politicans?
+
+*Representation* is just a service, like my electricity bill.
+
+Shop around!
+
+Watch out for grifters!
+
+Politicans are grifters!

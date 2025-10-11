@@ -129,7 +129,7 @@ class TestModelStringRepresentations:
     def test_model_meta_properties(self):
         """Test that models have proper meta properties."""
         from democracy.models import Community, Decision, Choice, Ballot, Vote
-        from accounts.models import CustomUser, Following
+        from security.models import CustomUser, Following
         
         models = [Community, Decision, Choice, Ballot, Vote, CustomUser, Following]
         

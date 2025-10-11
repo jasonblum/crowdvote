@@ -34,9 +34,10 @@ def build_network_data(community):
     
     Creates a network graph showing how members follow each other for vote delegation.
     Anonymous members will display as "Anonymous" in the visualization to preserve privacy.
+    Public members will display with their username and Jdenticon avatar.
     
     Returns a dictionary with:
-    - nodes: List of node objects (memberships) with id, username, display_name, is_anonymous
+    - nodes: List of node objects (memberships) with id, username, display_name, is_anonymous, user_id
     - links: List of link objects (following relationships) with source, target, tags
     - follower_counts: Dict mapping membership IDs to follower counts (for node colors)
     
@@ -69,6 +70,7 @@ def build_network_data(community):
             'username': membership.member.username if not membership.is_anonymous else 'Anonymous',
             'display_name': display_name if not membership.is_anonymous else 'Anonymous',
             'is_anonymous': membership.is_anonymous,
+            'user_id': str(membership.member.id),  # For Jdenticon avatar generation
         })
     
     # Build links array
@@ -996,6 +998,9 @@ def decision_detail(request, community_id, decision_id):
         # Get the latest result
         current_results = decision.results.first()
     
+    # Get all snapshots for this decision (for historical results table - Plan #8)
+    snapshots = decision.snapshots.all().order_by('-created')
+    
     context = {
         'community': community,
         'user_membership': user_membership,
@@ -1014,9 +1019,96 @@ def decision_detail(request, community_id, decision_id):
             'participation_rate': round(participation_rate, 1),
         },
         'current_results': current_results,
+        'snapshots': snapshots,  # Historical snapshots for Plan #8
     }
     
     return render(request, 'democracy/decision_detail.html', context)
+
+
+@login_required
+def snapshot_detail(request, community_id, decision_id, snapshot_id):
+    """
+    Display detailed view of a calculation snapshot (Plan #8 Phase 7).
+    
+    Shows complete delegation tree, ballot calculations, and STAR voting tally
+    results for a specific point-in-time snapshot.
+    
+    Args:
+        request: Django request object
+        community_id: UUID of the community
+        decision_id: UUID of the decision
+        snapshot_id: UUID of the snapshot
+    """
+    community = get_object_or_404(Community, id=community_id)
+    decision = get_object_or_404(Decision, id=decision_id, community=community)
+    snapshot = get_object_or_404(DecisionSnapshot, id=snapshot_id, decision=decision)
+    
+    # Check if user is a member
+    try:
+        user_membership = Membership.objects.get(
+            community=community,
+            member=request.user
+        )
+    except Membership.DoesNotExist:
+        messages.error(request, "You must be a member of this community to view snapshots.")
+        return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
+    
+    # Extract data from snapshot
+    snapshot_data = snapshot.snapshot_data
+    
+    # Get statistics from snapshot data
+    stats = snapshot_data.get('statistics', {
+        'total_members': 0,
+        'manual_ballots': 0,
+        'calculated_ballots': 0,
+        'no_ballot': 0,
+        'circular_prevented': 0,
+        'max_delegation_depth': 0
+    })
+    
+    # Get delegation tree data (if available)
+    delegation_tree = snapshot_data.get('delegation_tree', {
+        'nodes': [],
+        'edges': [],
+        'inheritance_chains': []
+    })
+    
+    # Build a user lookup dict for displaying names
+    from security.models import CustomUser
+    user_ids = list(set(
+        [node['voter_id'] for node in delegation_tree.get('nodes', [])]
+    ))
+    users = CustomUser.objects.filter(id__in=user_ids)
+    user_lookup = {str(u.id): u for u in users}
+    
+    # Organize nodes by type
+    manual_nodes = [n for n in delegation_tree.get('nodes', []) if n.get('vote_type') == 'manual']
+    calculated_nodes = [n for n in delegation_tree.get('nodes', []) if n.get('vote_type') == 'calculated']
+    
+    # Calculate influence counts (how many people inherited from each voter)
+    influence_counts = {}
+    for edge in delegation_tree.get('edges', []):
+        followee_id = edge.get('followee')
+        if followee_id:
+            influence_counts[followee_id] = influence_counts.get(followee_id, 0) + 1
+    
+    max_influence = max(influence_counts.values()) if influence_counts else 0
+    
+    context = {
+        'community': community,
+        'decision': decision,
+        'snapshot': snapshot,
+        'stats': stats,
+        'delegation_tree': delegation_tree,
+        'manual_nodes': manual_nodes,
+        'calculated_nodes': calculated_nodes,
+        'user_lookup': user_lookup,
+        'influence_counts': influence_counts,
+        'max_influence': max_influence,
+        'can_manage': user_membership.is_community_manager,
+    }
+    
+    return render(request, 'democracy/snapshot_detail.html', context)
 
 
 @login_required

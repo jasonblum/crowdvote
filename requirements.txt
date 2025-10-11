@@ -18,7 +18,6 @@ django-service-objects==0.7.1
 django-allauth==64.0.0
 wonderwords==2.2.0
 django-htmx==1.19.0
-starvote>=2.0.6
 
 # Development Dependencies
 django-debug-toolbar>=4.2.0

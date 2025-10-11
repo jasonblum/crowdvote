@@ -86,7 +86,7 @@
         .force('link', d3.forceLink(networkData.links).id(d => d.id).distance(180))
         .force('charge', d3.forceManyBody().strength(-500))
         .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('collision', d3.forceCollide().radius(70));  // Increased for wider nodes
+        .force('collision', d3.forceCollide().radius(75));  // Increased for wider nodes with avatars
 
     // Create container groups
     const linkGroup = g.append('g').attr('class', 'links');
@@ -153,9 +153,9 @@
 
     // Add rounded rectangle instead of circle
     node.append('rect')
-        .attr('width', 100)
+        .attr('width', d => d.is_anonymous ? 100 : 120)  // Wider for public users with avatars
         .attr('height', 35)
-        .attr('x', -50)  // Center the rectangle
+        .attr('x', d => d.is_anonymous ? -50 : -60)  // Center the rectangle
         .attr('y', -17.5)  // Center the rectangle
         .attr('rx', 8)  // Rounded corners
         .attr('ry', 8)  // Rounded corners
@@ -163,15 +163,33 @@
         .attr('stroke', '#fff')
         .attr('stroke-width', 2);
 
-    // Add text (username) centered in the rectangle
+    // Add Jdenticon avatar for public users (left side of rectangle)
+    node.filter(d => !d.is_anonymous)
+        .append('svg')
+        .attr('data-jdenticon-value', d => d.user_id)
+        .attr('width', 24)
+        .attr('height', 24)
+        .attr('x', -52)  // Left side of rectangle with padding
+        .attr('y', -12)  // Vertically centered
+        .style('pointer-events', 'none');
+
+    // Add text (username) - adjusted position based on anonymity
     node.append('text')
         .text(d => d.username)
+        .attr('x', d => d.is_anonymous ? 0 : 12)  // Shift right if has avatar
         .attr('dy', 5)
         .attr('text-anchor', 'middle')
         .attr('fill', '#fff')
         .attr('font-size', '11px')
         .attr('font-weight', 'bold')
         .style('pointer-events', 'none');  // Allow click to pass through to parent
+    
+    // Update Jdenticon after nodes are created
+    setTimeout(() => {
+        if (typeof jdenticon !== 'undefined') {
+            jdenticon.updateAll();
+        }
+    }, 100);
 
     // Update positions on tick
     simulation.on('tick', updatePositions);

@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django import forms
 
-from accounts.forms import ProfileEditForm
+from security.forms import ProfileEditForm
 from tests.factories.user_factory import UserFactory
 
 User = get_user_model()

@@ -16,7 +16,7 @@ from tests.factories.user_factory import UserFactory, MembershipFactory
 from tests.factories.community_factory import CommunityFactory
 from tests.factories.decision_factory import DecisionFactory, ChoiceFactory, BallotFactory, VoteFactory
 from democracy.models import Community, Decision, Ballot, Vote
-from accounts.models import Following
+from democracy.models import Following
 
 
 @pytest.mark.views
@@ -308,7 +308,7 @@ class TestDemocracyViewCoverage(TestCase):
         """Test community management application handling paths."""
         # Create pending application
         applicant = UserFactory(username="test_applicant")
-        from accounts.models import CommunityApplication
+        from security.models import CommunityApplication
         application = CommunityApplication.objects.create(
             user=applicant,
             community=self.community,
@@ -326,7 +326,7 @@ class TestDemocracyViewCoverage(TestCase):
         """Test application approval and rejection paths."""
         # Create pending application
         applicant = UserFactory(username="test_applicant")
-        from accounts.models import CommunityApplication
+        from security.models import CommunityApplication
         application = CommunityApplication.objects.create(
             user=applicant,
             community=self.community,

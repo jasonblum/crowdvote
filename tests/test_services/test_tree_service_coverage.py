@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from tests.factories.user_factory import UserFactory, MembershipFactory
 from tests.factories.community_factory import CommunityFactory
 from tests.factories.decision_factory import DecisionFactory, ChoiceFactory, BallotFactory, VoteFactory
-from accounts.models import Following
+from democracy.models import Following
 from democracy.tree_service import DelegationTreeService
 
 User = get_user_model()

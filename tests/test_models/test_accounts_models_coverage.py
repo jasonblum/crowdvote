@@ -14,7 +14,8 @@ from collections import Counter
 from tests.factories.user_factory import UserFactory
 from tests.factories.community_factory import CommunityFactory
 from tests.factories.decision_factory import DecisionFactory, BallotFactory
-from accounts.models import Following, CommunityApplication
+from democracy.models import Following
+from security.models import CommunityApplication
 
 User = get_user_model()
 

@@ -20,8 +20,8 @@ from django.utils import timezone
 from datetime import timedelta
 from django.test.utils import override_settings
 
-from accounts.models import Following
-from democracy.models import Community, Decision, Choice, Ballot, Vote, DecisionSnapshot, Membership
+from security.models import CustomUser
+from democracy.models import Community, Decision, Choice, Ballot, Vote, DecisionSnapshot, Membership, Following
 from democracy.signals import (
     recalculate_community_decisions_async,
     vote_changed,
@@ -103,8 +103,7 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
         ballot = Ballot.objects.create(
             decision=self.decision,
             voter=self.user1,
-            is_calculated=False,
-            is_anonymous=False
+            is_calculated=False
         )
         
         # This should trigger the vote_changed signal
@@ -135,8 +134,7 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
         ballot = Ballot.objects.create(
             decision=self.decision,
             voter=self.user1,
-            is_calculated=False,
-            is_anonymous=False
+            is_calculated=False
         )
         vote = Vote.objects.create(
             choice=self.choice1,
@@ -163,8 +161,7 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
         ballot = Ballot.objects.create(
             decision=self.decision,
             voter=self.user1,
-            is_calculated=False,
-            is_anonymous=False
+            is_calculated=False
         )
         vote = Vote.objects.create(
             choice=self.choice1,
@@ -186,10 +183,10 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
     @patch('democracy.signals.threading.Thread')
     def test_following_created_triggers_recalculation(self, mock_thread):
         """Test that creating a following relationship triggers recalculation."""
-        # Create following relationship
+        # Create following relationship (Plan #6: Following is now Membership→Membership)
         following = Following.objects.create(
-            follower=self.user1,
-            followee=self.user2,
+            follower=self.membership1,
+            followee=self.membership2,
             tags='governance,budget',
             order=1
         )
@@ -203,10 +200,10 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
     @patch('democracy.signals.threading.Thread')
     def test_following_deleted_triggers_recalculation(self, mock_thread):
         """Test that deleting a following relationship triggers recalculation."""
-        # Create following relationship
+        # Create following relationship (Plan #6: Following is now Membership→Membership)
         following = Following.objects.create(
-            follower=self.user1,
-            followee=self.user2,
+            follower=self.membership1,
+            followee=self.membership2,
             tags='governance',
             order=1
         )
@@ -263,8 +260,7 @@ class AsyncCalculationSignalsTest(TransactionTestCase):
             ballot = Ballot.objects.create(
                 decision=self.decision,
                 voter=self.user1,
-                is_calculated=False,
-                is_anonymous=False
+                is_calculated=False
             )
             Vote.objects.create(
                 choice=self.choice1,
@@ -667,8 +663,7 @@ class LoggingIntegrationTest(TestCase):
         ballot = Ballot.objects.create(
             decision=decision,
             voter=self.user,
-            is_calculated=False,
-            is_anonymous=False
+            is_calculated=False
         )
         
         with patch('democracy.signals.threading.Thread'):
@@ -687,23 +682,26 @@ class LoggingIntegrationTest(TestCase):
     def test_following_created_logging(self, mock_logger):
         """Test that following creation is properly logged."""
         user2 = UserFactory(username='followee')
-        Membership.objects.create(
+        membership2 = Membership.objects.create(
             member=user2,
             community=self.community,
             is_voting_community_member=True
         )
         
+        # Get user's membership
+        membership1 = Membership.objects.get(member=self.user, community=self.community)
+        
         with patch('democracy.signals.threading.Thread'):
             Following.objects.create(
-                follower=self.user,
-                followee=user2,
+                follower=membership1,
+                followee=membership2,
                 tags='governance,budget',
                 order=1
             )
         
-        # Verify logging
+        # Verify logging (note: action.title() capitalizes "Started")
         mock_logger.info.assert_any_call(
-            f'[FOLLOWING_STARTED] [{self.user.username}] - Started following {user2.username} on tags: governance, budget (priority: 1)'
+            f'[FOLLOWING_STARTED] [{self.user.username}] - Started following {user2.username} on tags: governance,budget (priority: 1)'
         )
     
     @patch('democracy.signals.logger')

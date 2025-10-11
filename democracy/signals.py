@@ -253,7 +253,7 @@ def following_changed(sender, instance, created, **kwargs):
         for community_id in shared_communities:
             thread = threading.Thread(
                 target=recalculate_community_decisions_async,
-                args=(community_id, f"following_{action}", instance.follower.id),
+                args=(community_id, f"following_{action}", instance.follower.member.id),
                 daemon=True
             )
             thread.start()
@@ -293,7 +293,7 @@ def following_deleted(sender, instance, **kwargs):
         for community_id in shared_communities:
             thread = threading.Thread(
                 target=recalculate_community_decisions_async,
-                args=(community_id, "following_deleted", instance.follower.id),
+                args=(community_id, "following_deleted", instance.follower.member.id),
                 daemon=True
             )
             thread.start()

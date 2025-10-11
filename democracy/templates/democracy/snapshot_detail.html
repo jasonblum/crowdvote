@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% load dict_extras %}
+
+{% block title %}Snapshot {{ snapshot.created|date:"M j, Y g:i A" }} - {{ decision.title }} - CrowdVote{% endblock %}
+
+{% block sidebar_content %}
+    <!-- Inherit logo from base.html -->
+    {{ block.super }}
+    
+    <!-- Snapshot Sidebar -->
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">📸</span>
+                </div>
+            </div>
+            <div class="ml-3">
+                <h1 class="text-lg font-medium text-gray-900 dark:text-white">Snapshot Details</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ snapshot.created|date:"M j, Y g:i A" }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <div class="px-6 py-4">
+        <nav class="space-y-2">
+            <a href="#stats-section" class="flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                📊 Statistics
+            </a>
+            <a href="#manual-section" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                🟢 Manual Ballots
+            </a>
+            <a href="#calculated-section" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                🔵 Calculated Ballots
+            </a>
+            {% if snapshot.winner %}
+            <a href="#results-section" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                🏆 STAR Results
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    
+    <!-- Back to Decision -->
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <a href="{% url 'democracy:decision_detail' community.id decision.id %}" 
+           class="flex items-center justify-center w-full px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            ← Back to Decision
+        </a>
+    </div>
+    
+    <!-- Theme Toggle -->
+    {% block theme_toggle %}
+    {% endblock %}
+{% endblock sidebar_content %}
+
+{% block header_left %}
+    <div class="flex items-center">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Calculation Snapshot</h1>
+    </div>
+{% endblock header_left %}
+
+{% block content %}
+    <div class="py-8 px-6">
+        <div class="space-y-8">
+            <!-- Decision Info -->
+            <section class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <div class="px-6 py-5">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ decision.title }}</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ community.name }}</p>
+                    <div class="mt-4 flex items-center space-x-4">
+                        {% if snapshot.is_final %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+                                🔴 FINAL Snapshot
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+                                🟢 Interim Snapshot
+                            </span>
+                        {% endif %}
+                        <span class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ snapshot.created|date:"F j, Y \a\t g:i A" }}
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section id="stats-section" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">📊 Snapshot Statistics</h2>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">🟢</span>
+                                <div>
+                                    <div class="text-2xl font-bold text-green-900 dark:text-green-100">{{ stats.manual_ballots }}</div>
+                                    <div class="text-sm text-green-700 dark:text-green-300">Manual Ballots</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">🔵</span>
+                                <div>
+                                    <div class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ stats.calculated_ballots }}</div>
+                                    <div class="text-sm text-blue-700 dark:text-blue-300">Calculated Ballots</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">⚫</span>
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ stats.no_ballot }}</div>
+                                    <div class="text-sm text-gray-700 dark:text-gray-300">No Ballot</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">🟠</span>
+                                <div>
+                                    <div class="text-2xl font-bold text-orange-900 dark:text-orange-100">{{ stats.circular_prevented }}</div>
+                                    <div class="text-sm text-orange-700 dark:text-orange-300">Circular Prevented</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">📏</span>
+                                <div>
+                                    <div class="text-2xl font-bold text-purple-900 dark:text-purple-100">{{ stats.max_delegation_depth }}</div>
+                                    <div class="text-sm text-purple-700 dark:text-purple-300">Max Depth</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">👥</span>
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ stats.total_members }}</div>
+                                    <div class="text-sm text-gray-700 dark:text-gray-300">Total Members</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Manual Ballots Section -->
+            {% if manual_nodes %}
+            <section id="manual-section" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">🟢 Manual Ballots</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Direct votes cast by community members</p>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="space-y-4 font-mono text-sm">
+                        {% for node in manual_nodes %}
+                        <div class="border-l-4 border-green-500 pl-4 py-2 bg-green-50 dark:bg-green-900/10">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                                <span class="font-bold text-gray-900 dark:text-white">
+                                    {% with user=user_lookup|get_item:node.voter_id %}
+                                        {% if user %}
+                                            {{ user.username }}
+                                        {% else %}
+                                            Unknown User
+                                        {% endif %}
+                                    {% endwith %}
+                                </span>
+                                {% if influence_counts|get_item:node.voter_id %}
+                                <span class="text-gray-500 dark:text-gray-400">({{ influence_counts|get_item:node.voter_id }})</span>
+                                {% if influence_counts|get_item:node.voter_id == max_influence %}
+                                <span class="text-yellow-500">🏆</span>
+                                {% endif %}
+                                {% endif %}
+                                <span class="text-gray-600 dark:text-gray-400">cast manual ballot</span>
+                                {% if node.tags %}
+                                <span class="text-orange-600 dark:text-orange-400">[{{ node.tags|join:", " }}]</span>
+                                {% endif %}
+                            </div>
+                            {% if node.votes %}
+                            <div class="mt-2 ml-5 text-xs space-y-1">
+                                {% for choice_id, vote_data in node.votes.items %}
+                                <div class="text-gray-700 dark:text-gray-300">
+                                    {{ vote_data.choice_name }}: 
+                                    <span class="text-yellow-600 dark:text-yellow-400 font-bold">
+                                        {{ vote_data.stars }}⭐
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Calculated Ballots Section -->
+            {% if calculated_nodes %}
+            <section id="calculated-section" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">🔵 Calculated Ballots</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Votes inherited through delegation</p>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="space-y-4 font-mono text-sm">
+                        {% for node in calculated_nodes %}
+                        <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 dark:bg-blue-900/10">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                                <span class="font-bold text-gray-900 dark:text-white">
+                                    {% with user=user_lookup|get_item:node.voter_id %}
+                                        {% if user %}
+                                            {{ user.username }}
+                                        {% else %}
+                                            Unknown User
+                                        {% endif %}
+                                    {% endwith %}
+                                </span>
+                                {% if influence_counts|get_item:node.voter_id %}
+                                <span class="text-gray-500 dark:text-gray-400">({{ influence_counts|get_item:node.voter_id }})</span>
+                                {% if influence_counts|get_item:node.voter_id == max_influence %}
+                                <span class="text-yellow-500">🏆</span>
+                                {% endif %}
+                                {% endif %}
+                                <span class="text-gray-600 dark:text-gray-400">calculated ballot</span>
+                                {% if node.inherited_tags %}
+                                <span class="text-orange-600 dark:text-orange-400">[{{ node.inherited_tags|join:", " }}]</span>
+                                {% endif %}
+                            </div>
+                            {% if node.votes %}
+                            <div class="mt-2 ml-5 text-xs space-y-1">
+                                {% for choice_id, vote_data in node.votes.items %}
+                                <div class="text-gray-700 dark:text-gray-300">
+                                    {{ vote_data.choice_name }}: 
+                                    <span class="text-yellow-600 dark:text-yellow-400 font-bold">
+                                        {{ vote_data.stars|floatformat:2 }}⭐
+                                    </span>
+                                    {% if vote_data.sources %}
+                                    <span class="text-gray-500 dark:text-gray-400 text-xs">
+                                        (avg from {{ vote_data.sources|length }} source{{ vote_data.sources|length|pluralize }})
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- STAR Voting Results Section -->
+            {% if snapshot.winner %}
+            <section id="results-section" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:border-gray-700 rounded-lg">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">🏆 STAR Voting Results</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Score Then Automatic Runoff tally</p>
+                </div>
+                <div class="px-6 py-6">
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-6 mb-6">
+                        <div class="text-center">
+                            <div class="text-sm text-yellow-700 dark:text-yellow-300 font-medium mb-2">WINNER</div>
+                            <div class="text-3xl font-bold text-yellow-900 dark:text-yellow-100">{{ snapshot.winner.title }}</div>
+                        </div>
+                    </div>
+                    
+                    {% if snapshot.tally_log %}
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 font-mono text-xs">
+                        {% for log_line in snapshot.tally_log %}
+                        <div class="text-gray-700 dark:text-gray-300 py-1">{{ log_line }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+

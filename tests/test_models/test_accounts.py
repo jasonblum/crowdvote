@@ -8,7 +8,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from accounts.models import Following
+from democracy.models import Following
 from democracy.models import Membership, Community
 from tests.factories import UserFactory, FollowingFactory, CommunityFactory, MembershipFactory
 

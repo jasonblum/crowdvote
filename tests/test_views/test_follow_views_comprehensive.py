@@ -12,8 +12,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
 from django.http import Http404
 
-from accounts.models import Following
-from accounts.forms import FollowForm
+from democracy.models import Following
+from security.forms import FollowForm
 from democracy.models import Community, Membership
 from tests.factories.user_factory import UserFactory, MembershipFactory
 from tests.factories.community_factory import CommunityFactory

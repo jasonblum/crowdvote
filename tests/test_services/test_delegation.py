@@ -11,7 +11,7 @@ from datetime import timedelta
 
 from democracy.services import StageBallots
 from democracy.models import Decision, Choice, Ballot, Vote
-from accounts.models import Following
+from democracy.models import Following
 from democracy.models import Membership
 from tests.factories import (
     CommunityWithDelegationFactory, DecisionFactory, ChoiceFactory,

@@ -1,0 +1,214 @@
+[2025-10-06 12:58:02] [INFO] Turnstile verification successful for IP 192.168.65.1
+[2025-10-06 12:58:02] [INFO] Magic link requested for email: jason.blum@gmail.com (CAPTCHA verified)
+[2025-10-06 12:58:02] [INFO] Creating magic link for: jason.blum@gmail.com
+[2025-10-06 12:58:02] [INFO] Magic link created with token: vKNvo6FU...
+[2025-10-06 12:58:02] [INFO] Magic link URL generated from request: http://localhost:8000/magic-login/vKNvo6FUD0HtFbeVUDy1X4R2HRxwcJIz7lGpk7p0SsCRRhD7/
+[2025-10-06 12:58:02] [INFO] Generated login URL for: jason.blum@gmail.com
+[2025-10-06 12:58:02] [INFO] Attempting to send email to: jason.blum@gmail.com
+[2025-10-06 12:58:02] [INFO] Using from_email: noreply@crowdvote.com
+[2025-10-06 12:58:02] [INFO] Email backend: security.sendpulse_backend.SendPulseEmailBackend
+[2025-10-06 12:58:02] [INFO] SendPulse: Successfully authenticated
+[2025-10-06 12:58:03] [INFO] SendPulse: Email sent successfully to ['jason.blum@gmail.com']
+[2025-10-06 12:58:03] [INFO] Email sent successfully to: jason.blum@gmail.com
+[2025-10-06 12:58:11] [INFO] Magic link login attempt with token: vKNvo6FU...
+[2025-10-06 12:58:11] [INFO] Magic link found for email: jason.blum@gmail.com, created: 2025-10-06 12:58:02.269935+00:00, expires: 2025-10-06 13:13:02.264147+00:00, used: None
+[2025-10-06 14:57:15] [INFO] Turnstile verification successful for IP 192.168.65.1
+[2025-10-06 14:57:15] [INFO] Magic link requested for email: jason.blum@gmail.com (CAPTCHA verified)
+[2025-10-06 14:57:15] [INFO] Creating magic link for: jason.blum@gmail.com
+[2025-10-06 14:57:15] [INFO] Magic link created with token: e7X5ocpu...
+[2025-10-06 14:57:15] [INFO] Magic link URL generated from request: http://localhost:8000/magic-login/e7X5ocpuRzUuGc3wWzc3xkFoqDbHYxZdrgJVELHqPdWVX3w0/
+[2025-10-06 14:57:15] [INFO] Generated login URL for: jason.blum@gmail.com
+[2025-10-06 14:57:15] [INFO] Attempting to send email to: jason.blum@gmail.com
+[2025-10-06 14:57:15] [INFO] Using from_email: noreply@crowdvote.com
+[2025-10-06 14:57:15] [INFO] Email backend: security.sendpulse_backend.SendPulseEmailBackend
+[2025-10-06 14:57:16] [INFO] SendPulse: Successfully authenticated
+[2025-10-06 14:57:16] [INFO] SendPulse: Email sent successfully to ['jason.blum@gmail.com']
+[2025-10-06 14:57:16] [INFO] Email sent successfully to: jason.blum@gmail.com
+[2025-10-06 14:57:22] [INFO] Magic link login attempt with token: e7X5ocpu...
+[2025-10-06 14:57:22] [INFO] Magic link found for email: jason.blum@gmail.com, created: 2025-10-06 14:57:15.688037+00:00, expires: 2025-10-06 15:12:15.679753+00:00, used: None
+[2025-10-06 14:58:23] [INFO] [MEMBER_JOINED] [WaggishFlock] - Joined community 'Minion Collective' (Voting: True)
+[2025-10-06 14:58:23] [INFO] [RECALC_START] [system] - Background recalculation triggered by member_joined in community 7844cb31-930f-4ced-90bc-30c0ea75d420
+[2025-10-06 14:58:23] [INFO] [ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community Minion Collective
+[2025-10-06 14:58:23] [INFO] [RECALC_PROCESSING] [system] - Processing 1 open decisions in Minion Collective
+[2025-10-06 14:58:23] [INFO] [SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision 'World Domination Meeting Schedule'
+[2025-10-06 14:58:23] [INFO] Creating snapshot for decision: World Domination Meeting Schedule
+[2025-10-06 14:58:28] [ERROR] Failed to create snapshot for decision 61ea4f21-ec91-4d56-a07b-ca2ee9f023fa: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 14:58:28] [ERROR] [RECALC_ERROR] [system] - Failed to recalculate decision 'World Domination Meeting Schedule': Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 14:58:28] [ERROR] [RECALC_ERROR] [system] - Traceback: Traceback (most recent call last):
+  File "/app/democracy/signals.py", line 104, in recalculate_community_decisions_async
+    snapshot = snapshot_service.process()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 837, in process
+    snapshot_data = self._capture_system_state(decision)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 877, in _capture_system_state
+    for following in community.members.prefetch_related('followings').all():
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1951, in _fetch_all
+    self._prefetch_related_objects()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1328, in _prefetch_related_objects
+    prefetch_related_objects(self._result_cache, *self._prefetch_related_lookups)
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 2372, in prefetch_related_objects
+    raise AttributeError(
+AttributeError: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+
+[2025-10-06 14:58:28] [INFO] [RECALC_COMPLETE] [system] - Community recalculation completed for Minion Collective
+[2025-10-06 17:03:26] [INFO] [MEMBER_JOINED] [WaggishFlock] - Joined community 'Springfield Town Council' (Voting: True)
+[2025-10-06 17:03:26] [INFO] [RECALC_START] [system] - Background recalculation triggered by member_joined in community 9650f71b-92ea-45cc-b385-fce8141155b9
+[2025-10-06 17:03:26] [INFO] [ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community Springfield Town Council
+[2025-10-06 17:03:26] [INFO] [RECALC_PROCESSING] [system] - Processing 1 open decisions in Springfield Town Council
+[2025-10-06 17:03:26] [INFO] [SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision 'Nuclear Plant Safety Inspection Schedule'
+[2025-10-06 17:03:26] [INFO] Creating snapshot for decision: Nuclear Plant Safety Inspection Schedule
+[2025-10-06 17:03:31] [ERROR] Failed to create snapshot for decision 930254d2-ef94-4e46-98ef-1dc5c5683baa: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:03:31] [ERROR] [RECALC_ERROR] [system] - Failed to recalculate decision 'Nuclear Plant Safety Inspection Schedule': Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:03:31] [ERROR] [RECALC_ERROR] [system] - Traceback: Traceback (most recent call last):
+  File "/app/democracy/signals.py", line 104, in recalculate_community_decisions_async
+    snapshot = snapshot_service.process()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 837, in process
+    snapshot_data = self._capture_system_state(decision)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 877, in _capture_system_state
+    for following in community.members.prefetch_related('followings').all():
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1951, in _fetch_all
+    self._prefetch_related_objects()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1328, in _prefetch_related_objects
+    prefetch_related_objects(self._result_cache, *self._prefetch_related_lookups)
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 2372, in prefetch_related_objects
+    raise AttributeError(
+AttributeError: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+
+[2025-10-06 17:03:31] [INFO] [RECALC_COMPLETE] [system] - Community recalculation completed for Springfield Town Council
+[2025-10-06 17:34:09] [INFO] [VOTE_CAST] [WaggishFlock] - Vote cast on decision 'World Domination Meeting Schedule' (Choice: Friday 4 PM, Stars: 4)
+[2025-10-06 17:34:09] [INFO] [RECALC_START] [system] - Background recalculation triggered by vote_cast in community 7844cb31-930f-4ced-90bc-30c0ea75d420
+[2025-10-06 17:34:09] [INFO] [ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community Minion Collective
+[2025-10-06 17:34:09] [INFO] [VOTE_CAST] [WaggishFlock] - Vote cast on decision 'World Domination Meeting Schedule' (Choice: Monday 9 AM, Stars: 2)
+[2025-10-06 17:34:09] [INFO] [RECALC_START] [system] - Background recalculation triggered by vote_cast in community 7844cb31-930f-4ced-90bc-30c0ea75d420
+[2025-10-06 17:34:09] [INFO] [ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community Minion Collective
+[2025-10-06 17:34:09] [INFO] [VOTE_CAST] [WaggishFlock] - Vote cast on decision 'World Domination Meeting Schedule' (Choice: Wednesday 2 PM, Stars: 5)
+[2025-10-06 17:34:09] [INFO] [RECALC_START] [system] - Background recalculation triggered by vote_cast in community 7844cb31-930f-4ced-90bc-30c0ea75d420
+[2025-10-06 17:34:09] [INFO] [ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community Minion Collective
+[2025-10-06 17:34:09] [INFO] [RECALC_PROCESSING] [system] - Processing 1 open decisions in Minion Collective
+[2025-10-06 17:34:09] [INFO] [SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision 'World Domination Meeting Schedule'
+[2025-10-06 17:34:10] [INFO] [RECALC_PROCESSING] [system] - Processing 1 open decisions in Minion Collective
+[2025-10-06 17:34:10] [INFO] Creating snapshot for decision: World Domination Meeting Schedule
+[2025-10-06 17:34:10] [INFO] [RECALC_PROCESSING] [system] - Processing 1 open decisions in Minion Collective
+[2025-10-06 17:34:15] [ERROR] Failed to create snapshot for decision 61ea4f21-ec91-4d56-a07b-ca2ee9f023fa: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:34:15] [ERROR] [RECALC_ERROR] [system] - Failed to recalculate decision 'World Domination Meeting Schedule': Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:34:15] [INFO] [SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision 'World Domination Meeting Schedule'
+[2025-10-06 17:34:15] [ERROR] [RECALC_ERROR] [system] - Traceback: Traceback (most recent call last):
+  File "/app/democracy/signals.py", line 104, in recalculate_community_decisions_async
+    snapshot = snapshot_service.process()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 837, in process
+    snapshot_data = self._capture_system_state(decision)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 877, in _capture_system_state
+    for following in community.members.prefetch_related('followings').all():
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1951, in _fetch_all
+    self._prefetch_related_objects()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1328, in _prefetch_related_objects
+    prefetch_related_objects(self._result_cache, *self._prefetch_related_lookups)
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 2372, in prefetch_related_objects
+    raise AttributeError(
+AttributeError: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+
+[2025-10-06 17:34:15] [INFO] [RECALC_COMPLETE] [system] - Community recalculation completed for Minion Collective
+[2025-10-06 17:34:15] [INFO] Creating snapshot for decision: World Domination Meeting Schedule
+[2025-10-06 17:34:20] [ERROR] Failed to create snapshot for decision 61ea4f21-ec91-4d56-a07b-ca2ee9f023fa: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:34:20] [ERROR] [RECALC_ERROR] [system] - Failed to recalculate decision 'World Domination Meeting Schedule': Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:34:20] [ERROR] [RECALC_ERROR] [system] - Traceback: Traceback (most recent call last):
+  File "/app/democracy/signals.py", line 104, in recalculate_community_decisions_async
+    snapshot = snapshot_service.process()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 837, in process
+    snapshot_data = self._capture_system_state(decision)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 877, in _capture_system_state
+    for following in community.members.prefetch_related('followings').all():
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1951, in _fetch_all
+    self._prefetch_related_objects()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1328, in _prefetch_related_objects
+    prefetch_related_objects(self._result_cache, *self._prefetch_related_lookups)
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 2372, in prefetch_related_objects
+    raise AttributeError(
+AttributeError: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+
+[2025-10-06 17:34:20] [INFO] [RECALC_COMPLETE] [system] - Community recalculation completed for Minion Collective
+[2025-10-06 17:34:20] [INFO] [SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision 'World Domination Meeting Schedule'
+[2025-10-06 17:34:20] [INFO] Creating snapshot for decision: World Domination Meeting Schedule
+[2025-10-06 17:34:25] [ERROR] Failed to create snapshot for decision 61ea4f21-ec91-4d56-a07b-ca2ee9f023fa: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:34:25] [ERROR] [RECALC_ERROR] [system] - Failed to recalculate decision 'World Domination Meeting Schedule': Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+[2025-10-06 17:34:25] [ERROR] [RECALC_ERROR] [system] - Traceback: Traceback (most recent call last):
+  File "/app/democracy/signals.py", line 104, in recalculate_community_decisions_async
+    snapshot = snapshot_service.process()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 837, in process
+    snapshot_data = self._capture_system_state(decision)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/democracy/services.py", line 877, in _capture_system_state
+    for following in community.members.prefetch_related('followings').all():
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 384, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1951, in _fetch_all
+    self._prefetch_related_objects()
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 1328, in _prefetch_related_objects
+    prefetch_related_objects(self._result_cache, *self._prefetch_related_lookups)
+  File "/usr/local/lib/python3.11/site-packages/django/db/models/query.py", line 2372, in prefetch_related_objects
+    raise AttributeError(
+AttributeError: Cannot find 'followings' on CustomUser object, 'followings' is an invalid parameter to prefetch_related()
+
+[2025-10-06 17:34:25] [INFO] [RECALC_COMPLETE] [system] - Community recalculation completed for Minion Collective
+[2025-10-06 19:06:13] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:06:13] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:08:08] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:08:09] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:08:26] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:08:46] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:15:06] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:15:06] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following B_minion in Minion Collective on tags: ALL
+[2025-10-06 19:15:23] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:15:23] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following absent_minion_3 in Minion Collective on tags: banana
+[2025-10-06 19:24:33] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:24:33] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following B_minion in Minion Collective on tags: governance,banana,maintenance
+[2025-10-06 19:29:47] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:29:47] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following B_minion in Minion Collective on tags: governance,banana,maintenance,community
+[2025-10-06 19:33:09] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:33:09] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance
+[2025-10-06 19:33:27] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:33:27] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance
+[2025-10-06 19:40:27] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:40:27] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance,banana
+[2025-10-06 19:42:47] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:42:47] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance
+[2025-10-06 19:42:56] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:42:56] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance
+[2025-10-06 19:43:24] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:43:24] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance,orange
+[2025-10-06 19:48:00] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:48:00] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance
+[2025-10-06 19:48:17] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:48:17] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance,bananma
+[2025-10-06 19:53:39] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:53:39] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance
+[2025-10-06 19:53:56] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:53:56] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance,orange
+[2025-10-06 19:58:41] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:58:41] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance
+[2025-10-06 19:58:48] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:58:48] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: governance,banana
+[2025-10-06 19:58:52] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:58:52] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following A_minion in Minion Collective on tags: banana
+[2025-10-06 19:59:04] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:59:04] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following banana_lover_1 in Minion Collective on tags: orange,banana
+[2025-10-06 19:59:08] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:59:08] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following banana_lover_1 in Minion Collective on tags: ALL
+[2025-10-06 19:59:17] [ERROR] [SIGNAL_ERROR] [system] - Error in following_changed signal: 'Membership' object has no attribute 'username'
+[2025-10-06 19:59:17] [INFO] [FOLLOWING_UPDATED] [WaggishFlock] - Now following banana_lover_1 in Minion Collective on tags: apple

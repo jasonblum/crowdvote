@@ -448,7 +448,7 @@
                 </h3>
                 <div class="text-gray-700 dark:text-gray-300 leading-relaxed space-y-4">
                   <p>
-                    CrowdVote uses a sophisticated two-stage vote calculation system powered by background cron jobs that automatically recalculate results whenever anything changes in the system. The entire process is handled by the <a href="https://github.com/jasonblum/crowdvote/blob/main/democracy/services.py" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium" target="_blank" rel="noopener noreferrer">services.py</a> file, which contains the core democratic algorithms.
+                    CrowdVote uses a sophisticated three-stage calculation system that automatically triggers whenever anything changes (votes cast, delegation relationships, membership changes). The entire process is handled by the <a href="https://github.com/jasonblum/crowdvote/blob/main/democracy/services.py" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium" target="_blank" rel="noopener noreferrer">services.py</a> file, which contains the core democratic algorithms.
                   </p>
                   
                   <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🔄 When Recalculation is Triggered</h4>
@@ -469,29 +469,41 @@
                     </p>
                   </div>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">⚙️ Stage 1: StageBallots Service</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">⚙️ Stage 1: Ballot Calculation (Simple Averaging)</h4>
                   <p>
-                    The <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-sm">StageBallots</code> service is the heart of CrowdVote's delegation system. It processes every community member for every active decision:
+                    The <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-sm">StageBallots</code> service is the heart of CrowdVote's delegation system. It calculates ballots for members who haven't voted directly by using <strong>simple averaging</strong> of inherited star ratings:
                   </p>
                   <ul class="list-disc list-inside ml-4 space-y-2">
-                    <li><strong>Direct Vote Detection:</strong> Checks if the member has cast their own vote</li>
+                    <li><strong>Direct Vote Detection:</strong> Checks if the member has cast their own manual vote</li>
                     <li><strong>Delegation Chain Resolution:</strong> For members who haven't voted, recursively follows their delegation relationships</li>
-                    <li><strong>Tag-Based Inheritance:</strong> Matches decision tags with delegation tags to determine whose vote to inherit</li>
+                    <li><strong>Tag-Based Inheritance:</strong> Matches decision tags with delegation tags to determine whose votes to inherit</li>
                     <li><strong>Multi-Level Processing:</strong> Handles complex delegation chains (A→B→C→D) with circular reference prevention</li>
-                    <li><strong>Fractional Averaging:</strong> When inheriting from multiple sources, calculates weighted averages of star ratings</li>
-                    <li><strong>Ballot Creation:</strong> Creates calculated ballots showing both inherited votes and inherited tags</li>
+                    <li><strong>Simple Averaging:</strong> When inheriting from multiple sources, averages the star ratings across all inherited ballots (not STAR voting)</li>
+                    <li><strong>Ballot Creation:</strong> Creates calculated ballots with fractional stars (like 3.7 or 4.2) showing both inherited votes and inherited tags</li>
                   </ul>
                   
                   <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-400 dark:border-green-500 mt-4">
-                    <h5 class="font-semibold text-green-900 dark:text-green-300 mb-2">Example: Complex Delegation</h5>
+                    <h5 class="font-semibold text-green-900 dark:text-green-300 mb-2">Example: Multi-Source Inheritance</h5>
                     <p class="text-green-800 dark:text-green-300 text-sm">
-                      If Alice follows Bob on "budget" issues, and Bob follows Carol on "budget" issues, and Carol votes 4 stars on a budget decision, then Alice's calculated ballot will show 4 stars inherited through Bob→Carol, with tags showing the complete delegation path.
+                      If Alice follows Bob (who votes 4 stars) and Carol (who votes 3 stars) on "budget" issues, Alice's calculated ballot will show <strong>3.5 stars</strong> - the simple average of 4 and 3. This averaging can produce fractional stars and happens at the ballot calculation stage, <em>before</em> the final tally.
                     </p>
                   </div>
                   
-                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🏆 Stage 2: Tally Service (STAR Voting)</h4>
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">📸 Stage 2: System Snapshot</h4>
                   <p>
-                    Once all ballots are staged (both manual and calculated), the <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-sm">Tally</code> service implements the complete STAR voting algorithm:
+                    Before running the final tally, CrowdVote creates an immutable <strong>system snapshot</strong> that captures the complete state at a specific moment in time:
+                  </p>
+                  <ul class="list-disc list-inside ml-4 space-y-2">
+                    <li><strong>Freezes Ballot State:</strong> Captures all manual and calculated ballots exactly as they exist</li>
+                    <li><strong>Records Delegation Tree:</strong> Preserves the complete network of who inherited from whom</li>
+                    <li><strong>Timestamp & Metadata:</strong> Stores when the snapshot was taken and system statistics</li>
+                    <li><strong>Prevents Race Conditions:</strong> Ensures the tally operates on consistent data even if new votes come in</li>
+                    <li><strong>Audit Trail:</strong> Creates permanent historical record for transparency and verification</li>
+                  </ul>
+                  
+                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white mt-6 mb-3">🏆 Stage 3: Final Tally (STAR Voting)</h4>
+                  <p>
+                    Once the snapshot is frozen, the <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-sm">Tally</code> service runs the complete STAR voting algorithm on the snapshot data to determine the winner:
                   </p>
                   
                   <div class="space-y-3">
@@ -535,7 +547,7 @@
                   </div>
                   
                   <p class="mt-6 font-medium">
-                    <strong>The result:</strong> A completely transparent, mathematically precise, and real-time democratic system where every vote is counted accurately and every delegation relationship is honored exactly as intended.
+                    <strong>The result:</strong> A three-stage democratic process that separates ballot calculation (simple averaging) from winner determination (STAR voting), with immutable snapshots providing complete transparency and auditability. Every delegation relationship is honored exactly as intended, and the entire calculation tree is preserved for verification.
                   </p>
                 </div>
               </div>

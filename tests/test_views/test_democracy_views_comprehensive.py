@@ -18,7 +18,7 @@ from datetime import timedelta
 from unittest.mock import patch, MagicMock
 
 from democracy.models import Community, Decision, Choice, Ballot, Vote, Membership, DecisionSnapshot
-from accounts.models import Following
+from democracy.models import Following
 from democracy.views import (
     build_decision_delegation_tree, build_influence_tree,
     build_decision_delegation_tree_old, build_influence_tree_old

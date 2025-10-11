@@ -38,86 +38,23 @@
                     📊 Current Results
                 </a>
             {% endif %}
+            {% if snapshots.exists %}
+                <a href="#snapshots-section" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md">
+                    📸 Calculation History
+                </a>
+            {% endif %}
         </nav>
     </div>
     
-    <!-- Decision Results Panel -->
+    <!-- Quick Actions (Plan #8: Removed Live Results panel, kept link to results) -->
+    {% if current_results or status == 'closed' or snapshots.exists %}
     <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold text-green-900 dark:text-green-100">📊 Live Results</h3>
-                {% if status == 'active' %}
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">
-                        🟢 Live
-                    </span>
-                {% elif status == 'closed' %}
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                        🔒 Final
-                    </span>
-                {% endif %}
-            </div>
-            
-            <!-- Countdown Timer or Status -->
-            {% if status == 'active' and decision.dt_close %}
-                <div class="mb-3 p-2 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-600">
-                    <div class="text-xs text-green-700 dark:text-green-300 font-medium mb-1">Voting closes in:</div>
-                    <div id="countdown-timer" 
-                         class="text-sm font-bold text-green-900 dark:text-green-100" 
-                         data-deadline="{{ decision.dt_close|date:'c' }}">
-                        Calculating...
-                    </div>
-                </div>
-            {% endif %}
-            
-            <!-- Quick Stats -->
-            <div class="space-y-2 text-xs">
-                <div class="flex items-center justify-between">
-                    <span class="text-green-700 dark:text-green-300">Participation</span>
-                    <span class="font-semibold text-green-900 dark:text-green-100">
-                        {{ stats.total_ballots }}/{{ stats.voting_members }} 
-                        ({{ stats.participation_rate }}%)
-                    </span>
-                </div>
-                
-                <!-- Calculation Status -->
-                <div class="flex items-center justify-between">
-                    <span class="text-green-700 dark:text-green-300">Calculation</span>
-                    <span class="font-semibold text-green-900 dark:text-green-100" id="calculation-status">
-                        {{ decision.get_calculation_status }}
-                    </span>
-                </div>
-                
-                {% if decision.last_calculated %}
-                <div class="flex items-center justify-between">
-                    <span class="text-green-700 dark:text-green-300">Last Updated</span>
-                    <span class="font-semibold text-green-900 dark:text-green-100">
-                        {{ decision.last_calculated|timesince }} ago
-                    </span>
-                </div>
-                {% endif %}
-            </div>
-            
-            <!-- Manual Recalculation Button (Managers Only) -->
-            {% if can_manage and status == 'active' %}
-            <div class="pt-3 border-t border-green-200 dark:border-green-600 mt-3">
-                <button id="manual-recalc-btn"
-                        onclick="triggerManualRecalculation()"
-                        class="inline-flex items-center justify-center w-full px-3 py-2 border border-orange-300 dark:border-orange-600 text-xs font-medium rounded-md text-orange-700 dark:text-orange-300 bg-white dark:bg-gray-800 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    🔄 Recalculate Now
-                </button>
-                <div id="recalc-message" class="mt-2 text-xs text-center hidden"></div>
-            </div>
-            {% endif %}
-            
-            <!-- View Complete Results Link -->
-            <div class="pt-3 border-t border-green-200 dark:border-green-600 mt-3">
-                <a href="{% url 'democracy:decision_results' community.id decision.id %}" 
-                   class="inline-flex items-center justify-center w-full px-3 py-2 border border-green-300 dark:border-green-600 text-xs font-medium rounded-md text-green-700 dark:text-green-300 bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors">
-                    📋 Complete Results & Analysis
-                </a>
-            </div>
-        </div>
+        <a href="#snapshots-section" 
+           class="flex items-center justify-center w-full px-4 py-2 border border-blue-300 dark:border-blue-600 text-sm font-medium rounded-md text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
+            📊 View Historical Results
+        </a>
     </div>
+    {% endif %}
     
     <!-- Back to Community -->
     <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
@@ -350,6 +287,87 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
+                    </div>
+                </section>
+            {% endif %}
+
+            <!-- Historical Calculation Snapshots (Plan #8) -->
+            {% if snapshots.exists %}
+                <section id="snapshots-section" class="bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+                    <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-lg font-medium text-gray-900 dark:text-white">📸 Calculation History</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Complete audit trail of all ballot calculations and tallies</p>
+                    </div>
+                    <div class="px-6 py-6">
+                        <table id="snapshots-table" class="display w-full">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Status</th>
+                                    <th>Winner</th>
+                                    <th>Participation</th>
+                                    <th>Manual</th>
+                                    <th>Calculated</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for snapshot in snapshots %}
+                                <tr>
+                                    <td>
+                                        <div class="text-sm text-gray-900 dark:text-gray-100">
+                                            {{ snapshot.created|date:"M j, Y" }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                            {{ snapshot.created|date:"g:i A" }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if snapshot.is_final %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200">
+                                                🔴 FINAL
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+                                                🟢 Interim
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if snapshot.winner %}
+                                            <span class="text-sm text-gray-900 dark:text-gray-100 font-medium">{{ snapshot.winner.title }}</span>
+                                        {% else %}
+                                            <span class="text-sm text-gray-500 dark:text-gray-400 italic">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-sm text-gray-900 dark:text-gray-100">
+                                            {{ snapshot.total_votes_cast }}/{{ snapshot.total_eligible_voters }}
+                                            {% if snapshot.total_eligible_voters > 0 %}
+                                                ({{ snapshot.total_votes_cast|floatformat:0 }}{% widthratio snapshot.total_votes_cast snapshot.total_eligible_voters 100 %}%)
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-sm text-gray-900 dark:text-gray-100">
+                                            {{ snapshot.snapshot_data.statistics.manual_ballots|default:"-" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-sm text-gray-900 dark:text-gray-100">
+                                            {{ snapshot.total_calculated_votes|default:"-" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'democracy:snapshot_detail' community.id decision.id snapshot.id %}" 
+                                           class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+                                            View Details →
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             {% endif %}
@@ -806,5 +824,30 @@ document.addEventListener('DOMContentLoaded', function() {
     renderSelectedTags();
     updateHiddenInput();
 })();
+
+// ============================================
+// DATATABLE INITIALIZATION FOR SNAPSHOTS (Plan #8)
+// ============================================
+$(document).ready(function() {
+    $('#snapshots-table').DataTable({
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        order: [[0, 'desc']], // Sort by timestamp column (newest first)
+        columnDefs: [
+            { orderable: false, targets: [1, 6] } // Status and Action not sortable
+        ],
+        language: {
+            search: "Search:",
+            lengthMenu: "Show _MENU_ snapshots",
+            info: "Showing _START_ to _END_ of _TOTAL_ snapshots",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        }
+    });
+});
 </script>
 {% endblock scripts %}

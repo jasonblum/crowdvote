@@ -8,8 +8,8 @@ import pytest
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from accounts.models import Following
-from accounts.forms import FollowForm
+from democracy.models import Following
+from security.forms import FollowForm
 from tests.factories.user_factory import UserFactory
 
 User = get_user_model()

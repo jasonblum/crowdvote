@@ -16,7 +16,7 @@ from django.test import TestCase
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from accounts.models import Following
+from democracy.models import Following
 from democracy.models import Membership
 from democracy.models import Community, Decision, Choice, Ballot, Vote
 from democracy.services import StageBallots, Tally

@@ -1106,6 +1106,21 @@ class DecisionSnapshot(BaseModel):
         help_text="True when decision is closed and results are final"
     )
     
+    winner = models.ForeignKey(
+        'Choice',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='winning_snapshots',
+        help_text="The winning choice determined by STAR voting tally (set after tally completes)"
+    )
+    
+    tally_log = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Complete log of STAR voting tally process with score and runoff details"
+    )
+    
     # Error handling and status tracking fields
     calculation_status = models.CharField(
         max_length=20,

@@ -8,8 +8,8 @@ including form validation, token verification, and error handling.
 import pytest
 from unittest.mock import patch, Mock
 from django.test import RequestFactory
-from accounts.forms import CaptchaProtectedMagicLinkForm
-from accounts.utils import verify_turnstile_token, get_client_ip
+from security.forms import CaptchaProtectedMagicLinkForm
+from security.utils import verify_turnstile_token, get_client_ip
 
 
 class TestCaptchaProtectedMagicLinkForm:

@@ -12,9 +12,9 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
-from democracy.models import Decision, DecisionSnapshot, Community, Choice, Ballot, Vote, Membership
+from democracy.models import Decision, DecisionSnapshot, Community, Choice, Ballot, Vote, Membership, Following
 from democracy.services import CreateCalculationSnapshot, SnapshotBasedStageBallots
-from accounts.models import CustomUser, Following
+from security.models import CustomUser
 from tests.factories.user_factory import UserFactory
 from tests.factories.community_factory import CommunityFactory
 from tests.factories.decision_factory import DecisionFactory
@@ -159,17 +159,26 @@ class TestCreateCalculationSnapshotService(TestCase):
         self.community = CommunityFactory(name='Test Community')
         
         # Create memberships
-        for user in [self.user1, self.user2, self.user3]:
-            Membership.objects.create(
-                member=user,
-                community=self.community,
-                is_voting_community_member=True
-            )
+        self.membership1 = Membership.objects.create(
+            member=self.user1,
+            community=self.community,
+            is_voting_community_member=True
+        )
+        self.membership2 = Membership.objects.create(
+            member=self.user2,
+            community=self.community,
+            is_voting_community_member=True
+        )
+        self.membership3 = Membership.objects.create(
+            member=self.user3,
+            community=self.community,
+            is_voting_community_member=True
+        )
         
-        # Create following relationship
+        # Create following relationship (Membership to Membership)
         Following.objects.create(
-            follower=self.user3,
-            followee=self.user1,
+            follower=self.membership3,
+            followee=self.membership1,
             tags='governance,budget',
             order=1
         )
@@ -229,7 +238,7 @@ class TestCreateCalculationSnapshotService(TestCase):
         user3_followings = followings[str(self.user3.id)]
         self.assertEqual(len(user3_followings), 1)
         self.assertEqual(user3_followings[0]['followee_id'], str(self.user1.id))
-        self.assertEqual(user3_followings[0]['tags'], 'governance, budget')
+        self.assertEqual(user3_followings[0]['tags'], 'governance,budget')
     
     def test_snapshot_captures_vote_data(self):
         """Test that snapshot captures complete vote data."""
@@ -247,11 +256,11 @@ class TestCreateCalculationSnapshotService(TestCase):
         self.assertEqual(ballot_data['tags'], 'governance')
         self.assertFalse(ballot_data['is_calculated'])
         
-        # Check vote data
+        # Check vote data (stored as strings for JSON compatibility with Decimal)
         votes = ballot_data['votes']
         self.assertEqual(len(votes), 2)
-        self.assertEqual(votes[str(self.choice1.id)], 5.0)
-        self.assertEqual(votes[str(self.choice2.id)], 2.0)
+        self.assertEqual(votes[str(self.choice1.id)], '5.00')
+        self.assertEqual(votes[str(self.choice2.id)], '2.00')
     
     def test_snapshot_error_handling(self):
         """Test snapshot creation error handling."""
@@ -325,8 +334,9 @@ class TestSnapshotBasedStageBallots(TestCase):
         
         self.assertIsNotNone(results)
         self.assertIn('total_members', results)
-        self.assertIn('existing_ballots', results)
-        self.assertIn('processing_time', results)
+        self.assertIn('manual_ballots', results)
+        self.assertIn('calculated_ballots', results)
+        self.assertIn('no_ballot', results)
         
         # Check snapshot status was updated
         self.snapshot.refresh_from_db()
@@ -363,23 +373,25 @@ class TestSnapshotIsolationIntegration(TestCase):
         self.community = CommunityFactory(name='Integration Test Community')
         
         # Create memberships
+        self.memberships = []
         for user in self.users:
-            Membership.objects.create(
+            membership = Membership.objects.create(
                 member=user,
                 community=self.community,
                 is_voting_community_member=True
             )
+            self.memberships.append(membership)
         
-        # Create following relationships
+        # Create following relationships (Membership to Membership)
         Following.objects.create(
-            follower=self.users[1],
-            followee=self.users[0],
+            follower=self.memberships[1],
+            followee=self.memberships[0],
             tags='governance',
             order=1
         )
         Following.objects.create(
-            follower=self.users[2],
-            followee=self.users[1],
+            follower=self.memberships[2],
+            followee=self.memberships[1],
             tags='governance',
             order=1
         )
@@ -439,8 +451,8 @@ class TestSnapshotIsolationIntegration(TestCase):
         Vote.objects.create(ballot=new_ballot, choice=self.choices[0], stars=4)
         
         Following.objects.create(
-            follower=self.users[4],
-            followee=self.users[2],
+            follower=self.memberships[4],
+            followee=self.memberships[2],
             tags='budget',
             order=1
         )
