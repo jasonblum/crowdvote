@@ -4,6 +4,14 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 
 ---
 
+## 2025-10-11 - STAR Voting with Decimal Support
+
+**Change**: docs/changes/0007_CHANGE-implement-star-voting-with-float-support.md  
+**Commit**: 22f6b5a  
+**Summary**: Implemented standalone STAR voting algorithm with native Decimal support for fractional star ratings (up to 8 decimal places). Created `democracy/star_voting.py` with `STARVotingTally` service implementing complete Score Then Automatic Runoff algorithm following Official Tiebreaker Protocol from starvoting.org. Raises `UnresolvedTieError` for Community Manager resolution (no random tie-breaking). Created `democracy/exceptions.py` for custom exceptions. Comprehensive test suite (22 tests) covering integer/Decimal ballots, tiebreaker protocol (all 4 steps), edge cases, and complex delegation scenarios producing 8-decimal precision. Standalone module - not integrated with existing code yet. Unblocks Plan #8 (snapshot-based calculations).
+
+---
+
 ## 2025-01-08 - Membership-Level Anonymity System
 
 **Change**: docs/changes/0006_CHANGE-membership-level-anonymity.md  
