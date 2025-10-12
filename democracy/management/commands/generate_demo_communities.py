@@ -12,6 +12,63 @@ User = get_user_model()
 
 class Command(BaseCommand):
     help = 'Generate realistic demo communities with delegation chains. Use --reset-database to wipe everything first.'
+    
+    """
+    Demo Data Generator for CrowdVote
+    
+    This command creates realistic demo communities with complex delegation patterns
+    for crowdvote.com. It's designed to be run nightly to provide a fresh demo experience.
+    
+    USAGE:
+    ------
+    
+    # Complete database reset (removes ALL data including your user account)
+    docker-compose exec web python manage.py generate_demo_communities --reset-database
+    
+    # Clear relationships only (keeps users)
+    docker-compose exec web python manage.py generate_demo_communities --clear-data
+    
+    NIGHTLY RESET STRATEGY (for crowdvote.com):
+    -------------------------------------------
+    
+    Schedule this to run nightly at midnight to reset the demo:
+    
+    1. Via Railway Cron (recommended for production):
+       - Set cron schedule: 0 0 * * * (midnight UTC)
+       - Command: python manage.py generate_demo_communities --reset-database
+       - This ensures a clean demo every day
+    
+    2. Via Docker Compose (local development):
+       - Add to crontab: 0 0 * * * docker-compose exec web python manage.py generate_demo_communities --reset-database
+    
+    WHAT IT CREATES:
+    ----------------
+    
+    ✅ 2 auto-join demo communities (Minion Collective, Springfield Town Council)
+       - 30 users each (10 manual voters, 15 calculated voters, 5 non-voters)
+       - 8 test users (A-H) with specific delegation patterns for testing
+       - 4 decisions each (1 closed, 3 open with varied timing)
+       - ~40% manual vote participation (realistic)
+       - 42+ following relationships total
+       - Multi-level delegation chains (up to 4+ levels deep)
+       - Complex delegation patterns (circular prevention, dual inheritance, etc.)
+    
+    ✅ 3 application-required empty communities (for realistic UX):
+       - Ocean View Condo Association
+       - Tech Workers Cooperative
+       - Riverside Community Garden
+    
+    ANONYMITY STRATEGY:
+    -------------------
+    
+    To ensure visible delegation networks:
+    - Manual voters (leaders): 100% public (must be followable)
+    - Calculated voters: 50% anonymous (realistic privacy mix)
+    - Test users A-H: 70% public (for delegation testing visibility)
+    - Lobbyists: 0% anonymous (required by system)
+    
+    Result: ~75% of voters are public, creating a rich delegation network.
+    """
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -289,8 +346,19 @@ class Command(BaseCommand):
             # Create membership
             community = Community.objects.get(name='Minion Collective')
             is_voter = username not in [u[0] for u in non_voters]
-            # Lobbyists MUST be public (is_anonymous=False), voters can be anonymous
-            is_anonymous = random.random() > 0.3 if is_voter else False  # 70% anonymous for voters, 0% for lobbyists
+            is_manual_voter = username in [u[0] for u in manual_voters]
+            
+            # Anonymity rules:
+            # - Lobbyists MUST be public (is_anonymous=False)
+            # - Manual voters (leaders) should be public so they can be followed
+            # - Calculated voters can be mostly anonymous (50%)
+            if not is_voter:
+                is_anonymous = False  # Lobbyists always public
+            elif is_manual_voter:
+                is_anonymous = False  # Manual voters always public (so they can be followed)
+            else:
+                is_anonymous = random.random() > 0.5  # 50% of calculated voters anonymous
+            
             Membership.objects.get_or_create(
                 member=user,
                 community=community,
@@ -365,8 +433,19 @@ class Command(BaseCommand):
             # Create membership
             community = Community.objects.get(name='Springfield Town Council')
             is_voter = username not in [u[0] for u in non_voters]
-            # Lobbyists MUST be public (is_anonymous=False), voters can be anonymous
-            is_anonymous = random.random() > 0.3 if is_voter else False  # 70% anonymous for voters, 0% for lobbyists
+            is_manual_voter = username in [u[0] for u in manual_voters]
+            
+            # Anonymity rules:
+            # - Lobbyists MUST be public (is_anonymous=False)
+            # - Manual voters (leaders) should be public so they can be followed
+            # - Calculated voters can be mostly anonymous (50%)
+            if not is_voter:
+                is_anonymous = False  # Lobbyists always public
+            elif is_manual_voter:
+                is_anonymous = False  # Manual voters always public (so they can be followed)
+            else:
+                is_anonymous = random.random() > 0.5  # 50% of calculated voters anonymous
+            
             Membership.objects.get_or_create(
                 member=user,
                 community=community,
@@ -411,13 +490,14 @@ class Command(BaseCommand):
                 test_users.append(user)
                 
                 # Create membership
+                # Test users A-H should mostly be public for delegation testing visibility
                 Membership.objects.get_or_create(
                     member=user,
                     community=community,
                     defaults={
                         'is_voting_community_member': True,
                         'is_community_manager': False,
-                        'is_anonymous': random.random() > 0.3  # 70% anonymous
+                        'is_anonymous': random.random() > 0.7  # 30% anonymous (mostly public)
                     }
                 )
                 
