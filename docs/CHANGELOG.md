@@ -4,11 +4,11 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 
 ---
 
-## 2025-10-12 - Complete Snapshot Calculation Engine (Plan #9)
+## 2025-10-12 - Complete Snapshot Calculation Engine + Recursive Tree Visualization (Plan #9)
 
 **Change**: docs/changes/0009_CHANGE-complete-snapshot-calculation-engine.md  
-**Commit**: (pending)  
-**Summary**: Completed the incomplete aspects of Plan #8 by fully implementing `SnapshotBasedStageBallots._calculate_ballot_from_snapshot()` - a recursive engine that calculates ballots entirely from frozen snapshot data (no live DB queries). Method builds complete delegation tree structure (nodes, edges, inheritance_chains, circular_prevented) with proper tag matching, ballot averaging, and depth tracking. Fixed signal flow in `democracy/signals.py` to call `StageBallots` BEFORE `CreateCalculationSnapshot` so ballots exist in DB to be captured. Removed obsolete `decision_results` view (lines 1307-1496 in `views.py`) and URL pattern - correct flow is now Decision Detail → Historical Results Table → Snapshot Detail. Engine successfully processes real data: 38 ballots, 38 nodes, 13 edges, 20 inheritance chains, max depth 2 levels. All 19 snapshot tests passing. Core calculation engine complete - delegation tree visualization in templates is functional and ready.
+**Commit**: f15906f  
+**Summary**: Completed Plan #8's incomplete aspects by fully implementing `SnapshotBasedStageBallots._calculate_ballot_from_snapshot()` - recursive engine calculating ballots entirely from frozen snapshot data (no live DB queries). Builds complete delegation tree structure (nodes, edges, inheritance_chains, circular_prevented) with tag matching, ballot averaging, depth tracking. Fixed signal flow: `StageBallots` runs BEFORE `CreateCalculationSnapshot` ensuring ballots exist to capture. Removed obsolete `decision_results` view and `/results/` URL. **Added recursive tree visualization**: created `voter_tree.html` component, `build_voter_tree()` in views for nested structure, filter logic showing calculated voters at root only if not followed by others, `multiply` template filter for 20px-per-level indentation. Manual voters in nested contexts show as clickable anchor links. Full light/dark theme support. Test Community improvements with signal handling. All 19 snapshot tests passing. Delegation tree visualization complete and functional.
 
 ---
 
