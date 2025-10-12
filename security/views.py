@@ -768,6 +768,10 @@ def _check_magic_link_rate_limits(ip, email):
     min_interval_minutes = getattr(settings, 'MAGIC_LINK_MIN_INTERVAL_MINUTES', 15)
     min_interval_seconds = min_interval_minutes * 60
     
+    # Bypass rate limits in local development (DEBUG=True)
+    if settings.DEBUG:
+        return None
+    
     # Check IP rate limit
     ip_key = f'magic_link_ip:{ip}'
     ip_data = cache.get(ip_key, {'count': 0, 'last_request': 0})

@@ -83,6 +83,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        from django.db.models.signals import post_save, post_delete
+        from democracy import signals as democracy_signals
+        
         # --reset-database takes precedence over --clear-data
         if options['reset_database']:
             self.reset_database_completely()
@@ -92,45 +95,96 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS('Generating REALISTIC community with proper voting patterns...')
         )
-
-        # Create communities (returns 5, but we only populate first 2)
-        all_communities = self.create_communities()
-        communities_to_populate = all_communities[:2]  # Only Minions and Springfield
         
-        # Create users with specific voting patterns (only for first 2 communities)
-        all_users = []
-        for community in communities_to_populate:
-            users = self.create_users_for_community(community)
-            all_users.extend(users)
+        # DISABLE SIGNALS during data generation to prevent 200+ snapshot events
+        self.stdout.write('Temporarily disabling signals during data generation...')
+        post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
+        post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
+        post_save.disconnect(democracy_signals.following_changed, sender=Following)
+        post_delete.disconnect(democracy_signals.following_deleted, sender=Following)
+        post_save.disconnect(democracy_signals.membership_changed, sender=Membership)
+        post_delete.disconnect(democracy_signals.membership_deleted, sender=Membership)
+        post_save.disconnect(democracy_signals.ballot_tags_changed, sender=Ballot)
+        post_save.disconnect(democracy_signals.decision_status_changed, sender=Decision)
         
-        # Add specific test users for delegation debugging (only for first 2 communities)
-        test_users = self.create_test_delegation_users(communities_to_populate)
-        all_users.extend(test_users)
-        
-        # Create test decisions FIRST (only for first 2 communities)
-        decisions = self.create_test_decisions(communities_to_populate)
-        
-        # Create manual votes (seed votes for delegation) - CRITICAL STEP
-        self.create_realistic_manual_votes(decisions, all_users)
-        
-        # Create realistic multi-level delegation chains
-        self.create_multilevel_delegation_chains(all_users)
-        
-        # Create specific test delegation pattern with circular reference prevention
-        self.create_test_delegation_relationships(all_users)
-        
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'Successfully generated realistic delegation data!\n'
-                f'- 2 communities with 30+ users each\n'
-                f'- 10 manual voters per community\n'
-                f'- 15+ calculated voters with multi-level chains\n'
-                f'- 5 non-voters per community\n'
-                f'- 8 test users (A-H) with specific delegation patterns\n'
-                f'- Deep delegation trees up to 4+ levels\n'
-                f'- Diverse tags: governance, budget, environment, safety, etc.\n'
+        try:
+            # Create communities (returns 6, but we only populate first 3)
+            all_communities = self.create_communities()
+            communities_to_populate = all_communities[:3]  # Minions, Springfield, and Test
+            
+            # Create users with specific voting patterns (only for first 2 communities)
+            all_users = []
+            for community in communities_to_populate:
+                users = self.create_users_for_community(community)
+                all_users.extend(users)
+            
+            # Add specific test users for delegation debugging (only for first 2 communities)
+            test_users = self.create_test_delegation_users(communities_to_populate)
+            all_users.extend(test_users)
+            
+            # Create test decisions FIRST (only for first 2 communities)
+            decisions = self.create_test_decisions(communities_to_populate)
+            self.stdout.write(f'\\n📋 Created {len(decisions)} decisions')
+            
+            # Create manual votes (seed votes for delegation) - CRITICAL STEP
+            self.stdout.write(f'\\n🗳️  Calling create_realistic_manual_votes with {len(decisions)} decisions and {len(all_users)} users')
+            self.create_realistic_manual_votes(decisions, all_users)
+            self.stdout.write(f'\\n✅ create_realistic_manual_votes completed')
+            
+            # Create realistic multi-level delegation chains
+            self.create_multilevel_delegation_chains(all_users)
+            
+            # Create specific test delegation pattern with circular reference prevention
+            self.create_test_delegation_relationships(all_users)
+            
+            # Create Test Community delegation relationships
+            self.create_test_community_delegations()
+            
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'Successfully generated realistic delegation data!\n'
+                    f'- 2 communities with 30+ users each\n'
+                    f'- 10 manual voters per community\n'
+                    f'- 15+ calculated voters with multi-level chains\n'
+                    f'- 5 non-voters per community\n'
+                    f'- 8 test users (A-H) with specific delegation patterns\n'
+                    f'- Deep delegation trees up to 4+ levels\n'
+                    f'- Diverse tags: governance, budget, environment, safety, etc.\n'
+                )
             )
-        )
+        finally:
+            # RE-ENABLE SIGNALS by reconnecting them
+            self.stdout.write('Re-enabling signals...')
+            post_save.connect(democracy_signals.vote_changed, sender=Vote)
+            post_delete.connect(democracy_signals.vote_deleted, sender=Vote)
+            post_save.connect(democracy_signals.following_changed, sender=Following)
+            post_delete.connect(democracy_signals.following_deleted, sender=Following)
+            post_save.connect(democracy_signals.membership_changed, sender=Membership)
+            post_delete.connect(democracy_signals.membership_deleted, sender=Membership)
+            post_save.connect(democracy_signals.ballot_tags_changed, sender=Ballot)
+            post_save.connect(democracy_signals.decision_status_changed, sender=Decision)
+        
+        # NOW trigger ONE snapshot/tally for each open decision
+        self.stdout.write(self.style.SUCCESS('\n🎯 Triggering snapshot calculation for open decisions...'))
+        from democracy.services import StageBallots, CreateCalculationSnapshot, SnapshotBasedStageBallots
+        from django.utils import timezone
+        
+        for decision in Decision.objects.filter(dt_close__gt=timezone.now()):
+            self.stdout.write(f'  Processing: {decision.title}')
+            
+            # Ballots already created by create_realistic_manual_votes(), so skip Step 1
+            
+            # Step 2: Create snapshot (captures existing ballots)
+            snapshot_service = CreateCalculationSnapshot(decision.id)
+            snapshot = snapshot_service.process()
+            
+            # Step 3: Process snapshot (builds delegation tree)
+            snapshot_stage_service = SnapshotBasedStageBallots(snapshot.id)
+            snapshot_stage_service.process()
+            
+            self.stdout.write(f'    ✅ Snapshot created: {snapshot.id}')
+        
+        self.stdout.write(self.style.SUCCESS('✅ All snapshots created!'))
 
     def reset_database_completely(self):
         """
@@ -145,17 +199,22 @@ class Command(BaseCommand):
         
         This is designed for daily/weekly demo resets on the production site.
         """
-        from django.db.models import signals
+        from django.db.models.signals import post_save, post_delete
+        from democracy import signals as democracy_signals
         from democracy.models import DecisionSnapshot
         
         self.stdout.write(self.style.WARNING('⚠️  RESETTING ENTIRE DATABASE...'))
         self.stdout.write('Temporarily disabling signals to prevent thread overload...')
         
         # Temporarily disconnect signals to prevent overwhelming database with threads
-        signals.post_save.disconnect(dispatch_uid='vote_changed')
-        signals.post_delete.disconnect(dispatch_uid='vote_deleted')
-        signals.post_save.disconnect(dispatch_uid='following_changed')
-        signals.post_delete.disconnect(dispatch_uid='following_deleted')
+        post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
+        post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
+        post_save.disconnect(democracy_signals.following_changed, sender=Following)
+        post_delete.disconnect(democracy_signals.following_deleted, sender=Following)
+        post_save.disconnect(democracy_signals.membership_changed, sender=Membership)
+        post_delete.disconnect(democracy_signals.membership_deleted, sender=Membership)
+        post_save.disconnect(democracy_signals.ballot_tags_changed, sender=Ballot)
+        post_save.disconnect(democracy_signals.decision_status_changed, sender=Decision)
         
         try:
             # Delete in reverse foreign key order
@@ -188,8 +247,16 @@ class Command(BaseCommand):
             
             self.stdout.write(self.style.SUCCESS('✅ Database wiped clean!'))
         finally:
-            # Re-enable signals (they'll reconnect automatically on next import)
+            # Re-enable signals by reconnecting them
             self.stdout.write('Re-enabling signals...')
+            post_save.connect(democracy_signals.vote_changed, sender=Vote)
+            post_delete.connect(democracy_signals.vote_deleted, sender=Vote)
+            post_save.connect(democracy_signals.following_changed, sender=Following)
+            post_delete.connect(democracy_signals.following_deleted, sender=Following)
+            post_save.connect(democracy_signals.membership_changed, sender=Membership)
+            post_delete.connect(democracy_signals.membership_deleted, sender=Membership)
+            post_save.connect(democracy_signals.ballot_tags_changed, sender=Ballot)
+            post_save.connect(democracy_signals.decision_status_changed, sender=Decision)
         
         # Create superuser only in DEBUG mode (local development)
         if settings.DEBUG:
@@ -274,15 +341,28 @@ class Command(BaseCommand):
             f'   • 3 application-required (empty): Ocean View, Tech Workers, Riverside'
         ))
         
-        # Return all communities, but caller should only populate first 2
-        return [minion_community, springfield_community, oceanview, tech_coop, garden]
+        # Test community (for delegation debugging)
+        test_community, _ = Community.objects.get_or_create(
+            name='Test Community',
+            defaults={
+                'description': 'A minimal test community for understanding delegation trees.',
+                'auto_approve_applications': True
+            }
+        )
+        
+        # Return all communities, but caller should only populate first 3 (Minions, Springfield, Test)
+        return [minion_community, springfield_community, test_community, oceanview, tech_coop, garden]
 
     def create_users_for_community(self, community):
-        """Create exactly 30 users per community with specific roles."""
+        """Create users for each community with specific roles."""
         if community.name == 'Minion Collective':
             return self.create_minion_users()
-        else:
+        elif community.name == 'Springfield Town Council':
             return self.create_springfield_users()
+        elif community.name == 'Test Community':
+            return self.create_test_community_users()
+        else:
+            return []
 
     def create_minion_users(self):
         """Create 30 Minion-themed users."""
@@ -458,11 +538,51 @@ class Command(BaseCommand):
         
         return users
 
+    def create_test_community_users(self):
+        """Create 3 simple test users for Test Community."""
+        test_users_data = [
+            ('AAAAAAAA', 'AAAAAAAA', 'Test'),  # Will follow B and C
+            ('BBBBBBBB', 'BBBBBBBB', 'Test'),  # Manual voter
+            ('CCCCCCC', 'CCCCCCC', 'Test'),    # Manual voter
+        ]
+        
+        users = []
+        community = Community.objects.get(name='Test Community')
+        
+        for username, first_name, last_name in test_users_data:
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': f'{username.lower()}@test.com',
+                    'is_active': True,
+                }
+            )
+            users.append(user)
+            
+            # All are voting members, all public (not anonymous)
+            Membership.objects.get_or_create(
+                member=user,
+                community=community,
+                defaults={
+                    'is_voting_community_member': True,
+                    'is_community_manager': False,
+                    'is_anonymous': False  # All public for testing
+                }
+            )
+        
+        return users
+
     def create_test_delegation_users(self, communities):
         """Create specific test users A, B, C, D, E, F, G, H for delegation testing."""
         test_users = []
         
         for community in communities:
+            # Skip Test Community - it has its own simple 3-user setup
+            if community.name == 'Test Community':
+                continue
+                
             community_suffix = '_minion' if 'Minion' in community.name else '_springfield'
             
             # Create test users A through H
@@ -636,6 +756,46 @@ class Command(BaseCommand):
             except User.DoesNotExist as e:
                 self.stdout.write(f'Could not find test users for {community_name}: {e}')
 
+    def create_test_community_delegations(self):
+        """
+        Create simple delegation pattern for Test Community:
+        - A follows B on ALL tags
+        - A follows C on "fruits"
+        """
+        try:
+            community = Community.objects.get(name='Test Community')
+            
+            # Get users
+            user_a = User.objects.get(username='AAAAAAAA')
+            user_b = User.objects.get(username='BBBBBBBB')
+            user_c = User.objects.get(username='CCCCCCC')
+            
+            # Get memberships
+            membership_a = Membership.objects.get(member=user_a, community=community)
+            membership_b = Membership.objects.get(member=user_b, community=community)
+            membership_c = Membership.objects.get(member=user_c, community=community)
+            
+            # A follows B on ALL tags (empty string means all tags)
+            Following.objects.get_or_create(
+                follower=membership_a,
+                followee=membership_b,
+                defaults={'tags': '', 'order': 1}  # Empty = ALL tags
+            )
+            
+            # A follows C on "fruits" tag
+            Following.objects.get_or_create(
+                follower=membership_a,
+                followee=membership_c,
+                defaults={'tags': 'fruits', 'order': 2}
+            )
+            
+            self.stdout.write(self.style.SUCCESS('✅ Test Community delegations created:'))
+            self.stdout.write('  AAAAAAAA → BBBBBBBB (ALL tags)')
+            self.stdout.write('  AAAAAAAA → CCCCCCC (fruits tag)')
+            
+        except (Community.DoesNotExist, User.DoesNotExist, Membership.DoesNotExist) as e:
+            self.stdout.write(self.style.WARNING(f'Could not create Test Community delegations: {e}'))
+
     def create_multilevel_delegation_chains(self, all_users):
         """Create realistic multi-level delegation chains with diverse tags."""
         # Diverse tag options
@@ -798,7 +958,7 @@ class Command(BaseCommand):
 
     def create_test_decisions(self, communities):
         """
-        Create 4 themed decisions per community with varied timing.
+        Create themed decisions for each community.
         
         Decision timing strategy:
         - Decision 1: CLOSED (1 hour ago)
@@ -811,8 +971,12 @@ class Command(BaseCommand):
         for community in communities:
             if community.name == 'Minion Collective':
                 community_decisions = self.create_minion_decisions(community)
-            else:
+            elif community.name == 'Springfield Town Council':
                 community_decisions = self.create_springfield_decisions(community)
+            elif community.name == 'Test Community':
+                community_decisions = self.create_test_community_decisions(community)
+            else:
+                continue
             decisions.extend(community_decisions)
             
         return decisions
@@ -983,8 +1147,34 @@ class Command(BaseCommand):
         
         return decisions
 
+    def create_test_community_decisions(self, community):
+        """Create 1 simple decision for Test Community."""
+        decisions = []
+        now = timezone.now()
+        
+        # One open decision closing in 1 week
+        decision, created = Decision.objects.get_or_create(
+            community=community,
+            title='What fruit should we eat',
+            defaults={
+                'description': 'Simple test decision for delegation tree visualization.',
+                'dt_close': now + timedelta(days=7),
+                'results_need_updating': True
+            }
+        )
+        if created:
+            Choice.objects.bulk_create([
+                Choice(decision=decision, title='Apple', description='Red and crunchy'),
+                Choice(decision=decision, title='Banana', description='Yellow and sweet'),
+                Choice(decision=decision, title='Orange', description='Citrus and juicy'),
+            ])
+        decisions.append(decision)
+        
+        return decisions
+
     def create_realistic_manual_votes(self, decisions, all_users):
         """Create realistic manual votes - the foundation for delegation."""
+        self.stdout.write(f'\\n🎯 create_realistic_manual_votes called with {len(decisions)} decisions')
         tag_options = [
             'governance', 'budget', 'environment', 'maintenance', 'safety', 
             'events', 'operations', 'policy', 'finance', 'community'
@@ -993,13 +1183,15 @@ class Command(BaseCommand):
         for decision in decisions:
             choices = list(decision.choices.all())
             community_members = decision.community.get_voting_members()
+            self.stdout.write(f'   Decision: {decision.title}, {len(choices)} choices, {community_members.count()} members')
             
             # REALISTIC SCENARIO: Only ~40% of voting members actually vote manually
             # The rest will either not vote or inherit through delegation
             
             # Guaranteed manual voters (community leaders)
             guaranteed_voters = ['kevin_minion', 'stuart_minion', 'bob_minion', 'gru_leader',
-                                'homer_simpson', 'marge_simpson', 'lisa_simpson', 'ned_flanders']
+                                'homer_simpson', 'marge_simpson', 'lisa_simpson', 'ned_flanders',
+                                'BBBBBBBB', 'CCCCCCC']  # Test Community manual voters
             
             # Test user A always votes manually (the source for delegation chains)  
             test_A_users = ['A_minion', 'A_springfield']
@@ -1018,8 +1210,19 @@ class Command(BaseCommand):
             all_manual_voters.extend(random_manual_voters)
             
             for voter in all_manual_voters:
-                # Test user A always uses 'governance' tag for delegation testing
-                if voter.username.startswith('A_'):
+                # Special handling for Test Community
+                if decision.community.name == 'Test Community':
+                    if voter.username == 'BBBBBBBB':
+                        tags = ['edible', 'lunch', 'yummy']
+                        self.stdout.write(f'  ✓ Test user B voting with specific tags')
+                    elif voter.username == 'CCCCCCC':
+                        tags = ['fruits']
+                        self.stdout.write(f'  ✓ Test user C voting with fruits tag')
+                    else:
+                        # AAAAAAAA shouldn't vote manually - will inherit
+                        continue
+                # Test user A always uses 'governance' tag for delegation testing (other communities)
+                elif voter.username.startswith('A_'):
                     tags = ['governance']
                     self.stdout.write(f'  ✓ Test user {voter.username} voting manually with governance tag')
                 else:
@@ -1035,14 +1238,31 @@ class Command(BaseCommand):
                 )
                 
                 if created:
-                    # Create realistic star ratings
+                    self.stdout.write(f'     Creating votes for {voter.username} ({len(choices)} choices)')
+                    # Create star ratings
                     for choice in choices:
-                        stars = random.randint(1, 5)  # 1-5 stars (avoid 0 for more realistic data)
-                        Vote.objects.get_or_create(
-                            choice=choice,
+                        # Special handling for Test Community votes
+                        if decision.community.name == 'Test Community':
+                            if voter.username == 'BBBBBBBB':
+                                # B's ballot: apple:5, banana:3, orange:1
+                                stars_map = {'Apple': 5, 'Banana': 3, 'Orange': 1}
+                                stars = stars_map.get(choice.title, 0)
+                            elif voter.username == 'CCCCCCC':
+                                # C's ballot: apple:3, banana:4, orange:0
+                                stars_map = {'Apple': 3, 'Banana': 4, 'Orange': 0}
+                                stars = stars_map.get(choice.title, 0)
+                            else:
+                                stars = random.randint(1, 5)
+                        else:
+                            stars = random.randint(1, 5)  # 1-5 stars (avoid 0 for more realistic data)
+                        
+                        vote, vote_created = Vote.objects.get_or_create(
                             ballot=ballot,
+                            choice=choice,
                             defaults={'stars': stars}
                         )
+                        if not vote_created:
+                            self.stdout.write(f'       WARNING: Vote for {choice.title} already existed!')
             
             manual_count = len(all_manual_voters)
             total_eligible = community_members.count()

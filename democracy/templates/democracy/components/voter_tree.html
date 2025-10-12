@@ -1,0 +1,114 @@
+{% load dict_extras %}
+{# Recursive template for rendering voter delegation tree #}
+{# Parameters: tree_node, user_lookup, influence_counts, max_influence, indent_level, is_nested #}
+
+<div {% if not is_nested %}id="voter-{{ tree_node.voter_id }}"{% endif %} style="padding-left: {{ indent_level|multiply:20 }}px;" class="mb-3">
+    <!-- Voter Header -->
+    <div class="flex items-center space-x-2 mb-2">
+        <span class="inline-block w-3 h-3 {% if tree_node.vote_type == 'manual' %}bg-green-500{% else %}bg-blue-500{% endif %} rounded-full"></span>
+        <span class="font-bold {% if tree_node.vote_type == 'manual' %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">
+            {% with user=user_lookup|get_item:tree_node.voter_id %}
+                {{ user.username|default:"Unknown" }}
+            {% endwith %}
+        </span>
+        {% if influence_counts|get_item:tree_node.voter_id %}
+        <span class="text-gray-500 dark:text-gray-500">({{ influence_counts|get_item:tree_node.voter_id }})</span>
+        {% if influence_counts|get_item:tree_node.voter_id == max_influence %}
+        <span>🏆</span>
+        {% endif %}
+        {% endif %}
+        {% if tree_node.vote_type == 'manual' %}
+        <span class="text-gray-600 dark:text-gray-400">cast manual ballot</span>
+        {% if tree_node.tags %}
+        <span class="text-orange-600 dark:text-orange-400">[{{ tree_node.tags|join:", " }}]</span>
+        {% endif %}
+        {% else %}
+        <span class="text-gray-600 dark:text-gray-400">calculating ballot...</span>
+        {% endif %}
+    </div>
+    
+    {% if tree_node.vote_type == 'manual' and not is_nested %}
+        <!-- Manual ballot at root level - show votes -->
+        {% if tree_node.votes %}
+        <div style="padding-left: 20px;" class="space-y-1 text-xs">
+            {% for choice_id, vote_data in tree_node.votes.items %}
+            <div class="text-gray-700 dark:text-gray-300">
+                {{ vote_data.choice_name }}: 
+                <span class="text-yellow-600 dark:text-yellow-400 font-bold">{{ vote_data.stars|floatformat:2 }}⭐</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% elif tree_node.vote_type == 'calculated' %}
+        <!-- Calculated ballot - show following relationships recursively -->
+        {% for following_item in tree_node.following %}
+            <div style="padding-left: 20px;" class="mb-2">
+                <!-- Show "Following X on [tags]" -->
+                <div class="flex items-center space-x-1 mb-1">
+                    <span class="text-blue-600 dark:text-blue-400">├─</span>
+                    <span class="text-gray-600 dark:text-gray-400">Following</span>
+                    {% if following_item.followee_tree %}
+                        {% with ft=following_item.followee_tree %}
+                        <span class="inline-block w-2 h-2 {% if ft.vote_type == 'manual' %}bg-green-500{% else %}bg-blue-500{% endif %} rounded-full"></span>
+                        {% with followee_user=user_lookup|get_item:ft.voter_id %}
+                        <a href="#voter-{{ ft.voter_id }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                            {{ followee_user.username|default:"Unknown" }}
+                        </a>
+                        {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        <span class="text-gray-500 dark:text-gray-500">[circular reference prevented]</span>
+                    {% endif %}
+                    <span class="text-gray-600 dark:text-gray-400">on</span>
+                    {% if following_item.edge.tags %}
+                    <span class="text-purple-600 dark:text-purple-400">[{{ following_item.edge.tags|join:", " }}]</span>
+                    {% else %}
+                    <span class="text-purple-600 dark:text-purple-400">[ALL]</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Recursively render followee's tree (indented) -->
+                {% if following_item.followee_tree %}
+                    {% include "democracy/components/voter_tree.html" with tree_node=following_item.followee_tree indent_level=indent_level|add:1 is_nested=True %}
+                {% endif %}
+                
+                <!-- Show tag match result -->
+                <div style="padding-left: 20px;" class="text-xs mb-1">
+                    {% if following_item.edge.active_for_decision %}
+                    <span class="text-green-600 dark:text-green-400">✓ MATCH → inheriting votes</span>
+                    {% else %}
+                    <span class="text-red-600 dark:text-red-400">✗ NO MATCH → not inheriting</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        
+        <!-- Final calculated ballot -->
+        <div style="padding-left: 0px;" class="mt-2">
+            <div class="flex items-center space-x-1 mb-2">
+                <span class="text-blue-600 dark:text-blue-400">└─</span>
+                <span class="font-bold text-blue-600 dark:text-blue-400">
+                    {% with user=user_lookup|get_item:tree_node.voter_id %}
+                        {{ user.username|default:"Unknown" }}
+                    {% endwith %}
+                </span>
+                <span class="text-gray-600 dark:text-gray-400">ballot calculated</span>
+                {% if tree_node.inherited_tags %}
+                <span class="text-orange-600 dark:text-orange-400">[{{ tree_node.inherited_tags|join:", " }}]</span>
+                {% endif %}
+            </div>
+            
+            {% if tree_node.votes %}
+            <div style="padding-left: 20px;" class="space-y-1 text-xs">
+                {% for choice_id, vote_data in tree_node.votes.items %}
+                <div class="text-gray-700 dark:text-gray-300">
+                    {{ vote_data.choice_name }}: 
+                    <span class="text-yellow-600 dark:text-yellow-400 font-bold">{{ vote_data.stars|floatformat:2 }}⭐</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+

@@ -4,6 +4,14 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 
 ---
 
+## 2025-10-12 - Complete Snapshot Calculation Engine (Plan #9)
+
+**Change**: docs/changes/0009_CHANGE-complete-snapshot-calculation-engine.md  
+**Commit**: (pending)  
+**Summary**: Completed the incomplete aspects of Plan #8 by fully implementing `SnapshotBasedStageBallots._calculate_ballot_from_snapshot()` - a recursive engine that calculates ballots entirely from frozen snapshot data (no live DB queries). Method builds complete delegation tree structure (nodes, edges, inheritance_chains, circular_prevented) with proper tag matching, ballot averaging, and depth tracking. Fixed signal flow in `democracy/signals.py` to call `StageBallots` BEFORE `CreateCalculationSnapshot` so ballots exist in DB to be captured. Removed obsolete `decision_results` view (lines 1307-1496 in `views.py`) and URL pattern - correct flow is now Decision Detail → Historical Results Table → Snapshot Detail. Engine successfully processes real data: 38 ballots, 38 nodes, 13 edges, 20 inheritance chains, max depth 2 levels. All 19 snapshot tests passing. Core calculation engine complete - delegation tree visualization in templates is functional and ready.
+
+---
+
 ## 2025-10-11 - Event-Driven Ballot Calculation with System Snapshots
 
 **Change**: docs/changes/0008_CHANGE-event-driven-ballot-calculation-with-snapshots.md  

@@ -19,7 +19,7 @@ from collections import defaultdict
 import threading
 import logging
 
-from .models import Community, Decision, Membership, Ballot, Choice, Vote
+from .models import Community, Decision, Membership, Ballot, Choice, Vote, DecisionSnapshot
 from democracy.models import Following
 from .signals import recalculate_community_decisions_async
 from .utils import generate_username_hash
@@ -1094,6 +1094,71 @@ def snapshot_detail(request, community_id, decision_id, snapshot_id):
     
     max_influence = max(influence_counts.values()) if influence_counts else 0
     
+    # Build recursive tree structure for calculated ballots
+    # Create lookup dicts
+    nodes_by_id = {n['voter_id']: n for n in delegation_tree.get('nodes', [])}
+    edges_by_follower = {}
+    for edge in delegation_tree.get('edges', []):
+        follower_id = edge['follower']
+        if follower_id not in edges_by_follower:
+            edges_by_follower[follower_id] = []
+        edges_by_follower[follower_id].append(edge)
+    
+    # Helper to build recursive tree for a voter
+    def build_voter_tree(voter_id, visited=None):
+        if visited is None:
+            visited = set()
+        
+        if voter_id in visited:
+            # Circular reference
+            return None
+        
+        visited.add(voter_id)
+        node = nodes_by_id.get(voter_id)
+        if not node:
+            return None
+        
+        # Build tree node
+        tree_node = {
+            **node,
+            'following': []
+        }
+        
+        # Get edges where this voter is the follower
+        edges = edges_by_follower.get(voter_id, [])
+        for edge in edges:
+            followee_id = edge['followee']
+            followee_tree = build_voter_tree(followee_id, visited.copy())
+            
+            tree_node['following'].append({
+                'edge': edge,
+                'followee_tree': followee_tree
+            })
+        
+        return tree_node
+    
+    # Build trees for all calculated voters (they will contain nested trees)
+    calculated_trees = []
+    
+    # Find which calculated voters are followed by OTHER calculated voters
+    # These should NOT appear at root level (they'll be nested)
+    calculated_voter_ids = {n['voter_id'] for n in calculated_nodes}
+    nested_calculated_voters = set()
+    
+    for edge in delegation_tree.get('edges', []):
+        follower_id = edge['follower']
+        followee_id = edge['followee']
+        # If a calculated voter follows another calculated voter, the followee is nested
+        if follower_id in calculated_voter_ids and followee_id in calculated_voter_ids:
+            nested_calculated_voters.add(followee_id)
+    
+    # Only show calculated voters at root level if they're NOT nested inside another calculated voter
+    for calc_node in calculated_nodes:
+        if calc_node['voter_id'] not in nested_calculated_voters:
+            tree = build_voter_tree(calc_node['voter_id'])
+            if tree:
+                calculated_trees.append(tree)
+    
     context = {
         'community': community,
         'decision': decision,
@@ -1102,6 +1167,7 @@ def snapshot_detail(request, community_id, decision_id, snapshot_id):
         'delegation_tree': delegation_tree,
         'manual_nodes': manual_nodes,
         'calculated_nodes': calculated_nodes,
+        'calculated_trees': calculated_trees,  # New recursive structure
         'user_lookup': user_lookup,
         'influence_counts': influence_counts,
         'max_influence': max_influence,
@@ -1301,199 +1367,6 @@ def vote_submit(request, community_id, decision_id):
                 messages.error(request, f"{field}: {error}")
         
         return redirect('democracy:decision_detail', community_id=community_id, decision_id=decision_id)
-
-
-@login_required
-def decision_results(request, community_id, decision_id):
-    """
-    Display comprehensive decision results with delegation tree and complete analysis.
-    
-    Shows the complete transparency view of a decision including:
-    - Decision metadata and participation statistics
-    - Delegation tree visualization (Phase 2)
-    - Complete vote tally with manual vs calculated indicators
-    - Final STAR voting results and analysis
-    
-    Args:
-        request: Django request object
-        community_id: UUID of the community
-        decision_id: UUID of the decision
-    """
-    community = get_object_or_404(Community, id=community_id)
-    decision = get_object_or_404(Decision, id=decision_id, community=community)
-    
-    # Check if user is a member
-    try:
-        user_membership = Membership.objects.get(
-            community=community,
-            member=request.user
-        )
-    except Membership.DoesNotExist:
-        messages.error(request, "You must be a member of this community to view decision results.")
-        return redirect('democracy:community_detail', community_id=community_id)
-    
-    # Check if decision is published (not draft)
-    if decision.dt_close is None and not user_membership.is_community_manager:
-        messages.error(request, "This decision is not yet published.")
-        return redirect('democracy:decision_list', community_id=community_id)
-    
-    # Get the latest snapshot (or create a basic one if none exists)
-    from .models import DecisionSnapshot
-    latest_snapshot = DecisionSnapshot.objects.filter(decision=decision).first()
-    
-    # If no snapshot exists, create a comprehensive one with delegation tree data
-    if not latest_snapshot:
-        # Generate delegation tree data using StageBallots service
-        from .services import StageBallots
-        stage_ballots_service = StageBallots()
-        
-        # Process ballots to get delegation tree data
-        delegation_trees = {}
-        
-        # Reset delegation tree data for this decision
-        stage_ballots_service.delegation_tree_data = {
-            'nodes': [],
-            'edges': [],
-            'inheritance_chains': []
-        }
-        
-        # Process only voting members to build delegation tree (exclude lobbyists)
-        for membership in community.memberships.filter(is_voting_community_member=True):
-            stage_ballots_service.get_or_calculate_ballot(
-                decision=decision, voter=membership.member
-            )
-        
-        # Get the delegation tree data for this decision
-        delegation_tree_data = stage_ballots_service.delegation_tree_data.copy()
-        
-        # Calculate basic stats with debugging - ONLY count ballots from voting members
-        voting_member_ids = list(community.get_voting_members().values_list('id', flat=True))
-        total_ballots = decision.ballots.filter(voter_id__in=voting_member_ids).count()
-        manual_ballots = decision.ballots.filter(voter_id__in=voting_member_ids, is_calculated=False).count()
-        calculated_ballots = decision.ballots.filter(voter_id__in=voting_member_ids, is_calculated=True).count()
-        voting_members = community.get_voting_members().count()
-        participation_rate = (total_ballots / voting_members * 100) if voting_members > 0 else 0
-        
-        # Clean debug logging
-        print(f"✅ Participation Rate Fixed: {total_ballots}/{voting_members} = {participation_rate:.1f}%")
-        
-        # Get tags used
-        tags_used = []
-        for ballot in decision.ballots.exclude(tags=''):
-            if ballot.tags:
-                ballot_tags = [tag.strip().lower() for tag in ballot.tags.split(',')]
-                tags_used.extend(ballot_tags)
-        
-        # Count tag frequency
-        from collections import Counter
-        tag_frequency = Counter(tags_used)
-        
-        # Create comprehensive snapshot data with delegation tree
-        snapshot_data = {
-            "metadata": {
-                "calculation_timestamp": timezone.now().isoformat(),
-                "system_version": "1.0.0",
-                "decision_status": "active" if decision.dt_close and decision.dt_close > timezone.now() else "closed"
-            },
-            "delegation_tree": delegation_tree_data,
-            "tag_analysis": {
-                "tag_frequency": dict(tag_frequency.most_common(10)),
-                "total_unique_tags": len(tag_frequency)
-            },
-            "vote_tally": {
-                "direct_votes": manual_ballots,
-                "calculated_votes": calculated_ballots
-            }
-        }
-        
-        # Create snapshot
-        latest_snapshot = DecisionSnapshot.objects.create(
-            decision=decision,
-            snapshot_data=snapshot_data,
-            total_eligible_voters=voting_members,
-            total_votes_cast=manual_ballots,
-            total_calculated_votes=calculated_ballots,
-            tags_used=list(tag_frequency.keys()),
-            is_final=(decision.dt_close and decision.dt_close <= timezone.now())
-        )
-    
-    # Determine decision status
-    now = timezone.now()
-    if decision.dt_close is None:
-        status = 'draft'
-    elif decision.dt_close > now:
-        status = 'active'
-    else:
-        status = 'closed'
-    
-    # Get all ballots for display (including those with 0 votes)
-    ballots_with_votes = decision.ballots.select_related('voter').prefetch_related('votes__choice').order_by('voter__username')
-    
-    # Get choices with basic stats and STAR voting results
-    choices = decision.choices.all()
-    choice_stats = {}
-    star_results = None
-    winner_choice_id = None
-    
-    # Calculate STAR voting results if there are ballots
-    voting_member_ids = list(community.get_voting_members().values_list('id', flat=True))
-    voting_ballots = decision.ballots.filter(voter_id__in=voting_member_ids)
-    
-    if voting_ballots.exists():
-        from .services import StageBallots
-        stage_service = StageBallots()
-        
-        # Run STAR voting calculation
-        try:
-            star_results = stage_service.automatic_runoff(voting_ballots)
-            if star_results and star_results.get('winner'):
-                winner_choice_id = star_results['winner'].id
-        except Exception as e:
-            # Fallback to basic stats if STAR calculation fails
-            pass
-    
-    # Calculate basic stats for all choices
-    for choice in choices:
-        votes = Vote.objects.filter(choice=choice)
-        total_votes = votes.count()
-        if total_votes > 0:
-            avg_stars = sum(vote.stars for vote in votes) / total_votes
-            choice_stats[choice.id] = {
-                'total_votes': total_votes,
-                'average_stars': round(avg_stars, 2)
-            }
-        else:
-            choice_stats[choice.id] = {'total_votes': 0, 'average_stars': 0}
-    
-    # Extract delegation tree data from snapshot
-    delegation_tree_data = latest_snapshot.snapshot_data.get('delegation_tree', {
-        'nodes': [],
-        'edges': [],
-        'inheritance_chains': []
-    })
-    
-    # Generate decision-specific delegation tree
-    # TODO: Temporarily disabled for new network visualization (Change 0003)
-    # decision_delegation_tree = build_decision_delegation_tree(decision, include_links=True)
-    decision_delegation_tree = None
-    
-    context = {
-        'community': community,
-        'user_membership': user_membership,
-        'decision': decision,
-        'status': status,
-        'latest_snapshot': latest_snapshot,
-        'ballots_with_votes': ballots_with_votes,
-        'choices': choices,
-        'choice_stats': choice_stats,
-        'can_manage': user_membership.is_community_manager,
-        'delegation_tree_data': delegation_tree_data,
-        # 'decision_delegation_tree': decision_delegation_tree,  # TODO: Temporarily disabled (Change 0003)
-        'star_results': star_results,
-        'winner_choice_id': winner_choice_id,
-    }
-    
-    return render(request, 'democracy/decision_results.html', context)
 
 
 @login_required

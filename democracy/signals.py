@@ -98,14 +98,26 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
                         logger.info(f"[SNAPSHOT_SKIP] [system] - Skipping '{locked_decision.title}' - already has active calculation: {active_snapshot.id}")
                         continue
                     
-                    # Create calculation snapshot (Plan #21 integration) - this is now atomic
+                    # STEP 1: Calculate ballots in database (Plan #9: needed before snapshot)
+                    logger.info(f"[STAGE_BALLOTS_START] [system] - Calculating ballots in database for '{locked_decision.title}'")
+                    from democracy.services import StageBallots
+                    stage_ballots_service = StageBallots()
+                    # Process only this decision's ballots
+                    for membership in locked_decision.community.memberships.all():
+                        stage_ballots_service.get_or_calculate_ballot(
+                            locked_decision, 
+                            membership.member
+                        )
+                    logger.info(f"[STAGE_BALLOTS_COMPLETE] [system] - Database ballots calculated")
+                    
+                    # STEP 2: Create calculation snapshot (Plan #8 integration) - now captures the ballots we just created
                     logger.info(f"[SNAPSHOT_CREATE_START] [system] - Creating snapshot for decision '{locked_decision.title}'")
                     snapshot_service = CreateCalculationSnapshot(locked_decision.id)
                     snapshot = snapshot_service.process()
                 logger.info(f"[SNAPSHOT_CREATE_COMPLETE] [system] - Snapshot created successfully: {snapshot.id}")
                 
-                # Stage ballots using snapshot data
-                logger.info(f"[STAGE_BALLOTS_START] [system] - Starting snapshot-based ballot staging for decision '{decision.title}'")
+                # STEP 3: Process snapshot ballots (Plan #9: builds delegation tree from frozen state)
+                logger.info(f"[SNAPSHOT_PROCESS_START] [system] - Processing snapshot-based calculation for decision '{decision.title}'")
                 stage_start_time = timezone.now()
                 
                 stage_service = SnapshotBasedStageBallots(snapshot.id)
@@ -121,10 +133,6 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
                 # Note: Using existing Tally service - TODO: Implement snapshot-based tally
                 tally_service = Tally()
                 tally_service.process()
-                
-                # Add extended delay to ensure spinner visibility for tally phase
-                import time
-                time.sleep(5)  # Additional 5 second delay during tally
                 
                 tally_duration = (timezone.now() - tally_start_time).total_seconds()
                 logger.info(f"[TALLY_COMPLETE] [system] - Tally completed in {tally_duration:.1f} seconds")

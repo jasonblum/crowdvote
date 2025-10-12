@@ -41,3 +41,16 @@ def trim(value):
     if value is None:
         return ''
     return str(value).strip()
+
+
+@register.filter
+def multiply(value, arg):
+    """
+    Multiply the value by the argument.
+    
+    Usage: {{ indent_level|multiply:20 }}
+    """
+    try:
+        return int(value) * int(arg)
+    except (ValueError, TypeError):
+        return 0

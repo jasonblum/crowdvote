@@ -726,10 +726,6 @@ class CreateCalculationSnapshot(Service):
             
             # Snapshot creation process
             
-            # Add visible delay for user feedback (shows processing is happening)
-            import time
-            time.sleep(5)  # 5 second delay to ensure spinner visibility
-            
             # Capture all data in a single transaction for consistency
             with transaction.atomic():
                 snapshot_data = self._capture_system_state(decision)
@@ -874,15 +870,8 @@ class SnapshotBasedStageBallots(Service):
             
             self.logger.info(f"Starting snapshot-based ballot staging for: {snapshot.decision.title}")
             
-            # Add visible delay for staging process
-            import time
-            time.sleep(2)  # 2 second delay during staging
-            
             # Process using snapshot data only
             results = self._process_snapshot_ballots(snapshot)
-            
-            # Add extended delay to ensure spinner visibility
-            time.sleep(10)  # 10 second delay to guarantee user sees spinner activity
             
             # Update snapshot with results
             snapshot.calculation_status = 'completed'
@@ -906,8 +895,8 @@ class SnapshotBasedStageBallots(Service):
         """
         Process ballots using only snapshot data (frozen state).
         
-        This is the core implementation that calculates ballots WITHOUT querying
-        the live database, using only the data captured in the snapshot.
+        This is the COMPLETE IMPLEMENTATION that calculates ballots recursively
+        WITHOUT querying the live database, using only the data captured in the snapshot.
         
         Args:
             snapshot: DecisionSnapshot with captured system state
@@ -917,17 +906,10 @@ class SnapshotBasedStageBallots(Service):
         """
         snapshot_data = snapshot.snapshot_data
         
-        # Snapshot data contains:
-        # - community_memberships: list of member IDs
-        # - followings: dict mapping follower_id to list of {followee_id, tags, order}
-        # - existing_ballots: dict mapping voter_id to ballot data
-        # - decision_data: decision info
-        # - choices_data: list of choices
-        
         self.logger.info(f"Processing snapshot {snapshot.id} for decision {snapshot.decision.title}")
         
         # Track statistics
-        stats = {
+        self.stats = {
             'total_members': len(snapshot_data['community_memberships']),
             'manual_ballots': 0,
             'calculated_ballots': 0,
@@ -937,62 +919,278 @@ class SnapshotBasedStageBallots(Service):
         }
         
         # Build delegation tree
-        delegation_tree = {
+        self.delegation_tree = {
             'nodes': [],
             'edges': [],
-            'inheritance_chains': []
+            'inheritance_chains': [],
+            'circular_prevented': []
         }
         
-        # Process each member
+        # Cache for calculated ballots (voter_id -> ballot_dict)
+        self.calculated_ballots_cache = {}
+        
+        # Get user lookup for display names
+        from security.models import CustomUser
+        user_ids = [member_id for member_id in snapshot_data['community_memberships']]
+        users = CustomUser.objects.filter(id__in=user_ids)
+        self.user_lookup = {str(user.id): user.username for user in users}
+        
+        # Process each member to calculate their ballot
         for member_id in snapshot_data['community_memberships']:
             member_id_str = str(member_id)
             
-            # Check if they have an existing ballot
-            if member_id_str in snapshot_data['existing_ballots']:
-                ballot_data = snapshot_data['existing_ballots'][member_id_str]
-                
-                if not ballot_data['is_calculated']:
-                    # Manual ballot
-                    stats['manual_ballots'] += 1
-                    
-                    # Add to delegation tree
-                    delegation_tree['nodes'].append({
-                        'voter_id': member_id_str,
-                        'vote_type': 'manual',
-                        'is_anonymous': ballot_data['is_anonymous'],
-                        'tags': ballot_data['tags'].split(',') if ballot_data['tags'] else [],
-                        'votes': ballot_data['votes'],
-                        'delegation_depth': 0
-                    })
-                else:
-                    # Calculated ballot - would need recalculation in full implementation
-                    # For now, count as calculated
-                    stats['calculated_ballots'] += 1
-                    
-                    delegation_tree['nodes'].append({
-                        'voter_id': member_id_str,
-                        'vote_type': 'calculated',
-                        'is_anonymous': ballot_data['is_anonymous'],
-                        'tags': ballot_data['tags'].split(',') if ballot_data['tags'] else [],
-                        'votes': ballot_data['votes'],
-                        'delegation_depth': 0  # Would be calculated in full implementation
-                    })
+            # Calculate or retrieve ballot for this member
+            ballot_result = self._calculate_ballot_from_snapshot(
+                member_id_str, 
+                snapshot_data, 
+                follow_path=[], 
+                delegation_depth=0
+            )
+            
+            # ballot_result is dict with 'ballot', 'tags', 'type' keys or None
+            if ballot_result is not None:
+                if ballot_result['type'] == 'manual':
+                    self.stats['manual_ballots'] += 1
+                elif ballot_result['type'] == 'calculated':
+                    self.stats['calculated_ballots'] += 1
             else:
-                # No ballot exists - could potentially be calculated
-                # Check if they follow anyone
-                if member_id_str in snapshot_data['followings']:
-                    # They follow someone - could have calculated ballot
-                    # In full implementation, would recursively calculate here
-                    stats['no_ballot'] += 1
-                else:
-                    # Not following anyone, no ballot possible
-                    stats['no_ballot'] += 1
+                self.stats['no_ballot'] += 1
         
         # Store delegation tree in snapshot for visualization
-        snapshot.snapshot_data['delegation_tree'] = delegation_tree
-        snapshot.snapshot_data['statistics'] = stats
+        snapshot.snapshot_data['delegation_tree'] = self.delegation_tree
+        snapshot.snapshot_data['statistics'] = self.stats
         snapshot.save()
         
-        self.logger.info(f"Snapshot processing complete: {stats}")
+        self.logger.info(f"Snapshot processing complete: {self.stats}")
         
-        return stats
+        return self.stats
+    
+    def _calculate_ballot_from_snapshot(self, voter_id, snapshot_data, follow_path, delegation_depth):
+        """
+        Recursively calculate ballot for a voter using only snapshot data.
+        
+        This is the core recursive calculation engine that:
+        - Works entirely from frozen snapshot data (no DB queries)
+        - Builds delegation tree as it goes
+        - Handles circular reference prevention
+        - Performs tag matching and inheritance
+        - Averages ballots from multiple sources
+        
+        Args:
+            voter_id (str): UUID string of voter
+            snapshot_data (dict): Frozen system state
+            follow_path (list): List of voter IDs in current chain (circular prevention)
+            delegation_depth (int): Current depth in delegation tree
+            
+        Returns:
+            dict: {'ballot': {choice_id: stars}, 'tags': [str], 'type': 'manual|calculated'} or None
+        """
+        # Update max delegation depth
+        self.stats['max_delegation_depth'] = max(self.stats['max_delegation_depth'], delegation_depth)
+        
+        # 1. CIRCULAR REFERENCE DETECTION
+        if voter_id in follow_path:
+            self.stats['circular_prevented'] += 1
+            path_str = ' → '.join([self.user_lookup.get(vid, vid) for vid in follow_path + [voter_id]])
+            self.delegation_tree['circular_prevented'].append({
+                'voter': self.user_lookup.get(voter_id, voter_id),
+                'voter_id': voter_id,
+                'attempted_path': path_str
+            })
+            self.logger.info(f"Circular reference prevented: {path_str}")
+            return None
+        
+        # 2. CHECK CACHE
+        if voter_id in self.calculated_ballots_cache:
+            return self.calculated_ballots_cache[voter_id]
+        
+        # 3. CHECK FOR EXISTING MANUAL BALLOT
+        if voter_id in snapshot_data['existing_ballots']:
+            ballot_data = snapshot_data['existing_ballots'][voter_id]
+            if not ballot_data['is_calculated']:
+                # Manual ballot found
+                ballot_result = {
+                    'ballot': {choice_id: Decimal(stars_str) for choice_id, stars_str in ballot_data['votes'].items()},
+                    'tags': ballot_data['tags'].split(',') if ballot_data['tags'] else [],
+                    'type': 'manual',
+                    'is_anonymous': ballot_data['is_anonymous']
+                }
+                
+                # Add to delegation tree nodes
+                self._add_node_to_tree(voter_id, ballot_result, delegation_depth, sources=[])
+                
+                # Cache and return
+                self.calculated_ballots_cache[voter_id] = ballot_result
+                return ballot_result
+        
+        # 4. GET FOLLOWING RELATIONSHIPS
+        followings = snapshot_data['followings'].get(voter_id, [])
+        if not followings:
+            # Can't calculate - not following anyone
+            self._add_node_to_tree(voter_id, None, delegation_depth, sources=[], reason="Not following anyone")
+            return None
+        
+        # 5. COLLECT BALLOTS TO AVERAGE
+        ballots_to_average = []
+        inherited_tags = set()
+        sources_info = []
+        
+        for following in followings:
+            followee_id = following['followee_id']
+            follow_tags = following['tags'].split(',') if following['tags'] else []
+            follow_order = following['order']
+            
+            # RECURSE to get followee's ballot
+            followee_result = self._calculate_ballot_from_snapshot(
+                followee_id,
+                snapshot_data,
+                follow_path + [voter_id],
+                delegation_depth + 1
+            )
+            
+            if followee_result is None:
+                # Followee has no ballot
+                continue
+            
+            followee_ballot = followee_result['ballot']
+            followee_tags = followee_result['tags']
+            
+            # 6. TAG MATCHING
+            should_inherit = False
+            matching_tags = []
+            
+            if not follow_tags or (len(follow_tags) == 1 and not follow_tags[0]):
+                # Following on ALL tags
+                should_inherit = True
+                matching_tags = followee_tags
+            else:
+                # Check intersection
+                followee_tag_set = set(followee_tags)
+                follow_tag_set = set(follow_tags)
+                matching_tag_set = followee_tag_set.intersection(follow_tag_set)
+                if matching_tag_set:
+                    should_inherit = True
+                    matching_tags = list(matching_tag_set)
+            
+            # Add edge to delegation tree
+            self._add_edge_to_tree(voter_id, followee_id, follow_tags, follow_order, should_inherit)
+            
+            if should_inherit:
+                # Add ballot to averaging list
+                ballots_to_average.append(followee_ballot)
+                inherited_tags.update(matching_tags)
+                
+                # Track source info
+                sources_info.append({
+                    'from_voter': self.user_lookup.get(followee_id, followee_id),
+                    'from_voter_id': followee_id,
+                    'tags': matching_tags,
+                    'order': follow_order,
+                    'is_anonymous': followee_result.get('is_anonymous', False)
+                })
+        
+        # 7. AVERAGE BALLOTS (simple averaging, not STAR voting)
+        if not ballots_to_average:
+            # Following others but no tag matches
+            self._add_node_to_tree(voter_id, None, delegation_depth, sources=[], 
+                                  reason="Following others but no tag matches")
+            return None
+        
+        # Average all inherited ballots
+        calculated_ballot = {}
+        all_choice_ids = set()
+        for ballot in ballots_to_average:
+            all_choice_ids.update(ballot.keys())
+        
+        for choice_id in all_choice_ids:
+            total_stars = sum(ballot.get(choice_id, Decimal('0')) for ballot in ballots_to_average)
+            avg_stars = total_stars / Decimal(len(ballots_to_average))
+            calculated_ballot[choice_id] = avg_stars
+        
+        # 8. BUILD RESULT
+        ballot_result = {
+            'ballot': calculated_ballot,
+            'tags': list(inherited_tags),
+            'type': 'calculated',
+            'is_anonymous': snapshot_data['existing_ballots'].get(voter_id, {}).get('is_anonymous', False)
+        }
+        
+        # Add to delegation tree nodes
+        self._add_node_to_tree(voter_id, ballot_result, delegation_depth, sources=sources_info)
+        
+        # Add inheritance chains for each choice
+        for choice_id, final_stars in calculated_ballot.items():
+            choice_title = next(
+                (c['title'] for c in snapshot_data['choices_data'] if c['id'] == choice_id),
+                choice_id
+            )
+            calculation_path = []
+            for source_ballot, source_info in zip(ballots_to_average, sources_info):
+                calculation_path.append({
+                    'voter': source_info['from_voter'],
+                    'voter_id': source_info['from_voter_id'],
+                    'stars': float(source_ballot.get(choice_id, Decimal('0'))),
+                    'weight': 1.0 / len(ballots_to_average),
+                    'tags': source_info['tags'],
+                    'is_anonymous': source_info['is_anonymous']
+                })
+            
+            self.delegation_tree['inheritance_chains'].append({
+                'final_voter': self.user_lookup.get(voter_id, voter_id),
+                'final_voter_id': voter_id,
+                'choice': choice_id,
+                'choice_title': choice_title,
+                'final_stars': float(final_stars),
+                'calculation_path': calculation_path
+            })
+        
+        # Cache and return
+        self.calculated_ballots_cache[voter_id] = ballot_result
+        return ballot_result
+    
+    def _add_node_to_tree(self, voter_id, ballot_result, delegation_depth, sources, reason=None):
+        """Add a node to the delegation tree structure."""
+        if ballot_result is None:
+            # No ballot
+            self.delegation_tree['nodes'].append({
+                'voter_id': voter_id,
+                'username': self.user_lookup.get(voter_id, voter_id),
+                'vote_type': 'no_ballot',
+                'reason': reason or "Unknown",
+                'delegation_depth': delegation_depth
+            })
+        else:
+            # Has ballot (manual or calculated)
+            node = {
+                'voter_id': voter_id,
+                'username': self.user_lookup.get(voter_id, voter_id),
+                'is_anonymous': ballot_result.get('is_anonymous', False),
+                'vote_type': ballot_result['type'],
+                'votes': {cid: {'stars': float(stars), 'choice_name': 'Choice'} for cid, stars in ballot_result['ballot'].items()},
+                'tags': ballot_result['tags'],
+                'delegation_depth': delegation_depth
+            }
+            
+            if ballot_result['type'] == 'calculated':
+                node['sources'] = sources
+                node['inherited_tags'] = ballot_result['tags']
+            
+            self.delegation_tree['nodes'].append(node)
+    
+    def _add_edge_to_tree(self, follower_id, followee_id, tags, order, active_for_decision):
+        """Add an edge to the delegation tree structure."""
+        # Check if edge already exists
+        existing_edge = next(
+            (e for e in self.delegation_tree['edges'] 
+             if e['follower'] == follower_id and e['followee'] == followee_id),
+            None
+        )
+        
+        if not existing_edge:
+            self.delegation_tree['edges'].append({
+                'follower': follower_id,
+                'followee': followee_id,
+                'tags': tags,
+                'order': order,
+                'active_for_decision': active_for_decision
+            })
