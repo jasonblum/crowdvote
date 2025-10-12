@@ -42,6 +42,9 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
     Uses Plan #21 snapshot-based services for data consistency during calculation.
     Runs in background thread to avoid blocking user requests.
     
+    IMPORTANT: This function runs in a background thread and MUST close database
+    connections when complete to prevent connection pool exhaustion.
+    
     Args:
         community_id (UUID): Community to recalculate
         trigger_event (str): Description of what triggered this recalculation
@@ -52,9 +55,11 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
     2. Runs SnapshotBasedStageBallots service for each decision
     3. Runs Tally service to calculate STAR voting results
     4. Logs comprehensive event information for transparency
+    5. Closes database connections to prevent pool exhaustion
     """
     try:
         from democracy.models import Community, Decision
+        from django.db import connection
         
         # Log the trigger event
         logger.info(f"[RECALC_START] [system] - Background recalculation triggered by {trigger_event} in community {community_id}")
@@ -126,12 +131,12 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
                 stage_duration = (timezone.now() - stage_start_time).total_seconds()
                 logger.info(f"[STAGE_BALLOTS_COMPLETE] [system] - Snapshot-based staging completed in {stage_duration:.1f} seconds")
                 
-                # Calculate STAR voting results
+                # Calculate STAR voting results from snapshot (Plan #9)
                 logger.info(f"[TALLY_START] [system] - Starting tally for snapshot {snapshot.id}")
                 tally_start_time = timezone.now()
                 
-                # Note: Using existing Tally service - TODO: Implement snapshot-based tally
-                tally_service = Tally()
+                # Pass snapshot ID to Tally service to tally from frozen data
+                tally_service = Tally(snapshot_id=snapshot.id)
                 tally_service.process()
                 
                 tally_duration = (timezone.now() - tally_start_time).total_seconds()
@@ -152,6 +157,11 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
     except Exception as e:
         logger.error(f"[RECALC_CRITICAL_ERROR] [system] - Critical error in background recalculation: {str(e)}")
         logger.error(f"[RECALC_CRITICAL_ERROR] [system] - Traceback: {traceback.format_exc()}")
+    finally:
+        # CRITICAL: Close database connection to prevent pool exhaustion
+        # Background threads don't automatically close connections like request threads do
+        connection.close()
+        logger.debug(f"[DB_CONNECTION_CLOSED] [system] - Background thread connection closed for community {community_id}")
 
 
 @receiver(post_save, sender=Vote)
@@ -320,9 +330,12 @@ def membership_changed(sender, instance, created, **kwargs):
     """
     Signal handler for when community memberships are created or modified.
     
-    Triggers recalculation when:
-    - New member joins community (created=True)
-    - Member's voting rights change (is_voting_community_member modified)
+    NOTE: Membership changes do NOT trigger recalculation because:
+    - Joining a community doesn't affect existing decisions
+    - Membership status is checked at calculation time
+    - Only votes and delegation changes should trigger recalculation
+    
+    This handler exists only for logging purposes.
     
     Args:
         sender: Membership model class
@@ -333,39 +346,15 @@ def membership_changed(sender, instance, created, **kwargs):
     try:
         if created:
             logger.info(f"[MEMBER_JOINED] [{instance.member.username}] - Joined community '{instance.community.name}' (Voting: {instance.is_voting_community_member})")
-            
-            # Trigger recalculation for the community
-            thread = threading.Thread(
-                target=recalculate_community_decisions_async,
-                args=(instance.community.id, "member_joined", instance.member.id),
-                daemon=True
-            )
-            thread.start()
-            
-            logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community {instance.community.name}")
-            
         else:
             # Check if voting rights changed
             if hasattr(instance, '_state') and instance._state.adding is False:
-                # This is an update - check if voting status changed
                 try:
                     old_instance = Membership.objects.get(pk=instance.pk)
                     if old_instance.is_voting_community_member != instance.is_voting_community_member:
                         status = "granted" if instance.is_voting_community_member else "revoked"
                         logger.info(f"[VOTING_RIGHTS_{status.upper()}] [{instance.member.username}] - Voting rights {status} in community '{instance.community.name}'")
-                        
-                        # Trigger recalculation
-                        thread = threading.Thread(
-                            target=recalculate_community_decisions_async,
-                            args=(instance.community.id, f"voting_rights_{status}", instance.member.id),
-                            daemon=True
-                        )
-                        thread.start()
-                        
-                        logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community {instance.community.name}")
-                        
                 except Membership.DoesNotExist:
-                    # Old instance doesn't exist, treat as creation
                     pass
                     
     except Exception as e:
@@ -377,7 +366,12 @@ def membership_deleted(sender, instance, **kwargs):
     """
     Signal handler for when community memberships are deleted (member leaves).
     
-    Triggers recalculation for the community.
+    NOTE: Membership deletion does NOT trigger recalculation because:
+    - Leaving a community doesn't require immediate recalculation
+    - Member's ballots are filtered out at calculation time based on membership
+    - Only votes and delegation changes should trigger recalculation
+    
+    This handler exists only for logging purposes.
     
     Args:
         sender: Membership model class
@@ -386,16 +380,6 @@ def membership_deleted(sender, instance, **kwargs):
     """
     try:
         logger.info(f"[MEMBER_LEFT] [{instance.member.username}] - Left community '{instance.community.name}'")
-        
-        # Trigger recalculation for the community
-        thread = threading.Thread(
-            target=recalculate_community_decisions_async,
-            args=(instance.community.id, "member_left", instance.member.id),
-            daemon=True
-        )
-        thread.start()
-        
-        logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community {instance.community.name}")
         
     except Exception as e:
         logger.error(f"[SIGNAL_ERROR] [system] - Error in membership_deleted signal: {str(e)}")
@@ -449,11 +433,15 @@ def ballot_tags_changed(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Decision)
 def decision_status_changed(sender, instance, created, **kwargs):
     """
-    Signal handler for when decisions are published or closed.
+    Signal handler for when decisions are published.
     
-    Triggers recalculation when:
+    Triggers INITIAL calculation when:
     - Decision is published (becomes active for voting)
-    - Decision is closed (triggers final calculation)
+    
+    This ensures a snapshot exists even if no one votes/follows during the voting period.
+    
+    NOTE: Decision closing does NOT trigger calculation because the last calculation
+    before closing is effectively the final one. No need to recalculate if nothing changed.
     
     Args:
         sender: Decision model class
@@ -469,7 +457,7 @@ def decision_status_changed(sender, instance, created, **kwargs):
             if instance.dt_close > timezone.now():
                 logger.info(f"[DECISION_PUBLISHED] [{instance.community.name}] - Decision '{instance.title}' is open for voting")
                 
-                # Trigger initial calculation
+                # Trigger initial calculation (ensures snapshot exists even if no votes)
                 thread = threading.Thread(
                     target=recalculate_community_decisions_async,
                     args=(instance.community.id, "decision_published", None),
@@ -478,24 +466,11 @@ def decision_status_changed(sender, instance, created, **kwargs):
                 thread.start()
                 
                 logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Initial calculation started for decision '{instance.title}'")
-                
-        else:
-            # Check if decision just closed
-            if instance.dt_close <= timezone.now():
-                # Check if this is a recent closure (within last minute to avoid repeated triggers)
-                time_since_close = timezone.now() - instance.dt_close
-                if time_since_close.total_seconds() <= 60:
-                    logger.info(f"[DECISION_CLOSED] [{instance.community.name}] - Decision '{instance.title}' has closed - triggering final calculation")
-                    
-                    # Trigger final calculation
-                    thread = threading.Thread(
-                        target=recalculate_community_decisions_async,
-                        args=(instance.community.id, "decision_closed", None),
-                        daemon=True
-                    )
-                    thread.start()
-                    
-                    logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Final calculation started for closed decision '{instance.title}'")
+        
+        # Note: We don't trigger on decision closing because:
+        # - If nothing changed since last calculation, no need to recalculate
+        # - The last calculation before closing is effectively the final one
+        # - Saves database connections and processing time
                     
     except Exception as e:
         logger.error(f"[SIGNAL_ERROR] [system] - Error in decision_status_changed signal: {str(e)}")

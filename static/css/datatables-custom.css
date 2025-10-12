@@ -358,6 +358,15 @@
     background-color: rgb(29, 78, 216); /* blue-700 */
 }
 
+/* Ensure button text is visible even inside DataTables */
+.dataTables_wrapper table.dataTable tbody td a.btn-primary-sm {
+    color: white !important;
+}
+
+.dark .dataTables_wrapper table.dataTable tbody td a.btn-primary-sm {
+    color: white !important;
+}
+
 /* ============================================================================
    UTILITIES
    ============================================================================ */

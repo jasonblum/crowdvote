@@ -469,13 +469,34 @@ class StageBallots(Service):
 
 
 class Tally(Service):
+    def __init__(self, snapshot_id=None):
+        """
+        Initialize Tally service.
+        
+        Args:
+            snapshot_id: Optional UUID of DecisionSnapshot to tally from (Plan #9)
+        """
+        super().__init__()
+        self.snapshot_id = snapshot_id
+        self.logger = logging.getLogger(__name__)
+    
     def process(self):
         """
-        Calculate STAR voting results for all open decisions using Plan #7 STARVotingTally.
+        Calculate STAR voting results using Plan #7 STARVotingTally.
+        
+        If snapshot_id provided (Plan #9), tallies from frozen snapshot data.
+        Otherwise, tallies all open decisions from live database.
         
         Returns:
             str: HTML-formatted tally report
         """
+        # Plan #9: If snapshot provided, tally only that snapshot
+        if self.snapshot_id:
+            from democracy.models import DecisionSnapshot
+            snapshot = DecisionSnapshot.objects.get(id=self.snapshot_id)
+            return self._tally_snapshot(snapshot)
+        
+        # Original behavior: tally all open decisions
         all_tally_reports = []
         
         for community in Community.objects.all():
@@ -684,6 +705,92 @@ class Tally(Service):
                 all_tally_reports.append(tally_report)
 
         return "<br/>".join(all_tally_reports)
+    
+    def _tally_snapshot(self, snapshot):
+        """
+        Tally a specific snapshot using frozen data (Plan #9).
+        
+        Args:
+            snapshot: DecisionSnapshot instance
+            
+        Returns:
+            str: HTML-formatted tally report
+        """
+        from decimal import Decimal
+        
+        decision = snapshot.decision
+        snapshot_data = snapshot.snapshot_data
+        
+        self.logger.info(f"Tallying snapshot {snapshot.id} for decision '{decision.title}'")
+        
+        # Extract ballot data from snapshot
+        delegation_tree = snapshot_data.get('delegation_tree', {})
+        nodes = delegation_tree.get('nodes', [])
+        
+        # Convert nodes to ballot format for STARVotingTally
+        ballot_list = []
+        choice_id_to_obj = {}
+        
+        for node in nodes:
+            if node.get('vote_type') in ['manual', 'calculated'] and node.get('votes'):
+                ballot_dict = {}
+                for choice_id, vote_data in node['votes'].items():
+                    # Convert stars back to Decimal
+                    ballot_dict[str(choice_id)] = Decimal(str(vote_data.get('stars', 0)))
+                    # Keep track of choice for display
+                    if choice_id not in choice_id_to_obj:
+                        try:
+                            from democracy.models import Choice
+                            choice_id_to_obj[str(choice_id)] = Choice.objects.get(id=choice_id)
+                        except Choice.DoesNotExist:
+                            pass
+                
+                if ballot_dict:
+                    ballot_list.append(ballot_dict)
+        
+        self.logger.info(f"Extracted {len(ballot_list)} ballots from snapshot for tallying")
+        
+        # Run STAR voting tally
+        try:
+            star_tally = STARVotingTally()
+            result = star_tally.run(ballot_list)
+            
+            # Update snapshot with results
+            if result.get('winner'):
+                winner_choice = choice_id_to_obj.get(result['winner'])
+                snapshot.winner = winner_choice
+            
+            snapshot.tally_log = result.get('tally_log', [])
+            
+            # Only mark as final if decision is closed (model validation prevents final=True for open decisions)
+            if not decision.is_open:
+                snapshot.is_final = True
+            
+            snapshot.calculation_status = 'completed'
+            snapshot.save()
+            
+            self.logger.info(f"Snapshot {snapshot.id} tally complete - winner: {snapshot.winner}, is_final: {snapshot.is_final}")
+            
+            return f"Tally complete for snapshot {snapshot.id}"
+            
+        except UnresolvedTieError as e:
+            self.logger.warning(f"Unresolved tie in snapshot {snapshot.id}: {e.tied_candidates}")
+            snapshot.tally_log = [f"Unresolved tie: {', '.join(e.tied_candidates)}"] + e.tiebreaker_log
+            
+            # Only mark as final if decision is closed
+            if not decision.is_open:
+                snapshot.is_final = True
+            
+            snapshot.calculation_status = 'completed'
+            snapshot.save()
+            return f"Tie detected in snapshot {snapshot.id}"
+            
+        except ValueError as e:
+            self.logger.error(f"Tally error in snapshot {snapshot.id}: {str(e)}")
+            snapshot.tally_log = [f"Error: {str(e)}"]
+            snapshot.calculation_status = 'error'
+            snapshot.save()
+            return f"Error tallying snapshot {snapshot.id}: {str(e)}"
 
 
 class CreateCalculationSnapshot(Service):

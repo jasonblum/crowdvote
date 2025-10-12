@@ -127,7 +127,7 @@ def global_calculation_status(request):
                     'status': 'Creating Snapshot...',
                     'status_type': 'active',  # 'active', 'completed', 'failed'
                     'timestamp': '2025-09-19T14:30:00Z',
-                    'url': '/communities/uuid/decisions/uuid/results/'
+                    'url': '/communities/uuid/decisions/uuid/snapshots/uuid/'
                 }
             ]
         }
@@ -173,7 +173,7 @@ def global_calculation_status(request):
             'status': status_map.get(snapshot.calculation_status, 'Processing...'),
             'status_type': 'active',
             'timestamp': snapshot.created_at.isoformat(),
-            'url': f'/communities/{snapshot.decision.community.id}/decisions/{snapshot.decision.id}/results/'
+            'url': f'/communities/{snapshot.decision.community.id}/decisions/{snapshot.decision.id}/snapshots/{snapshot.id}/'
         })
     
     # Find recent activity (last 24 hours) for decisions not already in active processing
@@ -215,7 +215,7 @@ def global_calculation_status(request):
             'status': status_display,
             'status_type': 'completed' if snapshot.calculation_status == 'completed' else 'failed',
             'timestamp': snapshot.created_at.isoformat(),
-            'url': f'/communities/{snapshot.decision.community.id}/decisions/{snapshot.decision.id}/results/'
+            'url': f'/communities/{snapshot.decision.community.id}/decisions/{snapshot.decision.id}/snapshots/{snapshot.id}/'
         })
     
     # Determine overall status

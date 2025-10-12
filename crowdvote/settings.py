@@ -107,6 +107,7 @@ ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
 ACCOUNT_ADAPTER = 'security.adapters.CrowdVoteAccountAdapter'
 
 # Redirect URLs
+LOGIN_URL = '/'  # Redirect to landing page instead of login page when logged out
 LOGIN_REDIRECT_URL = '/profile/profile/setup/'
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/profile/profile/setup/'
 

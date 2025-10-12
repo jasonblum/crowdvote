@@ -24,9 +24,15 @@ class Command(BaseCommand):
     
     # Complete database reset (removes ALL data including your user account)
     docker-compose exec web python manage.py generate_demo_communities --reset-database
+    docker-compose restart  # Required to reconnect signals
     
     # Clear relationships only (keeps users)
     docker-compose exec web python manage.py generate_demo_communities --clear-data
+    docker-compose restart  # Required to reconnect signals
+    
+    IMPORTANT: This command disables Django signals during execution to prevent
+    spawning 200+ background threads (which would exhaust database connections).
+    After the command completes, you MUST restart containers to reconnect signals.
     
     NIGHTLY RESET STRATEGY (for crowdvote.com):
     -------------------------------------------
@@ -35,11 +41,11 @@ class Command(BaseCommand):
     
     1. Via Railway Cron (recommended for production):
        - Set cron schedule: 0 0 * * * (midnight UTC)
-       - Command: python manage.py generate_demo_communities --reset-database
-       - This ensures a clean demo every day
+       - Command: python manage.py generate_demo_communities --reset-database && railway restart
+       - This ensures a clean demo every day with signals properly reconnected
     
     2. Via Docker Compose (local development):
-       - Add to crontab: 0 0 * * * docker-compose exec web python manage.py generate_demo_communities --reset-database
+       - Add to crontab: 0 0 * * * docker-compose exec web python manage.py generate_demo_communities --reset-database && docker-compose restart
     
     WHAT IT CREATES:
     ----------------
@@ -97,76 +103,99 @@ class Command(BaseCommand):
         )
         
         # DISABLE SIGNALS during data generation to prevent 200+ snapshot events
-        self.stdout.write('Temporarily disabling signals during data generation...')
-        post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
-        post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
-        post_save.disconnect(democracy_signals.following_changed, sender=Following)
-        post_delete.disconnect(democracy_signals.following_deleted, sender=Following)
-        post_save.disconnect(democracy_signals.membership_changed, sender=Membership)
-        post_delete.disconnect(democracy_signals.membership_deleted, sender=Membership)
-        post_save.disconnect(democracy_signals.ballot_tags_changed, sender=Ballot)
-        post_save.disconnect(democracy_signals.decision_status_changed, sender=Decision)
+        self.stdout.write('Disabling signals to prevent thread overload...')
+        
+        # Disconnect signals and verify they're disconnected
+        disconnected = []
         
         try:
-            # Create communities (returns 6, but we only populate first 3)
-            all_communities = self.create_communities()
-            communities_to_populate = all_communities[:3]  # Minions, Springfield, and Test
+            post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
+            disconnected.append("vote_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect vote_changed: {e}')
             
-            # Create users with specific voting patterns (only for first 2 communities)
-            all_users = []
-            for community in communities_to_populate:
-                users = self.create_users_for_community(community)
-                all_users.extend(users)
+        try:
+            post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
+            disconnected.append("vote_deleted")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect vote_deleted: {e}')
             
-            # Add specific test users for delegation debugging (only for first 2 communities)
-            test_users = self.create_test_delegation_users(communities_to_populate)
-            all_users.extend(test_users)
+        try:
+            post_save.disconnect(democracy_signals.following_changed, sender=Following)
+            disconnected.append("following_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect following_changed: {e}')
             
-            # Create test decisions FIRST (only for first 2 communities)
-            decisions = self.create_test_decisions(communities_to_populate)
-            self.stdout.write(f'\\n📋 Created {len(decisions)} decisions')
+        try:
+            post_delete.disconnect(democracy_signals.following_deleted, sender=Following)
+            disconnected.append("following_deleted")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect following_deleted: {e}')
             
-            # Create manual votes (seed votes for delegation) - CRITICAL STEP
-            self.stdout.write(f'\\n🗳️  Calling create_realistic_manual_votes with {len(decisions)} decisions and {len(all_users)} users')
-            self.create_realistic_manual_votes(decisions, all_users)
-            self.stdout.write(f'\\n✅ create_realistic_manual_votes completed')
+        # Note: membership signals don't spawn threads anymore (logging only)
             
-            # Create realistic multi-level delegation chains
-            self.create_multilevel_delegation_chains(all_users)
+        try:
+            post_save.disconnect(democracy_signals.ballot_tags_changed, sender=Ballot)
+            disconnected.append("ballot_tags_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect ballot_tags_changed: {e}')
             
-            # Create specific test delegation pattern with circular reference prevention
-            self.create_test_delegation_relationships(all_users)
-            
-            # Create Test Community delegation relationships
-            self.create_test_community_delegations()
-            
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'Successfully generated realistic delegation data!\n'
-                    f'- 2 communities with 30+ users each\n'
-                    f'- 10 manual voters per community\n'
-                    f'- 15+ calculated voters with multi-level chains\n'
-                    f'- 5 non-voters per community\n'
-                    f'- 8 test users (A-H) with specific delegation patterns\n'
-                    f'- Deep delegation trees up to 4+ levels\n'
-                    f'- Diverse tags: governance, budget, environment, safety, etc.\n'
-                )
-            )
-        finally:
-            # RE-ENABLE SIGNALS by reconnecting them
-            self.stdout.write('Re-enabling signals...')
-            post_save.connect(democracy_signals.vote_changed, sender=Vote)
-            post_delete.connect(democracy_signals.vote_deleted, sender=Vote)
-            post_save.connect(democracy_signals.following_changed, sender=Following)
-            post_delete.connect(democracy_signals.following_deleted, sender=Following)
-            post_save.connect(democracy_signals.membership_changed, sender=Membership)
-            post_delete.connect(democracy_signals.membership_deleted, sender=Membership)
-            post_save.connect(democracy_signals.ballot_tags_changed, sender=Ballot)
-            post_save.connect(democracy_signals.decision_status_changed, sender=Decision)
+        try:
+            post_save.disconnect(democracy_signals.decision_status_changed, sender=Decision)
+            disconnected.append("decision_status_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect decision_status_changed: {e}')
         
-        # NOW trigger ONE snapshot/tally for each open decision
-        self.stdout.write(self.style.SUCCESS('\n🎯 Triggering snapshot calculation for open decisions...'))
-        from democracy.services import StageBallots, CreateCalculationSnapshot, SnapshotBasedStageBallots
+        self.stdout.write(f'✅ Successfully disconnected {len(disconnected)}/6 signals: {", ".join(disconnected)}')
+        
+        # Create communities (returns 6, but we only populate first 3)
+        all_communities = self.create_communities()
+        communities_to_populate = all_communities[:3]  # Minions, Springfield, and Test
+        
+        # Create users with specific voting patterns (only for first 2 communities)
+        all_users = []
+        for community in communities_to_populate:
+            users = self.create_users_for_community(community)
+            all_users.extend(users)
+        
+        # Add specific test users for delegation debugging (only for first 2 communities)
+        test_users = self.create_test_delegation_users(communities_to_populate)
+        all_users.extend(test_users)
+        
+        # Create test decisions FIRST (only for first 2 communities)
+        decisions = self.create_test_decisions(communities_to_populate)
+        self.stdout.write(f'\\n📋 Created {len(decisions)} decisions')
+        
+        # Create manual votes (seed votes for delegation) - CRITICAL STEP
+        self.stdout.write(f'\\n🗳️  Calling create_realistic_manual_votes with {len(decisions)} decisions and {len(all_users)} users')
+        self.create_realistic_manual_votes(decisions, all_users)
+        self.stdout.write(f'\\n✅ create_realistic_manual_votes completed')
+        
+        # Create realistic multi-level delegation chains
+        self.create_multilevel_delegation_chains(all_users)
+        
+        # Create specific test delegation pattern with circular reference prevention
+        self.create_test_delegation_relationships(all_users)
+        
+        # Create Test Community delegation relationships
+        self.create_test_community_delegations()
+        
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Successfully generated realistic delegation data!\n'
+                f'- 2 communities with 30+ users each\n'
+                f'- 10 manual voters per community\n'
+                f'- 15+ calculated voters with multi-level chains\n'
+                f'- 5 non-voters per community\n'
+                f'- 8 test users (A-H) with specific delegation patterns\n'
+                f'- Deep delegation trees up to 4+ levels\n'
+                f'- Diverse tags: governance, budget, environment, safety, etc.\n'
+            )
+        )
+        
+        # STILL with signals disabled, trigger ONE snapshot/tally for each open decision
+        self.stdout.write(self.style.SUCCESS('\n🎯 Triggering snapshot calculation for open decisions (signals still disabled)...'))
+        from democracy.services import StageBallots, CreateCalculationSnapshot, SnapshotBasedStageBallots, Tally
         from django.utils import timezone
         
         for decision in Decision.objects.filter(dt_close__gt=timezone.now()):
@@ -182,9 +211,20 @@ class Command(BaseCommand):
             snapshot_stage_service = SnapshotBasedStageBallots(snapshot.id)
             snapshot_stage_service.process()
             
-            self.stdout.write(f'    ✅ Snapshot created: {snapshot.id}')
+            # Step 4: Tally snapshot (STAR voting) - BEFORE signals reconnect
+            tally_service = Tally(snapshot_id=snapshot.id)
+            tally_service.process()
+            
+            self.stdout.write(f'    ✅ Snapshot created and tallied: {snapshot.id}')
         
         self.stdout.write(self.style.SUCCESS('✅ All snapshots created!'))
+        
+        # IMPORTANT: Signals remain disabled. Restart containers to reconnect them naturally.
+        self.stdout.write(self.style.WARNING(
+            '\n⚠️  IMPORTANT: Signals remain disconnected to prevent thread overload.\n'
+            '   Please restart containers to reconnect signals:\n'
+            '   docker-compose restart\n'
+        ))
 
     def reset_database_completely(self):
         """
@@ -204,59 +244,80 @@ class Command(BaseCommand):
         from democracy.models import DecisionSnapshot
         
         self.stdout.write(self.style.WARNING('⚠️  RESETTING ENTIRE DATABASE...'))
-        self.stdout.write('Temporarily disabling signals to prevent thread overload...')
+        self.stdout.write('Disabling signals to prevent thread overload...')
         
         # Temporarily disconnect signals to prevent overwhelming database with threads
-        post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
-        post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
-        post_save.disconnect(democracy_signals.following_changed, sender=Following)
-        post_delete.disconnect(democracy_signals.following_deleted, sender=Following)
-        post_save.disconnect(democracy_signals.membership_changed, sender=Membership)
-        post_delete.disconnect(democracy_signals.membership_deleted, sender=Membership)
-        post_save.disconnect(democracy_signals.ballot_tags_changed, sender=Ballot)
-        post_save.disconnect(democracy_signals.decision_status_changed, sender=Decision)
+        disconnected = []
         
         try:
-            # Delete in reverse foreign key order
-            self.stdout.write('Deleting Votes...')
-            Vote.objects.all().delete()
+            post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
+            disconnected.append("vote_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect vote_changed: {e}')
             
-            self.stdout.write('Deleting Ballots...')
-            Ballot.objects.all().delete()
+        try:
+            post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
+            disconnected.append("vote_deleted")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect vote_deleted: {e}')
             
-            self.stdout.write('Deleting Choices...')
-            Choice.objects.all().delete()
+        try:
+            post_save.disconnect(democracy_signals.following_changed, sender=Following)
+            disconnected.append("following_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect following_changed: {e}')
             
-            self.stdout.write('Deleting DecisionSnapshots...')
-            DecisionSnapshot.objects.all().delete()
+        try:
+            post_delete.disconnect(democracy_signals.following_deleted, sender=Following)
+            disconnected.append("following_deleted")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect following_deleted: {e}')
             
-            self.stdout.write('Deleting Decisions...')
-            Decision.objects.all().delete()
+        # Note: membership signals don't spawn threads anymore (logging only)
             
-            self.stdout.write('Deleting Following relationships...')
-            Following.objects.all().delete()
+        try:
+            post_save.disconnect(democracy_signals.ballot_tags_changed, sender=Ballot)
+            disconnected.append("ballot_tags_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect ballot_tags_changed: {e}')
             
-            self.stdout.write('Deleting Memberships...')
-            Membership.objects.all().delete()
-            
-            self.stdout.write('Deleting Communities...')
-            Community.objects.all().delete()
-            
-            self.stdout.write('Deleting Users...')
-            User.objects.all().delete()
-            
-            self.stdout.write(self.style.SUCCESS('✅ Database wiped clean!'))
-        finally:
-            # Re-enable signals by reconnecting them
-            self.stdout.write('Re-enabling signals...')
-            post_save.connect(democracy_signals.vote_changed, sender=Vote)
-            post_delete.connect(democracy_signals.vote_deleted, sender=Vote)
-            post_save.connect(democracy_signals.following_changed, sender=Following)
-            post_delete.connect(democracy_signals.following_deleted, sender=Following)
-            post_save.connect(democracy_signals.membership_changed, sender=Membership)
-            post_delete.connect(democracy_signals.membership_deleted, sender=Membership)
-            post_save.connect(democracy_signals.ballot_tags_changed, sender=Ballot)
-            post_save.connect(democracy_signals.decision_status_changed, sender=Decision)
+        try:
+            post_save.disconnect(democracy_signals.decision_status_changed, sender=Decision)
+            disconnected.append("decision_status_changed")
+        except Exception as e:
+            self.stdout.write(f'  Warning: Could not disconnect decision_status_changed: {e}')
+        
+        self.stdout.write(f'✅ Disconnected {len(disconnected)}/6 signals: {", ".join(disconnected)}')
+        
+        # Delete in reverse foreign key order
+        self.stdout.write('Deleting Votes...')
+        Vote.objects.all().delete()
+        
+        self.stdout.write('Deleting Ballots...')
+        Ballot.objects.all().delete()
+        
+        self.stdout.write('Deleting Choices...')
+        Choice.objects.all().delete()
+        
+        self.stdout.write('Deleting DecisionSnapshots...')
+        DecisionSnapshot.objects.all().delete()
+        
+        self.stdout.write('Deleting Decisions...')
+        Decision.objects.all().delete()
+        
+        self.stdout.write('Deleting Following relationships...')
+        Following.objects.all().delete()
+        
+        self.stdout.write('Deleting Memberships...')
+        Membership.objects.all().delete()
+        
+        self.stdout.write('Deleting Communities...')
+        Community.objects.all().delete()
+        
+        self.stdout.write('Deleting Users...')
+        User.objects.all().delete()
+        
+        self.stdout.write(self.style.SUCCESS('✅ Database wiped clean!'))
         
         # Create superuser only in DEBUG mode (local development)
         if settings.DEBUG:
@@ -539,11 +600,13 @@ class Command(BaseCommand):
         return users
 
     def create_test_community_users(self):
-        """Create 3 simple test users for Test Community."""
+        """Create 5 test users for Test Community with complex delegation patterns."""
         test_users_data = [
-            ('AAAAAAAA', 'AAAAAAAA', 'Test'),  # Will follow B and C
+            ('AAAAAAAA', 'AAAAAAAA', 'Test'),  # Calculated voter
             ('BBBBBBBB', 'BBBBBBBB', 'Test'),  # Manual voter
-            ('CCCCCCC', 'CCCCCCC', 'Test'),    # Manual voter
+            ('CCCCCCC', 'CCCCCCC', 'Test'),    # Calculated voter (follows D)
+            ('DDDDDDDD', 'DDDDDDDD', 'Test'),  # Manual voter (follows E)
+            ('EEEEEEEE', 'EEEEEEEE', 'Test'),  # Manual voter
         ]
         
         users = []
@@ -758,9 +821,14 @@ class Command(BaseCommand):
 
     def create_test_community_delegations(self):
         """
-        Create simple delegation pattern for Test Community:
+        Create complex delegation pattern for Test Community:
         - A follows B on ALL tags
-        - A follows C on "fruits"
+        - A follows C on "fruits" tag (C is calculated, inherits from D)
+        - C follows D on ALL tags (C becomes calculated)
+        - D follows E on ALL tags
+        
+        This creates a chain: E → D → C → A (on fruits tag)
+        Plus: B → A (on all tags)
         """
         try:
             community = Community.objects.get(name='Test Community')
@@ -769,29 +837,51 @@ class Command(BaseCommand):
             user_a = User.objects.get(username='AAAAAAAA')
             user_b = User.objects.get(username='BBBBBBBB')
             user_c = User.objects.get(username='CCCCCCC')
+            user_d = User.objects.get(username='DDDDDDDD')
+            user_e = User.objects.get(username='EEEEEEEE')
             
             # Get memberships
             membership_a = Membership.objects.get(member=user_a, community=community)
             membership_b = Membership.objects.get(member=user_b, community=community)
             membership_c = Membership.objects.get(member=user_c, community=community)
+            membership_d = Membership.objects.get(member=user_d, community=community)
+            membership_e = Membership.objects.get(member=user_e, community=community)
             
-            # A follows B on ALL tags (empty string means all tags)
+            # A follows B on ALL tags
             Following.objects.get_or_create(
                 follower=membership_a,
                 followee=membership_b,
-                defaults={'tags': '', 'order': 1}  # Empty = ALL tags
+                defaults={'tags': '', 'order': 1}
             )
             
-            # A follows C on "fruits" tag
+            # A follows C on "fruits" tag (C is calculated, so A inherits C's calculated ballot)
             Following.objects.get_or_create(
                 follower=membership_a,
                 followee=membership_c,
                 defaults={'tags': 'fruits', 'order': 2}
             )
             
+            # C follows D on ALL tags (C becomes calculated voter)
+            Following.objects.get_or_create(
+                follower=membership_c,
+                followee=membership_d,
+                defaults={'tags': '', 'order': 1}
+            )
+            
+            # D follows E on ALL tags
+            Following.objects.get_or_create(
+                follower=membership_d,
+                followee=membership_e,
+                defaults={'tags': '', 'order': 1}
+            )
+            
             self.stdout.write(self.style.SUCCESS('✅ Test Community delegations created:'))
             self.stdout.write('  AAAAAAAA → BBBBBBBB (ALL tags)')
             self.stdout.write('  AAAAAAAA → CCCCCCC (fruits tag)')
+            self.stdout.write('  CCCCCCC → DDDDDDDD (ALL tags) [C is calculated]')
+            self.stdout.write('  DDDDDDDD → EEEEEEEE (ALL tags)')
+            self.stdout.write('  ')
+            self.stdout.write('  Chain: EEEEEEEE → DDDDDDDD → CCCCCCC → AAAAAAAA (fruits)')
             
         except (Community.DoesNotExist, User.DoesNotExist, Membership.DoesNotExist) as e:
             self.stdout.write(self.style.WARNING(f'Could not create Test Community delegations: {e}'))
@@ -1191,7 +1281,7 @@ class Command(BaseCommand):
             # Guaranteed manual voters (community leaders)
             guaranteed_voters = ['kevin_minion', 'stuart_minion', 'bob_minion', 'gru_leader',
                                 'homer_simpson', 'marge_simpson', 'lisa_simpson', 'ned_flanders',
-                                'BBBBBBBB', 'CCCCCCC']  # Test Community manual voters
+                                'BBBBBBBB', 'DDDDDDDD', 'EEEEEEEE']  # Test Community manual voters (A and C are calculated)
             
             # Test user A always votes manually (the source for delegation chains)  
             test_A_users = ['A_minion', 'A_springfield']
@@ -1214,12 +1304,15 @@ class Command(BaseCommand):
                 if decision.community.name == 'Test Community':
                     if voter.username == 'BBBBBBBB':
                         tags = ['edible', 'lunch', 'yummy']
-                        self.stdout.write(f'  ✓ Test user B voting with specific tags')
-                    elif voter.username == 'CCCCCCC':
-                        tags = ['fruits']
-                        self.stdout.write(f'  ✓ Test user C voting with fruits tag')
+                        self.stdout.write(f'  ✓ Test user B voting with tags: {tags}')
+                    elif voter.username == 'DDDDDDDD':
+                        tags = ['healthy', 'tasty']
+                        self.stdout.write(f'  ✓ Test user D voting with tags: {tags}')
+                    elif voter.username == 'EEEEEEEE':
+                        tags = ['YAAS']
+                        self.stdout.write(f'  ✓ Test user E voting with tags: {tags}')
                     else:
-                        # AAAAAAAA shouldn't vote manually - will inherit
+                        # AAAAAAAA and CCCCCCC don't vote manually - will inherit
                         continue
                 # Test user A always uses 'governance' tag for delegation testing (other communities)
                 elif voter.username.startswith('A_'):
@@ -1244,12 +1337,16 @@ class Command(BaseCommand):
                         # Special handling for Test Community votes
                         if decision.community.name == 'Test Community':
                             if voter.username == 'BBBBBBBB':
-                                # B's ballot: apple:5, banana:3, orange:1
+                                # B's ballot: Apple:5, Banana:3, Orange:1
                                 stars_map = {'Apple': 5, 'Banana': 3, 'Orange': 1}
                                 stars = stars_map.get(choice.title, 0)
-                            elif voter.username == 'CCCCCCC':
-                                # C's ballot: apple:3, banana:4, orange:0
-                                stars_map = {'Apple': 3, 'Banana': 4, 'Orange': 0}
+                            elif voter.username == 'DDDDDDDD':
+                                # D's ballot: Apple:2, Banana:5, Orange:4
+                                stars_map = {'Apple': 2, 'Banana': 5, 'Orange': 4}
+                                stars = stars_map.get(choice.title, 0)
+                            elif voter.username == 'EEEEEEEE':
+                                # E's ballot: Apple:1, Banana:4, Orange:5
+                                stars_map = {'Apple': 1, 'Banana': 4, 'Orange': 5}
                                 stars = stars_map.get(choice.title, 0)
                             else:
                                 stars = random.randint(1, 5)
