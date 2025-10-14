@@ -97,6 +97,46 @@ CrowdVote and all ideas expressed above by Jason Blum are licensed under the GNU
 - **django-extensions**: Development utilities
 - **django-debug-toolbar**: Development debugging
 
+## Environment Variables
+
+### Local Development (Docker)
+No environment variables needed! Docker Compose provides everything:
+- Database runs in `db` container (auto-configured)
+- `DEBUG=True` by default
+- Sensible defaults for all settings
+
+### Production (Railway)
+
+**Required Variables:**
+```bash
+DATABASE_URL          # Automatically provided by Railway PostgreSQL
+SECRET_KEY            # Generate: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+DEBUG                 # Set to False
+```
+
+**Recommended Variables:**
+```bash
+ALLOWED_HOSTS         # Defaults: .railway.app,crowdvote.com (usually fine as-is)
+ADMIN_URL             # Defaults: zanzibar (access admin at /zanzibar/ instead of /admin/)
+ANONYMITY_SALT        # Generate unique salt for production ballot anonymity
+```
+
+**Optional Email/Captcha Variables:**
+```bash
+SENDPULSE_API_ID      # For magic link emails (15k/month free)
+SENDPULSE_API_SECRET  # Get from sendpulse.com account settings
+DEFAULT_FROM_EMAIL    # Default: noreply@crowdvote.com
+TURNSTILE_SITE_KEY    # Cloudflare Turnstile for bot protection
+TURNSTILE_SECRET_KEY  # Get from Cloudflare dashboard
+```
+
+**For Railway Cron Service** (weekly demo reset):
+- Reference `DATABASE_URL` from main service
+- Reference `SECRET_KEY` from main service  
+- Set `DEBUG=False`
+
+See `PRODUCTION_ENV_EXAMPLE.md` for detailed setup instructions.
+
 ## Installation
 
 ### Prerequisites
