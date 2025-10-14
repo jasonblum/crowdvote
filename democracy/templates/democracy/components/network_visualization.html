@@ -6,7 +6,7 @@
     <div class="network-legend-item text-gray-700 dark:text-gray-300">→ Arrow with tags: Member delegates on specific issues</div>
     <div class="network-legend-item text-gray-700 dark:text-gray-300">→ Arrow with <strong>ALL</strong>: Member delegates on all issues (complete trust)</div>
     <div class="network-legend-item text-gray-700 dark:text-gray-300" style="margin-top: 10px;">
-        <strong>Node Colors (Heat Map):</strong> Gray (no followers) → Light Blue → Blue → Purple → Red (most followers)
+        <strong>Node Colors (Influence Heat Map):</strong> Gray (no followers) → Blue (low influence) → Purple (medium) → Red (high influence)
     </div>
 </div>
 
@@ -73,16 +73,24 @@ window.initNetworkVisualization = function() {
     // Find max followers for scaling
     const maxFollowers = Math.max(...Object.values(networkData.followerCounts));
 
-    // Color scale function - classic heat map (cold to hot)
+    // Color scale function - continuous gradient from blue → purple → red
     function getNodeColor(followersCount) {
         if (followersCount === 0) return '#9ca3af'; // Gray (no followers)
         
+        // Calculate ratio (0 to 1) of this person's followers relative to max
         const ratio = followersCount / Math.max(maxFollowers, 1);
         
-        if (ratio <= 0.25) return '#93c5fd'; // Light Blue (cool)
-        if (ratio <= 0.5) return '#3b82f6';  // Blue
-        if (ratio <= 0.75) return '#a855f7'; // Purple
-        return '#ef4444'; // Red (hot)
+        // Create continuous gradient: Blue (#3b82f6) → Purple (#a855f7) → Red (#ef4444)
+        // Split into two gradients for smoother transition
+        if (ratio <= 0.5) {
+            // First half: Blue to Purple
+            const localRatio = ratio * 2; // Scale 0-0.5 to 0-1
+            return d3.interpolateRgb('#3b82f6', '#a855f7')(localRatio);
+        } else {
+            // Second half: Purple to Red
+            const localRatio = (ratio - 0.5) * 2; // Scale 0.5-1 to 0-1
+            return d3.interpolateRgb('#a855f7', '#ef4444')(localRatio);
+        }
     }
 
     // Create force simulation

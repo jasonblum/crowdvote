@@ -87,10 +87,57 @@ def build_network_data(community):
             'tags': tags,
         })
     
-    # Calculate follower counts for each membership
+    # Calculate transitive influence for each membership
+    # This counts not just direct followers, but everyone who inherits through chains
     follower_counts = defaultdict(int)
+    
+    # Build adjacency list for traversal (follower -> followees)
+    adjacency = defaultdict(list)
     for link in links:
-        follower_counts[link['target']] += 1
+        adjacency[link['source']].append(link['target'])
+    
+    # For each potential influencer, count everyone who could inherit from them
+    all_node_ids = [node['id'] for node in nodes]
+    
+    def count_influenced_by(influencer_id, visited=None):
+        """Recursively count all people who inherit from this influencer"""
+        if visited is None:
+            visited = set()
+        
+        count = 0
+        for follower_id in all_node_ids:
+            if follower_id == influencer_id or follower_id in visited:
+                continue
+            
+            # Check if this follower inherits from influencer (directly or transitively)
+            if can_reach(follower_id, influencer_id, visited.copy()):
+                count += 1
+        
+        return count
+    
+    def can_reach(from_id, to_id, visited=None):
+        """Check if from_id can reach to_id by following chains"""
+        if visited is None:
+            visited = set()
+        
+        if from_id == to_id:
+            return True
+        
+        if from_id in visited:
+            return False
+        
+        visited.add(from_id)
+        
+        # Check all people this person follows
+        for followee_id in adjacency.get(from_id, []):
+            if can_reach(followee_id, to_id, visited):
+                return True
+        
+        return False
+    
+    # Calculate influence for each node
+    for node_id in all_node_ids:
+        follower_counts[node_id] = count_influenced_by(node_id)
     
     # Convert defaultdict to regular dict for JSON serialization
     follower_counts = dict(follower_counts)
