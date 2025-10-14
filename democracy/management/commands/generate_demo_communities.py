@@ -32,20 +32,26 @@ class Command(BaseCommand):
     
     IMPORTANT: This command disables Django signals during execution to prevent
     spawning 200+ background threads (which would exhaust database connections).
-    After the command completes, you MUST restart containers to reconnect signals.
     
-    NIGHTLY RESET STRATEGY (for crowdvote.com):
+    Restart is ONLY needed for local Docker if you run inside the web container.
+    Railway cron runs in a separate process, so no restart needed.
+    
+    WEEKLY RESET STRATEGY (for crowdvote.com):
     -------------------------------------------
     
-    Schedule this to run nightly at midnight to reset the demo:
+    Schedule this to run weekly to reset the demo:
     
     1. Via Railway Cron (recommended for production):
-       - Set cron schedule: 0 0 * * * (midnight UTC)
-       - Command: python manage.py generate_demo_communities --reset-database && railway restart
-       - This ensures a clean demo every day with signals properly reconnected
+       - Create a new service in Railway (or use existing service with cron schedule)
+       - Set cron schedule: 0 0 * * 0 (Sunday midnight UTC)
+       - Start command: python manage.py generate_demo_communities --reset-database --create-admin
+       - Railway will run this in a separate process that exits when done
+       - Your web service keeps running with signals intact - NO RESTART NEEDED
     
     2. Via Docker Compose (local development):
-       - Add to crontab: 0 0 * * * docker-compose exec web python manage.py generate_demo_communities --reset-database && docker-compose restart
+       - Run: docker-compose exec web python manage.py generate_demo_communities --reset-database
+       - Then restart: docker-compose restart
+       - (Local dev requires restart because command runs inside web container)
     
     WHAT IT CREATES:
     ----------------
@@ -85,7 +91,12 @@ class Command(BaseCommand):
         parser.add_argument(
             '--reset-database',
             action='store_true',
-            help='DESTRUCTIVE: Wipe entire database and recreate superuser (local only)'
+            help='DESTRUCTIVE: Wipe entire database and optionally recreate admin user'
+        )
+        parser.add_argument(
+            '--create-admin',
+            action='store_true',
+            help='Create demo admin user after reset (for production Railway cron)'
         )
 
     def handle(self, *args, **options):
@@ -94,7 +105,7 @@ class Command(BaseCommand):
         
         # --reset-database takes precedence over --clear-data
         if options['reset_database']:
-            self.reset_database_completely()
+            self.reset_database_completely(create_admin=options.get('create_admin', False))
         elif options['clear_data']:
             self.clear_existing_data()
         
@@ -219,25 +230,30 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS('✅ All snapshots created!'))
         
-        # IMPORTANT: Signals remain disabled. Restart containers to reconnect them naturally.
-        self.stdout.write(self.style.WARNING(
-            '\n⚠️  IMPORTANT: Signals remain disconnected to prevent thread overload.\n'
-            '   Please restart containers to reconnect signals:\n'
-            '   docker-compose restart\n'
-        ))
+        # Warning only relevant for local Docker (Railway cron runs in separate process)
+        if settings.DEBUG:
+            self.stdout.write(self.style.WARNING(
+                '\n⚠️  LOCAL DEV ONLY: If you ran this inside docker-compose exec, restart:\n'
+                '   docker-compose restart\n'
+                '   (Railway cron runs in separate process, so no restart needed there)\n'
+            ))
 
-    def reset_database_completely(self):
+    def reset_database_completely(self, create_admin=False):
         """
-        Completely wipe the database and recreate superuser.
+        Completely wipe the database and optionally recreate admin user.
         
         This method performs a complete database reset in the correct order
         to respect foreign key constraints. Signals are temporarily disabled
         to prevent massive thread spawning during deletion.
         
-        After wiping, it creates a superuser with username/password 'admin' 
-        ONLY if DEBUG=True (local development).
+        After wiping, creates a demo admin user if:
+        - create_admin flag is True (Railway cron with --create-admin)
+        - OR DEBUG=True (local development)
         
-        This is designed for daily/weekly demo resets on the production site.
+        Args:
+            create_admin: If True, creates admin user even in production
+        
+        This is designed for weekly demo resets on crowdvote.com.
         """
         from django.db.models.signals import post_save, post_delete
         from democracy import signals as democracy_signals
@@ -319,19 +335,20 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS('✅ Database wiped clean!'))
         
-        # Create superuser only in DEBUG mode (local development)
-        if settings.DEBUG:
-            self.stdout.write('Creating superuser (DEBUG mode)...')
+        # Create admin user if requested or in DEBUG mode
+        if create_admin or settings.DEBUG:
+            mode = 'Railway cron' if create_admin and not settings.DEBUG else 'DEBUG mode'
+            self.stdout.write(f'Creating demo admin user ({mode})...')
             User.objects.create_superuser(
                 username='admin',
-                email='admin@crowdvote.local',
+                email='admin@crowdvote.com',
                 password='admin',
-                first_name='Admin',
-                last_name='User'
+                first_name='Demo',
+                last_name='Admin'
             )
-            self.stdout.write(self.style.SUCCESS('🔐 Superuser created: admin/admin'))
+            self.stdout.write(self.style.SUCCESS('🔐 Demo admin created: admin/admin'))
         else:
-            self.stdout.write(self.style.WARNING('⚠️  Skipping superuser creation (production mode)'))
+            self.stdout.write(self.style.WARNING('⚠️  Skipping admin creation (use --create-admin flag if needed)'))
 
     def clear_existing_data(self):
         """Clear existing relationships data but keep users and communities."""
