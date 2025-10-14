@@ -6,11 +6,38 @@
     <!-- Voter Header -->
     <div class="flex items-center space-x-2 mb-2">
         <span class="inline-block w-3 h-3 {% if tree_node.vote_type == 'manual' %}bg-green-500{% else %}bg-blue-500{% endif %} rounded-full"></span>
-        <span class="font-bold {% if tree_node.vote_type == 'manual' %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">
-            {% with user=user_lookup|get_item:tree_node.voter_id %}
+        {% with user=user_lookup|get_item:tree_node.voter_id %}
+        {% if is_nested %}
+            <!-- In nested context: make username a clickable anchor with popover -->
+            <div class="relative group inline-block">
+                <a href="#voter-{{ tree_node.voter_id }}" class="font-bold {% if tree_node.vote_type == 'manual' %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %} hover:underline">
+                    {{ user.username|default:"Unknown" }}
+                </a>
+                
+                <!-- Popover showing ballot on hover -->
+                {% if tree_node.votes %}
+                <div class="absolute left-0 top-full mt-1 hidden group-hover:block z-50 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-gray-200 dark:ring-gray-700">
+                    <div class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        {{ user.username }}'s Ballot:
+                    </div>
+                    <div class="space-y-1">
+                        {% for choice_id, vote_data in tree_node.votes.items %}
+                        <div class="text-xs text-gray-700 dark:text-gray-300">
+                            {{ vote_data.choice_name }}: 
+                            <span class="text-yellow-600 dark:text-yellow-400 font-bold">{{ vote_data.stars|floatformat:2 }}⭐</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- At root level: just show username (not a link to itself) -->
+            <span class="font-bold {% if tree_node.vote_type == 'manual' %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">
                 {{ user.username|default:"Unknown" }}
-            {% endwith %}
-        </span>
+            </span>
+        {% endif %}
+        {% endwith %}
         {% if influence_counts|get_item:tree_node.voter_id %}
         <span class="text-gray-500 dark:text-gray-500">({{ influence_counts|get_item:tree_node.voter_id }})</span>
         {% if influence_counts|get_item:tree_node.voter_id == max_influence %}
@@ -51,9 +78,29 @@
                         {% with ft=following_item.followee_tree %}
                         <span class="inline-block w-2 h-2 {% if ft.vote_type == 'manual' %}bg-green-500{% else %}bg-blue-500{% endif %} rounded-full"></span>
                         {% with followee_user=user_lookup|get_item:ft.voter_id %}
-                        <a href="#voter-{{ ft.voter_id }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                            {{ followee_user.username|default:"Unknown" }}
-                        </a>
+                        <!-- Followee username with popover -->
+                        <div class="relative group inline-block">
+                            <a href="#voter-{{ ft.voter_id }}" class="font-semibold {% if ft.vote_type == 'manual' %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %} hover:underline">
+                                {{ followee_user.username|default:"Unknown" }}
+                            </a>
+                            
+                            <!-- Popover showing ballot on hover -->
+                            {% if ft.votes %}
+                            <div class="absolute left-0 top-full mt-1 hidden group-hover:block z-50 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-gray-200 dark:ring-gray-700">
+                                <div class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    {{ followee_user.username }}'s Ballot:
+                                </div>
+                                <div class="space-y-1">
+                                    {% for choice_id, vote_data in ft.votes.items %}
+                                    <div class="text-xs text-gray-700 dark:text-gray-300">
+                                        {{ vote_data.choice_name }}: 
+                                        <span class="text-yellow-600 dark:text-yellow-400 font-bold">{{ vote_data.stars|floatformat:2 }}⭐</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
                         {% endwith %}
                         {% endwith %}
                     {% else %}

@@ -621,7 +621,7 @@
                 if (!isPolling && !pollingTimeout) {
                     pollGlobalStatus();
                 }
-            }, 5000); // Poll every 5 seconds
+            }, 10000); // Poll every 10 seconds (reduced from 5s to decrease DB load)
             
             // Enhanced tooltip hover management
             const indicator = document.getElementById('global-processing-indicator');

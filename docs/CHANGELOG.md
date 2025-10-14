@@ -4,6 +4,13 @@ Format: Each entry includes change reference (docs/changes/), git commit, and co
 
 ---
 
+## 2025-10-14 - Fix Signal Duplication and Database Exhaustion (Plan #10)
+
+**Change**: docs/changes/0010_CHANGE_fix_signal_duplication_db_exhaustion.md  
+**Summary**: Fixed critical bug causing database connection exhaustion and perpetual spinner. Removed duplicate `ballot_tags_changed` signal handler (was triggering alongside `ballot_changed` for every ballot save). Added `is_calculated` check to `ballot_changed` and `ballot_deleted` signals to prevent infinite cascade - calculated ballots from delegation processing no longer trigger recalculation, only manual user votes do. Added thread spawn logging (`THREAD_SPAWN` with TTE and thread ID) to all signals. Created `check_stuck_snapshots` management command and `DecisionSnapshot.mark_stuck_snapshots_as_failed()` classmethod with 10-minute timeout. Added `failed_timeout` status choice. Reduced global spinner polling from 5s to 10s. Added `validate_signal_registration()` function. User testing revealed infinite cascade issue: following one user created 471 snapshots because calculated ballot saves were re-triggering signals. Each TTE now spawns exactly 1 thread. Database connections healthy (1 active vs 200 max). Spinner behavior correct (spins briefly, then stops).
+
+---
+
 ## 2025-10-12 - Complete Snapshot Calculation Engine + Recursive Tree Visualization (Plan #9)
 
 **Change**: docs/changes/0009_CHANGE-complete-snapshot-calculation-engine.md  

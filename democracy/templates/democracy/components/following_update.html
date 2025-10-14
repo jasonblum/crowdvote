@@ -24,3 +24,12 @@
         </button>
     {% endif %}
 </td>
+
+<!-- Trigger network refresh after follow/unfollow -->
+<script>
+    // Trigger HTMX to refresh the network visualization
+    htmx.ajax('GET', '{% url "democracy:refresh_network" community.id %}', {
+        target: '#network-visualization',
+        swap: 'innerHTML'
+    });
+</script>

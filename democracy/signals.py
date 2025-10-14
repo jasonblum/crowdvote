@@ -23,16 +23,59 @@ Integration with Plan #21 Snapshot System:
 import logging
 import threading
 import traceback
-from django.db.models.signals import post_save, post_delete, m2m_changed
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
-from django.db import transaction
 
-from democracy.models import Following
-from democracy.models import Vote, Ballot, Decision, Membership
+from democracy.models import Following, Ballot, Decision, Membership
 from democracy.services import CreateCalculationSnapshot, SnapshotBasedStageBallots, Tally
 
 logger = logging.getLogger(__name__)
+
+
+def validate_signal_registration():
+    """
+    Validate that signals are registered correctly to prevent duplication.
+    
+    This function checks how many signal receivers are registered for each
+    model to ensure we don't have duplicate handlers that would spawn
+    multiple threads per user action.
+    
+    Called during Django app initialization to provide early warning of
+    configuration issues.
+    """
+    from django.db.models.signals import post_save, post_delete
+    
+    # Check Ballot signal registration
+    ballot_save_receivers = [r for r in post_save._live_receivers(Ballot) if r]
+    ballot_delete_receivers = [r for r in post_delete._live_receivers(Ballot) if r]
+    
+    logger.info(f"[SIGNAL_CHECK] Ballot post_save has {len(ballot_save_receivers)} receiver(s)")
+    logger.info(f"[SIGNAL_CHECK] Ballot post_delete has {len(ballot_delete_receivers)} receiver(s)")
+    
+    # Check Following signal registration
+    following_save_receivers = [r for r in post_save._live_receivers(Following) if r]
+    following_delete_receivers = [r for r in post_delete._live_receivers(Following) if r]
+    
+    logger.info(f"[SIGNAL_CHECK] Following post_save has {len(following_save_receivers)} receiver(s)")
+    logger.info(f"[SIGNAL_CHECK] Following post_delete has {len(following_delete_receivers)} receiver(s)")
+    
+    # Check Decision signal registration
+    decision_save_receivers = [r for r in post_save._live_receivers(Decision) if r]
+    
+    logger.info(f"[SIGNAL_CHECK] Decision post_save has {len(decision_save_receivers)} receiver(s)")
+    
+    # Warn if we detect potential duplicates
+    if len(ballot_save_receivers) > 1:
+        logger.warning("[SIGNAL_WARNING] Multiple Ballot post_save receivers detected! This may cause duplicate threads.")
+    
+    return {
+        'ballot_save': len(ballot_save_receivers),
+        'ballot_delete': len(ballot_delete_receivers),
+        'following_save': len(following_save_receivers),
+        'following_delete': len(following_delete_receivers),
+        'decision_save': len(decision_save_receivers),
+    }
 
 
 def recalculate_community_decisions_async(community_id, trigger_event="unknown", user_id=None):
@@ -151,7 +194,6 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
                 logger.error(f"[RECALC_ERROR] [system] - Traceback: {traceback.format_exc()}")
                 continue
                 
-        total_duration = (timezone.now() - timezone.now()).total_seconds()  # Will be calculated properly
         logger.info(f"[RECALC_COMPLETE] [system] - Community recalculation completed for {community.name}")
         
     except Exception as e:
@@ -164,82 +206,104 @@ def recalculate_community_decisions_async(community_id, trigger_event="unknown",
         logger.debug(f"[DB_CONNECTION_CLOSED] [system] - Background thread connection closed for community {community_id}")
 
 
-@receiver(post_save, sender=Vote)
-def vote_changed(sender, instance, created, **kwargs):
+@receiver(post_save, sender=Ballot)
+def ballot_changed(sender, instance, created, **kwargs):
     """
-    Signal handler for when votes are cast, updated, or deleted.
+    Signal handler for when ballots are cast or updated.
     
     Triggers automatic recalculation for the decision when:
-    - New vote is cast (created=True)
-    - Existing vote is updated (created=False)
+    - New MANUAL ballot is cast (created=True, is_calculated=False)
+    - Existing MANUAL ballot is updated (created=False, is_calculated=False)
+    
+    CRITICAL: Only manual ballots trigger recalculation. Calculated ballots do NOT
+    trigger recalculation to prevent infinite cascade (recalculation → calculated
+    ballots saved → signals fired → more recalculation → infinite loop).
+    
+    NOTE: This fires on Ballot save, not individual Vote saves, so one ballot
+    submission triggers exactly ONE recalculation thread, not one per choice.
     
     Args:
-        sender: Vote model class
-        instance: The Vote instance that was saved
-        created: True if this is a new vote, False if updated
+        sender: Ballot model class
+        instance: The Ballot instance that was saved
+        created: True if this is a new ballot, False if updated
         **kwargs: Additional signal arguments
     """
     try:
-        decision = instance.ballot.decision
+        # CRITICAL: Ignore calculated ballots to prevent infinite cascade
+        if instance.is_calculated:
+            logger.debug(f"[BALLOT_CALCULATED_SKIP] [{instance.voter.username}] - Skipping recalculation for calculated ballot")
+            return
+        
+        decision = instance.decision
         community = decision.community
         
-        # Log the vote event
+        # Log the ballot event
         action = "cast" if created else "updated"
-        logger.info(f"[VOTE_{action.upper()}] [{instance.ballot.voter.username}] - Vote {action} on decision '{decision.title}' (Choice: {instance.choice.title}, Stars: {instance.stars})")
+        logger.info(f"[BALLOT_{action.upper()}] [{instance.voter.username}] - Ballot {action} on decision '{decision.title}'")
         
         # Only recalculate for open decisions
         if decision.dt_close > timezone.now():
             # Start background recalculation
             thread = threading.Thread(
                 target=recalculate_community_decisions_async,
-                args=(community.id, f"vote_{action}", instance.ballot.voter.id),
+                args=(community.id, f"ballot_{action}", instance.voter.id),
                 daemon=True
             )
             thread.start()
+            thread_id = thread.ident
             
+            logger.info(f"[THREAD_SPAWN] TTE='ballot_{action}' THREAD_ID={thread_id} COMMUNITY={community.name} USER={instance.voter.username}")
             logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community {community.name}")
         else:
-            logger.info(f"[VOTE_IGNORED] [system] - Vote on closed decision '{decision.title}' - no recalculation needed")
+            logger.info(f"[BALLOT_IGNORED] [system] - Ballot on closed decision '{decision.title}' - no recalculation needed")
             
     except Exception as e:
-        logger.error(f"[SIGNAL_ERROR] [system] - Error in vote_changed signal: {str(e)}")
+        logger.error(f"[SIGNAL_ERROR] [system] - Error in ballot_changed signal: {str(e)}")
 
 
-@receiver(post_delete, sender=Vote)
-def vote_deleted(sender, instance, **kwargs):
+@receiver(post_delete, sender=Ballot)
+def ballot_deleted(sender, instance, **kwargs):
     """
-    Signal handler for when votes are deleted.
+    Signal handler for when ballots are deleted.
     
-    Triggers automatic recalculation for the decision.
+    Triggers automatic recalculation for the decision when MANUAL ballots are deleted.
+    Calculated ballots are ignored to prevent infinite cascade.
     
     Args:
-        sender: Vote model class
-        instance: The Vote instance that was deleted
+        sender: Ballot model class
+        instance: The Ballot instance that was deleted
         **kwargs: Additional signal arguments
     """
     try:
-        decision = instance.ballot.decision
+        # CRITICAL: Ignore calculated ballots to prevent infinite cascade
+        if instance.is_calculated:
+            logger.debug(f"[BALLOT_CALCULATED_DELETE_SKIP] [{instance.voter.username}] - Skipping recalculation for calculated ballot deletion")
+            return
+        
+        decision = instance.decision
         community = decision.community
         
-        # Log the vote deletion
-        logger.info(f"[VOTE_DELETED] [{instance.ballot.voter.username}] - Vote deleted on decision '{decision.title}' (Choice: {instance.choice.title})")
+        # Log the ballot deletion
+        logger.info(f"[BALLOT_DELETED] [{instance.voter.username}] - Ballot deleted on decision '{decision.title}'")
         
         # Only recalculate for open decisions
         if decision.dt_close > timezone.now():
             # Start background recalculation
             thread = threading.Thread(
                 target=recalculate_community_decisions_async,
-                args=(community.id, "vote_deleted", instance.ballot.voter.id),
+                args=(community.id, "ballot_deleted", instance.voter.id),
                 daemon=True
             )
             thread.start()
+            thread_id = thread.ident
             
+            logger.info(f"[THREAD_SPAWN] TTE='ballot_deleted' THREAD_ID={thread_id} COMMUNITY={community.name} USER={instance.voter.username}")
             logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community {community.name}")
         else:
-            logger.info(f"[VOTE_DELETE_IGNORED] [system] - Vote deletion on closed decision '{decision.title}' - no recalculation needed")
+            logger.info(f"[BALLOT_DELETE_IGNORED] [system] - Ballot deletion on closed decision '{decision.title}' - no recalculation needed")
             
     except Exception as e:
-        logger.error(f"[SIGNAL_ERROR] [system] - Error in vote_deleted signal: {str(e)}")
+        logger.error(f"[SIGNAL_ERROR] [system] - Error in ballot_deleted signal: {str(e)}")
 
 
 @receiver(post_save, sender=Following)
@@ -275,6 +339,9 @@ def following_changed(sender, instance, created, **kwargs):
                 daemon=True
             )
             thread.start()
+            thread_id = thread.ident
+            
+            logger.info(f"[THREAD_SPAWN] TTE='following_{action}' THREAD_ID={thread_id} COMMUNITY_ID={community_id} USER={instance.follower.member.username}")
             
         if shared_communities:
             logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for {len(shared_communities)} shared communities")
@@ -315,6 +382,9 @@ def following_deleted(sender, instance, **kwargs):
                 daemon=True
             )
             thread.start()
+            thread_id = thread.ident
+            
+            logger.info(f"[THREAD_SPAWN] TTE='following_deleted' THREAD_ID={thread_id} COMMUNITY_ID={community_id} USER={instance.follower.member.username}")
             
         if shared_communities:
             logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for {len(shared_communities)} shared communities")
@@ -385,51 +455,6 @@ def membership_deleted(sender, instance, **kwargs):
         logger.error(f"[SIGNAL_ERROR] [system] - Error in membership_deleted signal: {str(e)}")
 
 
-@receiver(post_save, sender=Ballot)
-def ballot_tags_changed(sender, instance, created, **kwargs):
-    """
-    Signal handler for when ballot tags are modified.
-    
-    Tags affect delegation targeting, so changes require recalculation.
-    Only triggers for tag changes, not ballot creation (handled by vote signals).
-    
-    Args:
-        sender: Ballot model class
-        instance: The Ballot instance that was saved
-        created: True if this is a new ballot, False if updated
-        **kwargs: Additional signal arguments
-    """
-    try:
-        # Only process tag changes on existing ballots
-        if not created and hasattr(instance, 'tags'):
-            # Check if tags actually changed
-            try:
-                old_instance = Ballot.objects.get(pk=instance.pk)
-                if old_instance.tags != instance.tags:
-                    logger.info(f"[BALLOT_TAGS_CHANGED] [{instance.voter.username}] - Updated tags on decision '{instance.decision.title}' from '{old_instance.tags}' to '{instance.tags}'")
-                    
-                    # Only recalculate for open decisions
-                    if instance.decision.dt_close > timezone.now():
-                        # Trigger recalculation
-                        thread = threading.Thread(
-                            target=recalculate_community_decisions_async,
-                            args=(instance.decision.community.id, "ballot_tags_changed", instance.voter.id),
-                            daemon=True
-                        )
-                        thread.start()
-                        
-                        logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Background recalculation started for community {instance.decision.community.name}")
-                    else:
-                        logger.info(f"[BALLOT_TAGS_IGNORED] [system] - Tag change on closed decision '{instance.decision.title}' - no recalculation needed")
-                        
-            except Ballot.DoesNotExist:
-                # Old instance doesn't exist, treat as creation (handled by vote signals)
-                pass
-                
-    except Exception as e:
-        logger.error(f"[SIGNAL_ERROR] [system] - Error in ballot_tags_changed signal: {str(e)}")
-
-
 @receiver(post_save, sender=Decision)
 def decision_status_changed(sender, instance, created, **kwargs):
     """
@@ -464,7 +489,9 @@ def decision_status_changed(sender, instance, created, **kwargs):
                     daemon=True
                 )
                 thread.start()
+                thread_id = thread.ident
                 
+                logger.info(f"[THREAD_SPAWN] TTE='decision_published' THREAD_ID={thread_id} COMMUNITY={instance.community.name} DECISION={instance.title}")
                 logger.info(f"[ASYNC_RECALC_TRIGGERED] [system] - Initial calculation started for decision '{instance.title}'")
         
         # Note: We don't trigger on decision closing because:

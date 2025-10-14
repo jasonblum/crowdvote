@@ -1133,6 +1133,7 @@ class DecisionSnapshot(BaseModel):
             ('failed_snapshot', 'Snapshot Creation Failed'),
             ('failed_staging', 'Stage Ballots Failed'),
             ('failed_tallying', 'Tally Failed'),
+            ('failed_timeout', 'Calculation Timed Out'),
             ('corrupted', 'Snapshot Corrupted')
         ],
         default='ready',
@@ -1198,6 +1199,69 @@ class DecisionSnapshot(BaseModel):
             raise ValidationError("Cannot create final snapshot for open decision")
             
         super().save(*args, **kwargs)
+    
+    @classmethod
+    def mark_stuck_snapshots_as_failed(cls, timeout_minutes=10):
+        """
+        Find snapshots stuck in processing states and mark them as failed.
+        
+        Snapshots that remain in 'creating', 'staging', or 'tallying' status
+        for longer than the timeout period are considered stuck and marked
+        as failed to prevent the global spinner from spinning indefinitely.
+        
+        This method is called by:
+        - The check_stuck_snapshots management command
+        - Optionally by a periodic task (if Celery is configured)
+        
+        Args:
+            timeout_minutes (int): How long before considering snapshot stuck.
+                                  Default is 10 minutes.
+        
+        Returns:
+            tuple: (count of stuck snapshots, list of decision titles affected)
+            
+        Example:
+            >>> count, decisions = DecisionSnapshot.mark_stuck_snapshots_as_failed(timeout_minutes=5)
+            >>> print(f"Marked {count} stuck snapshots as failed")
+        """
+        import logging
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        logger = logging.getLogger(__name__)
+        
+        cutoff_time = timezone.now() - timedelta(minutes=timeout_minutes)
+        
+        # Find snapshots stuck in processing states
+        stuck_snapshots = cls.objects.filter(
+            calculation_status__in=['creating', 'staging', 'tallying'],
+            created_at__lt=cutoff_time
+        ).select_related('decision')
+        
+        count = stuck_snapshots.count()
+        decision_titles = []
+        
+        if count > 0:
+            logger.warning(f"[STUCK_SNAPSHOTS] Found {count} stuck snapshots (timeout={timeout_minutes}m)")
+            
+            # Collect decision titles for reporting
+            for snapshot in stuck_snapshots:
+                decision_titles.append(snapshot.decision.title)
+                logger.warning(
+                    f"[STUCK_SNAPSHOT] Decision='{snapshot.decision.title}' "
+                    f"Status={snapshot.calculation_status} Age={(timezone.now() - snapshot.created_at).total_seconds() / 60:.1f}m"
+                )
+            
+            # Mark them all as failed
+            stuck_snapshots.update(
+                calculation_status='failed_timeout',
+                error_log=f'Calculation timed out after {timeout_minutes} minutes',
+                last_error=timezone.now()
+            )
+            
+            logger.info(f"[STUCK_SNAPSHOTS_FIXED] Marked {count} stuck snapshots as failed_timeout")
+        
+        return count, decision_titles
     
     @property
     def participation_rate(self):

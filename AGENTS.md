@@ -416,6 +416,12 @@ When planning features:
 - Wait for explicit approval before implementing
 - Work on one small part at a time
 
+### After Writing Code
+- **Never commit and push without user testing first**
+- Let the user try out changes locally before pushing to GitHub/Railway
+- Wait for explicit approval: "push it" or "looks good, commit it"
+- User needs time to test in browser before deploying to production
+
 ### During Development
 - Keep the README.md and AGENTS.md updated
 - Maintain comprehensive tests

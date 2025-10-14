@@ -1615,11 +1615,15 @@ def follow_member(request, community_id, member_id):
     # Prepare tags list for template
     tags_display = tags_string.split(',') if tags_string else None
     
+    # Rebuild network data for out-of-band swap
+    network_data = build_network_data(community)
+    
     context = {
         'membership': member_membership,
         'following': following,
         'tags_list': tags_display,
         'community': community,
+        'network_data': network_data,
     }
     
     return render(request, 'democracy/components/following_update.html', context)
@@ -1652,13 +1656,36 @@ def unfollow_member(request, community_id, member_id):
     if deleted_count > 0:
         logger.info(f"[FOLLOWING_REMOVED] [{request.user.username}] - Unfollowed {member_membership.member.username} in {community.name}")
     
+    # Rebuild network data for out-of-band swap
+    network_data = build_network_data(community)
+    
     context = {
         'membership': member_membership,
         'following': None,
         'community': community,
+        'network_data': network_data,
     }
     
     return render(request, 'democracy/components/following_update.html', context)
+
+
+@login_required
+def refresh_network(request, community_id):
+    """
+    Return just the network visualization HTML for HTMX refresh.
+    
+    Used after follow/unfollow actions to update the delegation network
+    without requiring a full page reload.
+    """
+    community = get_object_or_404(Community, id=community_id)
+    network_data = build_network_data(community)
+    
+    context = {
+        'network_data': network_data,
+        'community': community,
+    }
+    
+    return render(request, 'democracy/components/network_visualization.html', context)
 
 
 @login_required

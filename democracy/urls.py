@@ -34,4 +34,7 @@ urlpatterns = [
     # Membership Settings (Anonymity Toggle)
     path('communities/<uuid:community_id>/membership-settings/', views.membership_settings_modal, name='membership_settings_modal'),
     path('communities/<uuid:community_id>/membership-settings/save/', views.membership_settings_save, name='membership_settings_save'),
+    
+    # Network Visualization Refresh
+    path('communities/<uuid:community_id>/network/refresh/', views.refresh_network, name='refresh_network'),
 ]

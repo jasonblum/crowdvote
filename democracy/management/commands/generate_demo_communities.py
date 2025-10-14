@@ -109,16 +109,16 @@ class Command(BaseCommand):
         disconnected = []
         
         try:
-            post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
-            disconnected.append("vote_changed")
+            post_save.disconnect(democracy_signals.ballot_changed, sender=Ballot)
+            disconnected.append("ballot_changed")
         except Exception as e:
-            self.stdout.write(f'  Warning: Could not disconnect vote_changed: {e}')
+            self.stdout.write(f'  Warning: Could not disconnect ballot_changed: {e}')
             
         try:
-            post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
-            disconnected.append("vote_deleted")
+            post_delete.disconnect(democracy_signals.ballot_deleted, sender=Ballot)
+            disconnected.append("ballot_deleted")
         except Exception as e:
-            self.stdout.write(f'  Warning: Could not disconnect vote_deleted: {e}')
+            self.stdout.write(f'  Warning: Could not disconnect ballot_deleted: {e}')
             
         try:
             post_save.disconnect(democracy_signals.following_changed, sender=Following)
@@ -250,16 +250,16 @@ class Command(BaseCommand):
         disconnected = []
         
         try:
-            post_save.disconnect(democracy_signals.vote_changed, sender=Vote)
-            disconnected.append("vote_changed")
+            post_save.disconnect(democracy_signals.ballot_changed, sender=Ballot)
+            disconnected.append("ballot_changed")
         except Exception as e:
-            self.stdout.write(f'  Warning: Could not disconnect vote_changed: {e}')
+            self.stdout.write(f'  Warning: Could not disconnect ballot_changed: {e}')
             
         try:
-            post_delete.disconnect(democracy_signals.vote_deleted, sender=Vote)
-            disconnected.append("vote_deleted")
+            post_delete.disconnect(democracy_signals.ballot_deleted, sender=Ballot)
+            disconnected.append("ballot_deleted")
         except Exception as e:
-            self.stdout.write(f'  Warning: Could not disconnect vote_deleted: {e}')
+            self.stdout.write(f'  Warning: Could not disconnect ballot_deleted: {e}')
             
         try:
             post_save.disconnect(democracy_signals.following_changed, sender=Following)

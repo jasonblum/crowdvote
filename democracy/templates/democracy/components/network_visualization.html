@@ -12,9 +12,8 @@
 
 <script>
 // Wait for D3.js to load before initializing visualization
-(function() {
-    // Check if D3 is loaded, if not wait for window load
-    function initNetworkVisualization() {
+// This function can be called multiple times (e.g., after HTMX swaps)
+window.initNetworkVisualization = function() {
         if (typeof d3 === 'undefined') {
             console.error('D3.js library not loaded');
             return;
@@ -28,14 +27,19 @@
 
     // If no data, show message
     if (!networkData.nodes || networkData.nodes.length === 0) {
-        document.getElementById('network-svg').insertAdjacentHTML('afterend', 
-            '<div class="text-center py-8 text-gray-500 dark:text-gray-400">No delegation relationships to display</div>'
-        );
+        const svg = document.getElementById('network-svg');
+        if (svg) {
+            svg.innerHTML = '';
+            svg.insertAdjacentHTML('afterend', 
+                '<div class="text-center py-8 text-gray-500 dark:text-gray-400">No delegation relationships to display</div>'
+            );
+        }
         return;
     }
 
-    // Set up SVG
+    // Set up SVG (clear any existing content first)
     const svg = d3.select('#network-svg');
+    svg.selectAll('*').remove();
     const container = document.getElementById('network-visualization');
     const width = container.clientWidth || 1100;
     const height = 500;
@@ -217,13 +221,8 @@
     function dragended(event, d) {
         // Keep node pinned where user dragged it
     }
-    }
-    
-    // Initialize when DOM and D3 are ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initNetworkVisualization);
-    } else {
-        initNetworkVisualization();
-    }
-})();
+}
+
+// Initialize immediately (this script runs when content is swapped in)
+window.initNetworkVisualization();
 </script>
